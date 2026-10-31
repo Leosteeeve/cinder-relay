@@ -1,6 +1,6 @@
 # CINDER RELAY — Performance Budget
 
-**以下全部是项目暂定目标，不是基准测试结果，也不是 Epic 或 GPU 厂商的性能保证。** Phase 00 只有原生基础工程，没有已实现的玩法、性能 trace 或可报告 FPS。
+**以下全部是项目暂定目标，不是基准测试结果，也不是 Epic 或 GPU 厂商的性能保证。** Phase 01A 已建立单地图探索灰盒；其玩法 smoke 不是性能 benchmark，目前没有正式性能 trace 或可报告 FPS。
 
 ## 测试档与预算提案
 

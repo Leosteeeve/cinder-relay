@@ -22,4 +22,14 @@
 
 ## 后续决策触发
 
+### Phase 01A 增量（2026-10-31）
+
+- **CR-016 / Approved**：用户明确启动 Phase 01A；单地图、三连通区域、基础第一人称控制、模块／终端／信号交互、四目标与 UMG 结束。取代旧 P01 的更窄范围；仍禁止 combat／assembly／AI／streaming，指定 feature branch push。
+- **CR-017 / Implemented**：原生 CharacterMovement、Enhanced Input、GameMode 单枚举、BlueprintNativeEvent 交互及原生 UMG。无模块改名、架构替换或自定义管理器。
+- **CR-018 / Implemented**：Editor-only Python／Editor Scripting Utilities 生成标准资产；它们的 Beta／Experimental 风险限定于离线编辑管线，runtime 无 Python 依赖。官方 Unreal MCP 在 5.8 存在且为 Experimental，但本任务不需要新连接，未启用。
+- **CR-019 / Implemented**：专属生成路径、元数据与 Actor tags；重跑复用 155 个对象，不删除用户内容。发现 API 差异后针对具体调用修复；中断生成的空 map 按 hash 与空内容验证恢复，随后加入立即持久化所有权。
+- **CR-020 / Implemented**：输入映射在 PawnClientRestart 重新安装，解决 Spawn BeginPlay 早于 Possess 的生命周期问题；定向编译 20.95 秒、exit 0。停止无理由构建。
+- **CR-021 / Provisional defaults**：300/500/160 cm/s、250 cm trace、85° FOV、无 head bob，待人工手感验收；非最终性能／画质承诺。普通 PIE Esc 被 Editor 截获，正式控制验收使用 Standalone。
+- **CR-022 / Verified**：Python Rotator 使用命名轴；修正坡道与自动转向，并阻止截图泵 Slate 时的测试重入。最终真实 PIE 流程 11 项通过，零 teleport，结尾／重开成功；细节和未验收边界在 MILESTONES，停止追加无理由测试。
+
 P01 前收敛移动动作／镜头约束，P02 前定武器与敌人，P03 前定修复流程／叙事，P04 前定回访与加载边界。大幅引擎／模块／架构变更先提交影响、替代方案和迁移计划，不以清理草稿为理由重写工作系统。

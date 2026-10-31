@@ -10,6 +10,15 @@ Phase 00 不下载大型第三方资源包、不购买资产，也不将本机�
 
 当前没有外部 Fab 模型、动画、纹理、声音或 raw pack 入库。`/Engine/` 中被模板引用的内容属于引擎安装依赖，不代表已复制到本仓库或许可可独立再分发。通过 Editor 创建的项目自有地图单独记录生成方式；原始地图中的 Engine asset 引用仍需在最终包审核。
 
+## Phase 01A 来源补充
+
+| ID／内容 | 来源／作者 | 许可／署名／再分发 | 兼容与证据 |
+| --- | --- | --- | --- |
+| EPIC-002：Cube、Cylinder、默认 TextRender 字体／材质 | 本机官方 UE 5.8.4 `/Engine/BasicShapes` 与引擎默认 TextRender 依赖；Epic Games；[Epic Engine Content](https://dev.epicgames.com/documentation/en-us/unreal-engine/working-with-content-in-unreal-engine) | 适用 Unreal Engine EULA；保留 Epic 署名义务；只引用安装依赖，不复制引擎资源库或独立再分发素材 | 由真实 Editor 用于灰盒；未验证 packaged cook |
+| CR-GEN-001：灰盒 map、8 个纯色材质、11 个输入资产、5 个配置 Blueprint | 本项目 `CinderRelay/Scripts/generate_greybox.py`；由本项目制作流程生成 | 项目自有编排，依赖部分仍遵循 Epic 条款；没有附加第三方素材 license 或对外开源许可 | UE 5.8.4 Editor 实际生成／保存，155 个具名对象；运行证据见 MILESTONES |
+
+Phase 01A 未下载／购买外部资源，无 marketplace 运行依赖。所有 `.uasset`／`.umap` 使用现有 Git LFS；截图与原始运行日志保存在忽略目录。生成资产的精确内容 hash 由 Git LFS pointer 记录。
+
 ## 今后的必填记录
 
 每个包记录：资产 ID／本地路径、source URL、作者／提供者、版本和获取日期、原文件 SHA256、完整 license 名称／版本／条款 URL、署名文本／位置、修改记录、redistribution 限制、允许的 repo 可见性、宣称引擎兼容、实际 UE 5.8.4 import／cook／runtime 证据、负责人和状态。

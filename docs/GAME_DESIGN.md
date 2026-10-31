@@ -1,5 +1,18 @@
 # CINDER RELAY — Game Design
 
+## Phase 01A 可玩探索原型
+
+用户批准三个区域连通的单地图灰盒：铁路场出生、工坊发现电力模块、下行通道进入中继站。模块只承担目标状态，不是背包或武器装配系统。
+
+目标原文依次为：
+
+1. Reach the maintenance workshop.
+2. Find a functional power module.
+3. Restore power to Relay Nine.
+4. Investigate the restored signal.
+
+最后显示 `MERIDIAN NETWORK / CONNECTION RESTORED`，提供重新开始与退出。WASD／鼠标、Shift 跑、Ctrl 蹲、Space 跳、E 交互、Esc 暂停。01A 是短探索闭环，不声称已达到最终 12–16 分钟精修切片目标。
+
 状态：用户于 2026-10-31 批准的制作方向；实施范围以 [MILESTONES](MILESTONES.md) 为准。
 
 ## 已确认身份

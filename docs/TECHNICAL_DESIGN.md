@@ -2,11 +2,31 @@
 
 ## 确认基线与实施边界
 
-用户确定 UE 5.8、Windows／Visual Studio、C++ 核心和 Blueprint 支持层。本机安装 UE **5.8.4 / CL 58902052**。本轮初始审计没有任何 `.uproject` 或旧 `ThresholdFPS` C++ 模块；新工程采用 `CinderRelay`，并通过 Unreal Editor 原生 Blank C++ 流程创建，具体结果见 [Phase 00 验证记录](PHASE00_VALIDATION.md)。没有进行模块重命名。
+用户确定 UE 5.8、Windows／Visual Studio、C++ 核心和 Blueprint 支持层。本机安装 UE **5.8.4 / CL 58902052**。Phase 00 初始审计没有任何 `.uproject` 或旧 `ThresholdFPS` C++ 模块；工程采用 `CinderRelay`，通过 Unreal Editor 原生 Blank C++ 流程创建，具体结果见 [Phase 00 验证记录](PHASE00_VALIDATION.md)。Phase 01A 审计确认该工程、clean main 和既有 origin，并在其上增量实施，没有进行模块重命名。
 
 保留已安装引擎，不修改引擎源码。工程／模块改名、引擎升级和架构替换需先有迁移计划及授权。Phase 00 不包含第一人称移动、射击、任务、修复、存档或流送系统实现。
 
 ## 工程与模块
+
+### Phase 01A 已实施的增量
+
+保留 `CinderRelay` 单 Runtime 模块；增加 UMG 公共依赖及 Slate／SlateCore 私有依赖。没有新 runtime plugin、manager、移动／物理框架。`PythonScriptPlugin` 与 `EditorScriptingUtilities` 仅在 Editor target 启用：Epic 将其列为实验／Beta 编辑工具，本阶段用其生成标准资产，运行游戏不依赖 Python。已核实 UE 5.8 官方 Unreal MCP 及本机插件存在，但未连接或启用：当前原生 Python 已满足资产生产，避免增加实验性接入路径。
+
+| 新类 | 职责与编辑方式 |
+| --- | --- |
+| ACRCharacter | 原生 CharacterMovement／capsule／第一人称 camera；Enhanced Input；10 Hz 相机 trace，E 时再次校验；Blueprint 可调速度、灵敏度、距离和输入资产 |
+| ICRInteractable / UCRInteractable | CanInteract、GetInteractionPrompt、Interact 三个 BlueprintNativeEvent；不查找全场景 |
+| ACRInteractionActor | Blueprint 可配置 PowerModule／Relay／Signal；检查当前目标、距离和视线；本地 used guard 防重复；模块拾取后隐藏并关闭碰撞 |
+| ACRWorkshopTrigger | 仅 Pawn overlap 驱动到达工坊，重复进入不重复推进 |
+| ACRGameMode | 章节局部 ECRObjective 单枚举、期望状态检查和事件广播；没有任务框架／GameInstance 世界引用 |
+| ACRPlayerController | 订阅 HUD 更新，Esc 暂停、释放鼠标、恢复、重新开始与退出 |
+| UCRHUDWidget | 原生 UMG WidgetTree：目标、提示、准星、控制说明、暂停和结束菜单；无每帧 UI binding |
+
+生成 Blueprint：BP_CRCharacter、BP_CRGameMode、BP_PowerModule、BP_RelayTerminal、BP_SignalConsole。真实 Input Actions／IMC 在 `/Game/Generated/Phase01A/Input`；W/S/A/D 使用四个 Boolean actions，以原生 AddMovementInput 合成方向，鼠标两条 Axis1D，Shift／Ctrl／Space／E 为动作。Esc 使用可在暂停时执行的 Controller key binding，UI 焦点收到 Esc 时由 UMG 处理。关闭旧输入平滑、FOV 缩放和 legacy scales，灵敏度由角色显式参数控制。
+
+本地输入 context 在 BeginPlay 及 PawnClientRestart 幂等安装；保存所属 subsystem 弱引用，EndPlay 只移除本角色 context。暂停清理 sprint／jump／crouch 请求并 flush keys。镜头位于 capsule 内，85° FOV、pitch 限制 ±80°，无 head bob；蹲姿仍由原生站起空间检查控制。默认 walk/sprint/crouch 为 300/500/160 cm/s，交互距离 250 cm。
+
+目标序列：到工坊 → 找模块 → 在 Relay Nine 安装 → 查看恢复信号 →结束菜单。结束只暂停当前世界，Restart 使用原生 map travel 重置本章；这是显式菜单转换，不在交互路径同步加载大资源。尚无 combat、AI、save、streaming 或动画装配。
 
 项目实际路径：`CinderRelay/CinderRelay.uproject`；源码：`CinderRelay/Source/CinderRelay/`；与根目录文档共用一个 Git 仓库，不嵌套 Git。
 
