@@ -7,6 +7,8 @@
 #include "InputCoreTypes.h"
 #include "Components/InputComponent.h"
 #include "Engine/World.h"
+#include "CRChapterStreamingController.h"
+#include "EngineUtils.h"
 
 void ACRPlayerController::BeginPlay()
 {
@@ -30,6 +32,13 @@ void ACRPlayerController::SetupInputComponent()
 	// Pause must remain available when the game is paused; movement uses Enhanced Input assets.
 	FInputKeyBinding& PauseBinding = InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &ACRPlayerController::TogglePrototypePause);
 	PauseBinding.bExecuteWhenPaused = true;
+	InputComponent->BindKey(EKeys::R, IE_Pressed, this, &ACRPlayerController::RetryStreaming);
+}
+
+void ACRPlayerController::SetStreamingStatus(const FText& Text) { if (HUD) HUD->SetStreamingStatus(Text); }
+void ACRPlayerController::RetryStreaming()
+{
+	for (TActorIterator<ACRChapterStreamingController> It(GetWorld()); It; ++It) { It->RetryFailedLoads(); break; }
 }
 
 void ACRPlayerController::OnPossess(APawn* InPawn)

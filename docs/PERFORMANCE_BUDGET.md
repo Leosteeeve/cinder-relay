@@ -1,6 +1,6 @@
 # CINDER RELAY — Performance Budget
 
-**以下全部是项目暂定目标，不是基准测试结果，也不是 Epic 或 GPU 厂商的性能保证。** Phase 01A 已建立单地图探索灰盒；其玩法 smoke 不是性能 benchmark，目前没有正式性能 trace 或可报告 FPS。
+**预算表是项目目标，不是 Epic 或 GPU 厂商的性能保证。** 文末记录 Phase 01B 的真实 packaged 诊断测量；功能已通过，但本次数据没有达到 60 FPS 帧耗时目标。灰盒结果不代表最终美术性能。
 
 ## 测试档与预算提案
 
@@ -40,6 +40,43 @@
 
 同一故障两次修复失败后，停止试错，交付：复现步骤、原始错误／trace、两次假设及结果、最可能根因与可区分它们的下一项检查。诊断完成后再决定继续；不要无限 rebuild、清 DDC、重装或扩大改动范围。
 
-## 当前结果
+## Phase 01B packaged 诊断记录 — 2026-10-31
 
-无 benchmark、GPU／VRAM 实测、视觉验收或手感结论。原生 CinderRelayEditor baseline 编译成功与上述目标无因果保证。尚需确认实际画质档、GPU TGP、输出分辨率和是否接受超分。
+一次 Windows Development 包、一次新游戏进程、一次三轮 C→B→A→B→C 回访；不清缓存、不强制逐区 GC。记录 151.286 s / 6476 行 actor tick；三轮回访段 4766 行。此次依 Phase 01B 指令执行有界路线，包含初始安全加载、Ready veto/反向取消/失败重试；不是上述未来正式 60 s 预热 + 3×120 s 的无追踪性能 benchmark。
+
+条件：UE 5.8.4 CL 58902052；AMD Ryzen 9 8945HX；32 GB RAM；RTX 5070 Laptop，驱动 616.92；Windows D3D12 SM6。1920×1080 原生结束截图确认输出分辨率，`r.ScreenPercentage=100`、DynamicRes=0、VSync=0、MaxFPS=0。所有 sg.* 画质项为 **3 / Epic**；AA method=4（TSR，100% 输入分辨率）、Lumen GI/reflection=1、RT=1、Lumen HardwareRayTracing=1、VSM=1。没有启用帧生成或下调质量。`settings.txt` 初次写入早于 ExecCmds 时曾为 ScreenPercentage=0；游戏日志确认移动前设为100，Restart 后最终 settings.txt 也为100。
+
+供电查询 PowerOnline=true、Charging=true；Windows 电源方案为“平衡”。TGP/power.limit 返回 N/A，不猜测额定功率；本次 GPU 监测约 21.77–40.16 W、56–62°C。未固定/锁定时钟，没有人工确认所有期间持续前台。OS/驱动/DDC 缓存未清空；“新进程首启”不是物理冷机。
+
+同时启用 `cpu,gpu,frame,bookmark,loadtime,memory,metadata,assetmetadata`。Memory allocation/callstack 跟踪、自动路线、CSV 缓冲有额外开销；因此这些是带追踪的诊断结果，不能作为无追踪 60 FPS 的最终证明。
+
+| 三轮回访段 | median ms | p95 ms | p99 ms | 最大 ms |
+| --- | ---: | ---: | ---: | ---: |
+| World tick frame delta | 15.993 | 71.453 | 88.655 | 111.686 |
+| Game Thread 原生计数器 | 3.164 | 15.529 | 23.895 | 102.161 |
+| Render Thread 原生计数器 | 15.963 | 70.780 | 86.985 | 112.294 |
+| GPU 原生 RHI frame 计数器 | 10.800 | 15.704 | 16.217 | 18.810 |
+
+回访段 >50 ms 的 frame delta 有 **615** 行。p95 frame 超出16.67ms目标 **54.78 ms**，GT/GPU p95也分别高于12/14ms目标。本阶段不以“流送功能通过”替代性能目标。world delta 在启动可被引擎截断，整段最大400ms不能当作真正最差帧；Insights 原始 trace 含约1.84s的启动/初期 GameThread frame。线程计数器来自前一个引擎帧，不能简单相加。
+
+| 驻留/加载指标 | 实测 |
+| --- | --- |
+| 初始 A request→Ready | 2612 ms；角色生成始终延后到地板/碰撞就绪 |
+| 正常区域转换 request→Ready | 19–885 ms（剔除明确的 B veto/取消/故障请求）；首进 C 352ms，首次返回 B 301ms、A 885ms |
+| 预载余量 | 800cm / 500cm/s ≈1.6s，大于本次最大正常转换0.885s；胶囊 overlap 还略提前。不是所有磁盘/缓存状态的保证 |
+| 进程 Working Set 峰值 | 2,629,877,760 B ≈2.45 GiB |
+| 进程 commit 峰值 | 5,028,859,904 B ≈4.68 GiB；UE Windows `UsedVirtual=PROCESS_MEMORY_COUNTERS.PagefileUsage`（commit charge），不是虚拟地址范围或显存 |
+| 同一 C 停留点 cycle1/2/3 commit 中位数 | 4,440,100,864 / 4,578,897,920 / 4,585,627,648 B |
+| cycle3−cycle1 | +145,526,784 B ≈138.79 MiB，小于暂定256MiB；只有三轮观察，不宣称排除所有泄漏 |
+| 真实 Unloaded 事件 | A 4、B 8、C 3；均原生 Unloaded、loaded=0、visible=0、desired=0 |
+| GPU 监测总已用显存峰值 | nvidia-smi 全适配器4173MiB，包含其他进程；不能当作游戏独占显存预算验收 |
+
+后续加载记录出现旧地板 weak witness 无效（witness_valid=0），证实观察的旧 Actor 没有被控制器强引用留住；不是所有资产的完整 Reference Viewer/引用链审计。显存池保留不等于 level 未卸载。
+
+证据根目录 `.environment-local/phase-01b/`：`packaged-game.log`、`packaged.utrace`（1,674,598,618 B）、`packaged-summary.json`、`os-samples.csv`；包内 `Windows/CinderRelay/Saved/Phase01B` 有原始 CSV、settings、route、receipt 和 ending.png。`summarize_streaming.py` 只汇总这些数据。
+
+Unreal Insights 已实际离线分析 trace，exit 0；解析 76 个 CPU threads、22,103,638 scopes，Memory Insights 收到117,199,686系统内存事件。CPU 导出包含 `Sync_RenderingThread` / `GameThreadWaitForTask` 约119.99/119.86s（含嵌套、整段启动与等待，不相加）。这支持优先调查渲染线程/同步等待，而不是假设控制器加载逻辑耗尽GT。GPU trace有少量时间戳顺序警告；本表GPU数字来自原生RHI计数器。明确区分观察与原因假设，不能把所有开销归咎于memory tracing。
+
+进一步按真实 `RenderThread 0` 导出的22–32s片段显示 Scene scope 可达83.34ms；完整trace有 `WaitForVisibilityTasks`（最大56.23ms）与 `UpdateAllPrimitiveSceneInfos`（启动/初期最大1.805s）。`insights-render-hitch.csv` 含明确ThreadName；统计表默认也带GPU聚合项，不能把整张表当成单线程时间相加。计数器目录和Memory Insights事件均已实际解析。第一次导出线程名/文件引号不符合此版本接口，按真实名称修正后定向导出成功；没有再运行游戏。
+
+下一性能任务应先做与当前场景/设置相同的短定向、关闭高开销 memory trace 的对照，定位渲染/同步尖峰；保留图像质量，不进行架构重写。此次未自动启动该额外 benchmark 或优化。

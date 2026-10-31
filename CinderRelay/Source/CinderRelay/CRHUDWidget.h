@@ -14,6 +14,7 @@ class CINDERRELAY_API UCRHUDWidget : public UUserWidget
 public:
 	void SetObjective(const FText& Text);
 	void SetPrompt(const FText& Text);
+	void SetStreamingStatus(const FText& Text);
 	void SetMenu(bool bVisible, bool bEnded);
 protected:
 	virtual void NativeOnInitialized() override;
@@ -24,6 +25,7 @@ private:
 	UFUNCTION() void ExitClicked();
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> ObjectiveText;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> PromptText;
+	UPROPERTY(Transient) TObjectPtr<UTextBlock> StreamingText;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> MenuTitle;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> MenuBody;
 	UPROPERTY(Transient) TObjectPtr<UBorder> MenuBackdrop;

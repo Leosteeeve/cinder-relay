@@ -16,6 +16,8 @@ public:
 	UFUNCTION(BlueprintCallable) void RestartPrototype();
 	UFUNCTION(BlueprintCallable) void ExitPrototype();
 	UFUNCTION(BlueprintCallable) void RefreshHUD();
+	void SetStreamingStatus(const FText& Text);
+	void RetryStreaming();
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="UI") bool bPrototypePaused = false;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="UI") bool bPrototypeEnded = false;
 protected:

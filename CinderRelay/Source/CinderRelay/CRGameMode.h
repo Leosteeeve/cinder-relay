@@ -23,7 +23,12 @@ public:
 	UFUNCTION(BlueprintPure) ECRObjective GetObjective() const { return Objective; }
 	UFUNCTION(BlueprintPure) FText GetObjectiveText() const;
 	bool TryAdvance(ECRObjective Expected);
+	void ReleaseStartingPlayer();
+protected:
+	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
+	virtual void BeginPlay() override;
 private:
+	TWeakObjectPtr<APlayerController> WaitingPlayer;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Chapter", meta=(AllowPrivateAccess="true"))
 	ECRObjective Objective = ECRObjective::ReachWorkshop;
 };

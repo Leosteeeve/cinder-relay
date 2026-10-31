@@ -89,6 +89,67 @@ C++ 修改后运行相关 target 编译；数据／Blueprint 变化运行对应�
 
 复现→根据日志／trace定位→最小修改→相关测试→记录结果。同一故障两次修复均失败：停止编辑，提供根因证据、已排除项和下一项诊断；不要反复重建、清 DDC、安装插件或改架构猜测。通过相关检查后停止扩大测试，除非新证据要求。
 
+## Phase 01B 执行合同（2026-10-31）
+
+用户已接受 Phase 01A，并明确授权 Phase 01B。基线为已合并的 main `96524c9`，工作分支 `phase-01b-streaming`。
+
+1. **迁移与安全门**：保存原图不变，以 Editor 复制世界、原生 MoveActorsToLevel 迁移 155 个 Actor；每个 Actor 的类别、世界变换、组件、碰撞、材质与交互配置必须相等。共享 Actor、PlayerStart、必要入口遮挡留 persistent。产出 4 个真实地图，无 WP、无 streaming volumes。
+2. **运行时流送与状态**：一个控制器使用 ULevelStreaming 的原生 desired flags、加载/显示委托和低频超时看守；门只在双方真实就绪时开放。初始 A 就绪前不生成角色；GameMode 仍是唯一目标状态，流送 Actor 从目标进度恢复已使用状态。返回与重试是接受条件。
+3. **有界验证**：实现前确认原基线没有四地图/流送控制器；完成后一次 Editor target 编译、实际 Editor 功能检查、一次 Windows Development BuildCookRun。Development 专用验收路线通过原生移动/交互，先回访三轮，再结束及 Restart；包含就绪抑制和恢复。记录真实结果，不能用文件存在代替可玩性。
+4. **交付**：复核整分支，修复有证据的重要问题；更新现有文档，显式暂存相关资产/代码，提交、推送并创建 PR，不合并。
+
+依赖：现有输入/角色/GM/HUD、可用 Editor Python、UE 5.8.4 和 VS 工具链。迁移只依赖已有资产和新类；运行时 readiness 验证必须与迁移后的区域归属一致；验收器只通过公开游戏行为驱动，不直接改变章节状态。
+
+验证预算以用户本次指令为准：不为逐类 TDD 重复编译完整 Unreal target；同一故障两次修复失败后停止并诊断。非目标：战斗、AI、最终美术、磁盘存档、自制异步资源框架、模块重命名、性能重写。
+
 ## 后续任务边界
 
-Phase 01B 需要用户另行启动。先确认回访范围并用现有坐标／tags 制定迁移清单，保留已工作的输入、交互和目标状态。不得直接将本章转换为 World Partition，也不得在尚未验证 packaged 加载时声称无缝。
+Phase 01B 已授权；Phase 02 仍需用户另行启动。不得将本章转换为 World Partition，也不得在尚未验证 packaged 加载时声称无缝。
+
+## Phase 01B 实际交付与验证 — 2026-10-31
+
+**状态：原生流送与 packaged 功能验收通过；60 FPS 性能目标未通过，人工门口/手感接受仍待用户。** 没有进入 Phase 02。
+
+| 检查 | 结果与证据 |
+| --- | --- |
+| Git 基线 | Phase01A PR #1 已合并，main 快进至 `96524c9`；分支 `phase-01b-streaming`。切换时旧 Editor 锁住资产，正常关闭后逐一核对25个LFS对象哈希，把本地旧副本保存在 ignored backup，再 fast-forward；没有 reset、删除用户文件或 force-push |
+| 首次 C++ 编译 | CinderRelayEditor/Win64/Development **Succeeded / exit0 / 53.04s**；`build-editor.log`。随后仅定向修正 BeginPlay 初始化顺序/当前API（22.58s），工坊事件绑定（见下），PIE退出（8.45s）；没有全引擎重建 |
+| 原生迁移 | `migration-editor.log` 的 `CR_MIGRATION_PASS`；四张地图保存成功；155个原Actor：persistent15/A86/B22/C32，另外3个persistentActor。`Saved/Phase01B/migration-comparison.json` differences=[]，真实类别/世界和组件变换/碰撞/材质/交互设置相等；原图SHA未变 |
+| 重开资产 | 新Editor进程 `CR_ASSET_REOPEN_PASS`，155原Actor归属正确；不是只检查磁盘文件名 |
+| Editor 功能 | `editor-acceptance-entryfix.log`：3轮分别62.655/98.152/133.627s完成，模块/终端恢复、目标0→1→2→3→4、结尾和Restart PASS。完整receipt保存在 `editor-accepted/acceptance.json`；NullRHI不证明画面/性能 |
+| Editor 退出修复 | 完整路线原先在活跃PIE直接退出触发Slate清理异常；现在由Python监督本轮新receipt，先停止PIE再关闭Editor。只重测退出路径，`editor-exit-check.log` **exit0**；该短检查明确不是玩法验收 |
+| Windows 包 | 唯一 BuildCookRun **BUILD SUCCESSFUL / exit0 / 258.73s**；`package.log`。CinderRelay game target编译、cook、pak/IoStore、stage/archive均完成；Cook ReferencedSet明确列出四图 |
+| Packaged 初始加载 | 真正的 `package/Windows/CinderRelay/Binaries/Win64/CinderRelay.exe`，PID35188；默认进入 `L_CH01_Persistent`；A Ready之前没有生成玩家，不在空世界落下 |
+| Packaged 流程 | 一次完整路线PASS，151.286s记录、6476行；3次 C→B→A→B→C，回访前完成模块/relay，最终signal最后执行。旧模块不重现、终端不重复推进、Workshop entry不重复触发。Restart恢复0目标、初始区和UI；同一pawn在正常跨区中保持 |
+| 门/失败 | 目标已loaded/visible但测试veto阻止Ready时，角色向门行走仍被真实碰撞挡住；反向离开取消需求并卸载；注入controller Failed后门关闭，公开R处理器Retry恢复。没有制造磁盘/缺cook包的实际I/O故障 |
+| packaged退出/画面 | 真实游戏日志 `RequestExitWithStatus(0,0)`、正常LogExit，无fatal；启动器exit0没有被单独拿来证明成功。已查看原生1920×1080 ending.png，MERIDIAN NETWORK/CONNECTION RESTORED及两个按钮存在；没有声称人工检查全部转换遮挡或物理键鼠 |
+| 内存与性能 | 三轮frame p95 71.453ms、GT15.529ms、GPU15.704ms；commit峰值4.68GiB、同C点首末+138.79MiB；真实卸载A4/B8/C3。完整条件、trace分析、预算差距和限制见 PERFORMANCE_BUDGET |
+
+真实文件：`/Game/Generated/Phase01B/Maps/L_CH01_Persistent`、`L_CH01_RailYard`、`L_CH01_Workshop`、`L_CH01_RelayBunker`。原图 `/Game/Generated/Phase01A/Maps/L_CH01_Greybox` SHA256仍为 `C22AC1DAFE74F3006CA8F2498E7AD81BA8AC827890C44B3554F31D0D13D3E733`。
+
+本次打包输入清单（Source/Config/Content/uproject）保存于 `validated-inputs.json`，SHA256 `E9939D7F4733DE06158399EF6D4057AE89D55F04423E10E2CB163F47564AC47E`；实际game exe SHA256 `E1C74DDE2C0ABAB85217452DEF087C3F921FF4B8D14838BC3382449BD7F61A42`；packaged PASS receipt SHA256 `49CA82D0BC95532855FACA4592A6CC12E809B29264B4CC9849085A7FAF02C5E5`。文档/统计脚本后续修改不改变该编译包。
+
+代表性真实日志（省略日志系统的时间前缀；完整 timeline 在 packaged-summary.json）：
+
+```text
+CR_STREAM StartupPlayerHeld
+CR_ACCEPT 2.827 cycle=0 PASS Initial A floor ready before spawn
+CR_STREAM C LoadRequested t=19.781 request=1 state=0 loaded=0 visible=0 wanted=1 player=B witness_valid=0
+CR_STREAM C Ready t=20.121 request=1 state=3 loaded=1 visible=1 wanted=1 player=B witness_valid=1
+CR_STREAM B Unloaded t=25.273 request=5 state=0 loaded=0 visible=0 wanted=0 player=C witness_valid=1
+CR_INTERACTION Reconciled kind=0 objective=3
+CR_ACCEPT 140.842 cycle=3 PASS Completed one C-B-A-B-C cycle
+CR_ACCEPT_FINISH {"passed":true,"restart_verified":true,"message":"Restart verified after three backtracking cycles and ending","stage":"startup","map":"L_CH01_Persistent"}
+```
+
+以上均来自本次 packaged 日志，不是预设示例事件。
+
+实际修复记录与限制：
+
+- Python预检发现 overlap getter未导出，改用反射属性；颜色repr含内存地址，改比RGBA值。复制World的Python强引用曾阻止LoadLevel GC，释放wrapper后继续。commandlet MoveActorsToLevel返回0，改完整Editor后实际迁移全部成功。首次迁移保存/receipt成功后Python关闭阶段发生异常，随后新进程重开和真实packaged运行证明资产可用；不宣称首次迁移进程exit0。
+- 最初Editor路线在module阶段失败；诊断证明角色在X1772/1889与entry重叠、Pawn响应为Overlap，但目标仍0。迁移后sparse delegate丢失constructor绑定；BeginPlay日志previous_binding=0确认，改每次BeginPlay AddUniqueDynamic、EndPlay解绑后通过完整路线。诊断日志曾误用普通delegate GetAllObjects导致一次编译失败（8.20s）；按sparse API改IsBound后定向编译通过（5.82s）。没有同一错误两次失败后继续猜测。
+- 一次独立只读审查未发现生产流送架构Critical问题；Important退出路径已用短检查修复验证；旧receipt误读风险由本轮mtime监督消除。没有再派二次review，也没有以review代替运行证据。
+- 审查未覆盖真实I/O坏包恢复、任意运行时删除地板/交互Actor。前者明确未注入；后者本阶段没有这样的玩法路径，未来加入破坏内容时须重新定义Ready失效。final-art、全部碰撞面、手感与自然遮挡仍需人工接受。
+- 60FPS目标未通过；trace指出渲染/同步等待值得进一步定位，不能归因为“C++慢”或用重写/降画质解决。先处理有界性能对照与用户短试玩，再决定Phase02单次战斗遭遇；不会自动开始。
+
+所有原始日志、trace、包和备份位于ignored `.environment-local/phase-01b/`；入库的是此可追溯摘要、源码、四图和现有文档更新。

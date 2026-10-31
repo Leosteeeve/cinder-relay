@@ -140,3 +140,50 @@ git push -u origin main
 ```
 
 有已存在 remote／远端提交时先 fetch 并检查历史，不覆盖、不自动换 origin、不强推。源码与文档分阶段提交，不执行无审计的 `git add .`。
+
+## Phase 01B native streaming
+
+以下是已存在工程的命令，不是新建或重命名工程。`$repo`、`$ueRoot`、`$project` 均为任务变量。退出现有同工程 Editor 后再编译/迁移，避免资产或 DLL 文件锁。
+
+```powershell
+$repo = 'D:\Projects\FPS Game'
+$ueRoot = 'D:\Engines\Unreal\UE_5.8'
+$project = Join-Path $repo 'CinderRelay\CinderRelay.uproject'
+$evidence = Join-Path $repo '.environment-local\phase-01b'
+Set-Location -LiteralPath $repo
+New-Item -ItemType Directory -Path $evidence -Force | Out-Null
+& "$ueRoot\Engine\Build\BatchFiles\Build.bat" CinderRelayEditor Win64 Development "-Project=$project" -WaitMutex -NoEngineChanges -NoHotReloadFromIDE
+if ($LASTEXITCODE -ne 0) { throw 'Editor target compilation failed; diagnose the reported error.' }
+```
+
+迁移脚本：已经生成完毕时只审计，不应重生成或替换地图。必须完整 Editor，不能改为 Python commandlet 执行 MoveActorsToLevel（commandlet 选择集不可用）。路径参数使用 `/`，避免 Unreal 对反斜杠转义。
+
+```powershell
+& "$ueRoot\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" $project '-ExecutePythonScript=D:/Projects/FPS Game/CinderRelay/Scripts/migrate_streaming.py' -unattended -nosplash
+```
+
+Editor 功能检查（NullRHI，无视觉/性能结论）：
+
+```powershell
+& "$ueRoot\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" $project '-ExecutePythonScript=D:/Projects/FPS Game/CinderRelay/Scripts/smoke_streaming.py' -CRStreamAcceptance -NullRHI -unattended -nosplash
+Get-Content -LiteralPath "$repo\CinderRelay\Saved\Phase01B\acceptance.json"
+```
+
+只诊断已复现的退出路径时另加 `-CRStreamExitCheck`；它明确不是玩法验收。完整路线与此短检查的 receipt 必须分开归档。脚本只读取本次写出的 receipt，并先停止 PIE 再退出；不能只看 Editor exit 0 判定路线通过。
+
+Windows Development 一次打包：
+
+```powershell
+& "$ueRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -target=CinderRelay -build -cook -stage -pak -archive "-archivedirectory=$evidence\package" -nocompileeditor -installed -unattended -utf8output
+if ($LASTEXITCODE -ne 0) { throw 'BuildCookRun failed; preserve package.log and diagnose.' }
+$game = Join-Path $evidence 'package\Windows\CinderRelay.exe'
+& $game -windowed -ResX=1920 -ResY=1080
+```
+
+有界 packaged 验收与 trace（不是日常试玩参数，不输入控制台、不传送）：
+
+```powershell
+& $game -CRStreamAcceptance -windowed -ResX=1920 -ResY=1080 -ForceRes -NoVSync '-ExecCmds=r.ScreenPercentage 100,r.DynamicRes.OperationMode 0,r.VSync 0,t.MaxFPS 0' '-trace=cpu,gpu,frame,bookmark,loadtime,memory,metadata,assetmetadata' "-tracefile=$evidence\packaged.utrace" "-abslog=$evidence\packaged-game.log"
+```
+
+新进程不清 OS/DDC/驱动缓存。非 Shipping 记录保存到该包 `CinderRelay/Saved/Phase01B`（若平台重定向 Saved，以启动日志的实际目录为准）。`acceptance.json`、`route.txt`、`frames.csv`、`memory.csv`、`settings.txt` 和原生结束截图分别证明不同事项。运行 `Scripts/summarize_streaming.py <Saved/Phase01B> <game-log> <output.json>` 只汇总已有数据，不重复运行游戏。Memory trace 有额外开销，应单独标明，不能充当无追踪的最终美术性能基线。

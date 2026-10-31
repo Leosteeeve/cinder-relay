@@ -1,72 +1,74 @@
-# Chapter 01 — Streaming Strategy
+# Chapter 01 — Native Level Streaming
 
-## 决定与概念区域
+Phase 01B 在已接受的 Phase 01A 基础上实施。手工线性章节使用一个 persistent world 与三个 `ULevelStreamingDynamic` 子关卡，由脚本请求控制；不使用 World Partition、Level Streaming Volumes 或跨区 OpenLevel。原图保持为回滚参考。
 
-第一章是手工线性章节，含少量探索支路。后续采用 **非 World Partition 的 persistent level + 原生 Level Streaming**作为实施默认，不实现自定义流送框架。Phase 01A 先用单地图验证空间和玩法。
+## 地图与 Actor 所有权
 
-## Phase 01A 实际灰盒与 Phase 01B 边界
+地图目录均为 `/Game/Generated/Phase01B/Maps/`。
 
-01A 按最新授权只创建 **一个非 WP 地图 L_CH01_Greybox**，三个区域已由真实几何连通，没有 sublevel／streaming 实现。单位为 cm，+X 为主要前进方向，地面与坡道使用原生静态碰撞。
+| 资产 | 原 Actor | 新 Actor | 内容 |
+| --- | ---: | ---: | --- |
+| L_CH01_Persistent | 15 | 3 | PlayerStart、4 个全局环境 Actor、10 个入口立面/门框/标牌；1 控制器、2 遮挡门 |
+| L_CH01_RailYard | 86 | 0 | 铁路、车厢、仓库、场地，X -2000～1600，Y ±1400，地面 Z=0 |
+| L_CH01_Workshop | 22 | 0 | 工坊主体、工作台、模块、entry trigger，X 1600～3600，Y ±700，地面 Z=0 |
+| L_CH01_RelayBunker | 32 | 0 | 坡道与地下站；X 3600～7200；坡道 X 3600～5400，Z 0→-600 |
 
-| 分区 | 精确空间边界 | 未来拆分入口 |
-| --- | --- | --- |
-| A Rail Yard | X -2000～1600，Y -1400～1400，地面 Z=0 | 工坊入口平面 X=1600，门洞 Y ±180，净高 350 |
-| B Workshop | X 1600～3600，Y -700～700，地面 Z=0 | 后门 X=3600，门洞 Y ±180；到达触发器中心 (1790,0,160) |
-| C Access ramp | X 3600～5400，Y ±180，地面 Z 0→-600 | 约 18.4° 连续坡道，归 C 所有；地下入口 X=5400 |
-| C Relay Bunker | X 5400～7200，Y ±650，地面 Z=-600 | 终端 (6200,-320,-455)，结束监视台 (6900,0,-450) |
+原始 155 个具名生成 Actor 全部保留。Persistent 的 10 个 B 区例外：`CR_WorkshopFront-440/440`、`CR_WorkshopLintelFront`、`CR_WorkshopRear-440/440`、`CR_WorkshopLintelRear`、`CR_WorkshopEntrance`、`CR_EntranceStripe-205/205`、`CR_BunkerDirection`。这些小型遮挡立面让关闭的门有完整边框，避免相邻主体卸载后露出空白。
 
-生成对象带 `CR_Zone_A_RailYard`／`CR_Zone_B_Workshop`／`CR_Zone_C_RelayBunker`／`CR_Zone_Shared` tags 及同名 Editor folders，可据此迁移到原生 sublevels。这些是编辑组织，不是 Runtime Data Layers。生成脚本目前只适用于单地图；01B 开始后先更新所有权／生成协议，不能直接重跑并覆盖已拆分的关卡。
+回滚图：`/Game/Generated/Phase01A/Maps/L_CH01_Greybox`，原始 SHA256 `C22AC1DAFE74F3006CA8F2498E7AD81BA8AC827890C44B3554F31D0D13D3E733`。新 persistent 不引用或加载此图。引擎自身的 WorldSettings/LevelScriptActor 不计入 155 个内容 Actor。
 
-01B 建议在 X≈1200 接近工坊时预载 B，在工坊后半段预载 C；位置仅是初始触发候选，最终距离取决于最大 500 cm/s 移速和 packaged 加载测量。先明确是否全章可回访，再确定 A/B 卸载；当前灰盒允许回头。GameMode 目标状态属于同一个 persistent world，不能迁进易卸载区域。迁移后重新验证 late callbacks、卸载引用、冷启动 cook 覆盖与回头路径；不自动实施。
+## 运行时策略
 
-| 概念区域 | 作用 | 驻留边界建议 |
-| --- | --- | --- |
-| Railway Yard／铁路场 | 开场、探索、建立方向 | 接近工坊前预载工坊；确认玩家离开与回访规则后再卸载 |
-| Maintenance Workshop／维修工坊 | 维修师身份、回收与武器恢复 | 可作为遮挡、预载地下站和 checkpoint 的过渡空间 |
-| Underground Relay Station／地下中继站 | 设施任务、MERIDIAN 线索与章节结尾 | 进入前确认几何、碰撞和玩法资源就绪；结束后可受控章节 travel |
+`ACRChapterStreamingController` 只管理本章三个引擎流送对象。软地图引用通过 `GetStreamingLevel` 解析已注册对象，`SetShouldBeLoaded/SetShouldBeVisible` 提交原生目标状态；加载/显示/隐藏/卸载委托触发重算。0.25 s watchdog 只检查三项状态、丢失事件和超时，不做每帧世界搜索。
 
-建议 persistent level 保持精简：必要的世界级设置、转换触发与极少共享对象。大体积环境、遭遇、声音和章节视觉内容属于相应区域。地图名称和触发位置在灰盒里程碑确定，不创建占位二进制文件。
+这里直接使用原生 desired flags，而不叠加 `LoadStreamLevel/UnloadStreamLevel` latent actions：反向请求由引擎自身协调，不存在重复 latent UUID 或 callback owner。每次 desired 改变仍增加 request ID，便于追踪。加载与卸载均不阻塞。
 
-区域边界由遮挡、玩家速度、可回访范围和加载测量决定，不能机械地按建筑名拆分。铁路场虽在室外，规模有限并不因此要求 WP。[原生 Level Streaming](https://dev.epicgames.com/documentation/en-us/unreal-engine/level-streaming-overview-in-unreal-engine)。
+状态：Unloaded → Loading → LoadedOrShowing → Ready；离开时 Unloading → Unloaded；超时或失败进入 Failed。Ready 需要 loaded、visible、所属关卡地板 trace/注册物理组件及已 BeginPlay 的必要交互 Actor；B 还要求 workshop entry，C 要求 access ramp。固定等待时间不是 Ready 条件。
 
-## 其他世界结构的适用范围
+`ACRGameMode` 在 A Ready 前保留 PlayerController、暂缓生成角色。A Ready 后按原 GameMode 流程生成一次角色；跨区不销毁角色/Controller，也不重置 GameMode。BeginPlay 初始化保护避免测试/overlap 在流送对象绑定前误报失败。
 
-| 结构 | 方案 | 使用理由／代价 |
-| --- | --- | --- |
-| 独立线性章节 | 独立 map + 受控 travel；章节内部按需 streaming | 简单且驻留明确；OpenLevel 不承诺无阻塞／真正无缝 |
-| 连续室内／本章三个区 | persistent + 原生 sublevels | 门厅、拐角和竖向连接便于控制边界，须测重叠峰值 |
-| 枢纽 | 小枢纽 + 相邻 sublevels，远任务独立 map | 根据回访和同时驻留成本决定；不常驻全部任务 |
-| 大型连续室外 | 评估 WP、streaming sources、HLOD／OFPA | 空间单元管理适合大世界，附加内容与调试成本高；不是本章默认 |
+## 两道门、预载与回访
 
-[World Partition](https://dev.epicgames.com/documentation/en-us/unreal-engine/world-partition-in-unreal-engine) 由 streaming sources 和空间单元控制驻留。若后续规模改变，先更新决策再采用；不得擅自转换已工作的章节。Runtime Data Layers 可表达 WP 内任务阶段，Editor Data Layers 用于编辑组织；二者不能替代资产生命周期。[Data Layers](https://dev.epicgames.com/documentation/en-us/unreal-engine/world-partition---data-layers-in-unreal-engine)。
+`ACRStreamingGate` 位于 X=1600（AB）、3600（BC），门洞 Y ±180、净高 350 cm。关闭时有真实 BlockAll 碰撞与不透明面；双方均需要且 Ready 才开放。卸载请求前先关门。
 
-## 地图与资产的不同职责
+- 预载 Box：门平面前后 800 cm，Y ±1450，Z ±1100；Pawn 进入时要求两侧区域。
+- 保留 Box：前后 1000 cm；离开后取消邻区需求，形成 200 cm 滞回。角色胶囊半径 42 cm 也影响实际 overlap 位置。
+- 门口保护：中心距门 <230 cm 强制保留双方，避免在角色穿越时卸载支撑几何。
+- CurrentZone 的切换采用 160 cm 滞回：A→B X>1760，B→A X<1440；B→C X>3760，C→B X<3440。
+- 通常只有当前区；接近门时保留当前区和必要邻区。极短边界重叠可临时保留三者，不允许卸载当前区。
+- 最大 sprint 500 cm/s。800 cm 几何提前量约 1.6 s；最终是否有足够余量以 packaged 实测表为准，不能用 PIE 延迟证明。
 
-Level Streaming 负责世界内容、Actor 和 visibility；Asset Manager／StreamableManager 负责内容引用与请求。加载 `UWorld` 资产本身不等于地图激活、碰撞／导航就绪或玩家可以传送。
+失败时门保持关闭，HUD 显示 `Access unavailable. Press R to retry.`。R 重置请求期限并重试；UE 原生 FailedToLoad 状态仅在无 loaded level 时，通过 `SetWorldAsset` 重新设置相同软引用恢复 Unloaded（本机 5.8.4 源码已核对）。缺失地图文件无法靠重试补齐，仍须修复 cook；重试不能打开不满足条件的门。
 
-小型明确常驻依赖可用硬引用；跨区大资源、角色库、音频／动画采用 `TSoftObjectPtr`／`TSoftClassPtr`，需要 ID／bundle 才使用 Primary Asset。软引用不是自动异步加载，也不是自动 cook 保证；用明确引用／Asset Manager scan与 cook 规则覆盖目标资产，并在 packaged build 实测。[Async Loading](https://dev.epicgames.com/documentation/en-us/unreal-engine/asynchronous-asset-loading-in-unreal-engine)、[Asset Manager](https://dev.epicgames.com/documentation/en-us/unreal-engine/asset-management-in-unreal-engine)。
+## 目标与卸载引用
 
-不得让常驻 Blueprint、GameInstance 或 class defaults 硬引用整个章节。使用 Reference Viewer／Size Map 查依赖；跨区保存稳定 ID 或弱引用，不让已离开的区域 Actor 被持久对象留住。
+唯一章节状态仍是 `ACRGameMode/ECRObjective`：ReachWorkshop → FindModule → RestorePower → InvestigateSignal → Complete。`ACRInteractionActor::BeginPlay` 从进度恢复 bUsed；已取模块隐藏并关闭碰撞，终端不会重复奖励或播放完成事件。WorkshopTrigger 的 TryAdvance 仍要求旧状态匹配。没有新增库存、任务框架或磁盘存档。
 
-## 最小转换协议
+控制器和验收器只持有区域 Actor 的弱引用；门只弱引用控制器。EndPlay 解绑委托、清 timer。日志中的 `witness_valid` 区分隐藏/卸载与旧 Actor 仍被缓存持有；Unloaded 必须同时满足原生状态、loaded=false、visible=false、desired=false。引擎资源缓存、异步删除与显存池不要求立刻归零；不逐区强制 GC。
 
-1. 进入提前触发范围，发起一次原生异步加载请求，记录 owner／目标 ID／请求序号，禁止重复堆积。
-2. 预载下一段必需资源；提前距离依据“实测 load latency × 最大移动速度 + 余量”，考虑回头与快速移动。正常只预载一个目标区。
-3. 等待 load、visibility 和必需内容就绪，检查入口碰撞、导航及任务依赖；不以固定 Delay 代替完成条件。资源注册、渲染资源和 PSO 仍可能产生游戏线程卡顿。
-4. 安全放行玩家，激活遭遇／叙事，仅触发一次；若失败，留在安全区域，显示可恢复反馈，不让玩家进入空世界。
-5. 玩家离开安全缓冲区且无需旧区后，停止其 AI／声音／latent 操作、解绑事件、失效旧回调，原生卸载 level，释放 load handles／bundles 和硬引用。
-6. 检查正常 GC 与渲染资源回收后的驻留。卸载完成不等于专用显存即时下降；不在交火中反复强制 GC，异常残留先查引用／缓存。
+## 安全迁移与恢复
 
-支持取消、返回、重复 trigger、checkpoint 恢复、owner EndPlay 和超时；回调必须确认 owner 与当前请求仍有效。checkpoint 存储区域／对象稳定 ID 和值，不保存 Actor 指针。
+`Scripts/migrate_streaming.py` 必须在**完整 Editor**以 `-ExecutePythonScript` 运行。先复制原图，再用 `EditorLevelUtils.create_new_streaming_level` 与 `move_actors_to_level` 搬移，保留 Actor 世界变换、类别、组件变换、材质、碰撞、灯光与交互设置。原图文件 hash 前后相同。不是删除并手动重建对象。运行时模块没有 UnrealEd 依赖。
 
-## 预算与验收
+输出 `Saved/Phase01B/migration.json`（逐 Actor 归属）和 `migration-comparison.json`（前后属性）。完成后的再次执行只审计；部分已拆分或未拥有的目标会拒绝自动修复。仅一个尚未拆分、带 ownership 且全部属性等于原图的 persistent 副本允许安全续作。不要再运行 Phase 01A generator。
 
-峰值包括基础系统、共享资源、当前区、下一段和切换过程；不能用单区静止值宣称通过。暂定 VRAM／RAM 与采样协议见 [PERFORMANCE_BUDGET](PERFORMANCE_BUDGET.md)。预算不够时调整资产密度、遮挡和预载时机，不默认扩大纹理池或常驻全部区域。
+若自动迁移阻塞：在 Editor 复制原图到 persistent；Window → Levels 创建三个空关卡，Streaming Method 设 Blueprint；先按上表选中 persistent 例外，再按区域 tag 选择剩余 Actor，Levels 中对目标使用 Move Selected Actors to Level。保留世界坐标，保存四图；逐项核对原 155 个 Actor 和门/控制器，再验收。未经 inventory 对比不能宣称迁移成功。
 
-| 环境 | 能证明什么 | 不能证明什么 |
-| --- | --- | --- |
-| Editor／PIE | 引用、加载事件顺序、关卡设置、碰撞、基础交互 | 已在内存／DDC 内的资产不证明首启或真实 I/O；Editor 能找到资产不证明 cook 完整 |
-| Packaged Development | 实际 cook 内容、软引用解析、首次进入、往返、卸载与真实内存峰值 | 没有固定设备／设置的单次 FPS 不能作为可靠 benchmark |
-| 人工完整试玩 | 空间可读性、遮挡是否自然、过渡节奏、叙事连续性 | 感觉流畅不能替代 trace 和内存测量 |
+## Cook 与验收边界
 
-P04 接受测试：首次进入三个区域、反向返回、同一 trigger 重入、checkpoint 跨区恢复、一次失败注入以及 3 次往返驻留检查。无穿地、不可见碰撞、重复叙事或缺 cook 资源；所有性能数字必须带原始证据。此时才正式接受流送方案。
+三个子图在 persistent 的 Levels 中注册，均非 Always Loaded、初始不载入/不显示、无 Streaming Volumes。Packaging 明确列四图；默认图切换只在功能验证后进行。Editor 能读到资源不代表 packaged cook 完整。
+
+`smoke_streaming.py` 重新打开四图并检查归属，再启动 PIE。`-CRStreamAcceptance` 只在非 Shipping 生成 `ACRStreamingAcceptance`；它注入 Enhanced Input、转向相机、沿固定路径行走，绝不 teleport 或直接设置目标。包括 Ready veto、反向取消、一次失败/重试、三次 C→B→A→B→C、模块/终端防重复、结束及 Restart。生产流程不依赖测试 veto；veto 本身最多 20 s。
+
+完整运行证据见 MILESTONES，设置/数据口径见 PERFORMANCE_BUDGET。自动路线不是人工手感或所有碰撞面的视觉验收。
+
+## 官方依据与其他结构
+
+核对 UE 5.8 官方 [Level Streaming Overview](https://dev.epicgames.com/documentation/en-us/unreal-engine/level-streaming-overview-in-unreal-engine)、[C++ loading/unloading](https://dev.epicgames.com/documentation/unreal-engine/loading-and-unloading-levels-using-cplusplus-in-unreal-engine)、[ULevelStreaming](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Engine/ULevelStreaming)、[MoveActorsToLevel](https://dev.epicgames.com/documentation/unreal-engine/API/Editor/UnrealEd/UEditorLevelUtils/MoveActorsToLevel?lang=en-US)、[Packaging](https://dev.epicgames.com/documentation/unreal-engine/packaging-your-project)。官方 C++ 教程示例使用阻塞参数，本章依用户要求使用非阻塞 native flags。
+
+| 世界结构 | 适合方案 |
+| --- | --- |
+| 独立线性章节 | 独立 map + 明确章节 travel；章内可 streaming |
+| 连续室内/本章 | Persistent + 原生 scripted sublevels + 受控遮挡边界 |
+| 小枢纽 | 枢纽 + 必要邻区；远任务独立地图，根据回访预算决定 |
+| 大连续室外 | 另行评估 World Partition、sources、HLOD；不可据此改写本章 |

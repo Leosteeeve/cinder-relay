@@ -1,11 +1,49 @@
 #include "CRGameMode.h"
 #include "CRCharacter.h"
 #include "CRPlayerController.h"
+#include "CRChapterStreamingController.h"
+#include "CRStreamingAcceptance.h"
+#include "EngineUtils.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
 
 ACRGameMode::ACRGameMode()
 {
 	DefaultPawnClass = ACRCharacter::StaticClass();
 	PlayerControllerClass = ACRPlayerController::StaticClass();
+}
+
+void ACRGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
+{
+	for (TActorIterator<ACRChapterStreamingController> It(GetWorld()); It; ++It)
+	{
+		if (!It->IsZoneReady(0))
+		{
+			WaitingPlayer = NewPlayer;
+			UE_LOG(LogTemp, Display, TEXT("CR_STREAM StartupPlayerHeld"));
+			return;
+		}
+		break;
+	}
+	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
+}
+
+void ACRGameMode::ReleaseStartingPlayer()
+{
+	if (WaitingPlayer.IsValid())
+	{
+		APlayerController* Player = WaitingPlayer.Get(); WaitingPlayer.Reset();
+		Super::HandleStartingNewPlayer_Implementation(Player);
+		UE_LOG(LogTemp, Display, TEXT("CR_STREAM StartupPlayerReleased"));
+	}
+}
+
+void ACRGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+#if !UE_BUILD_SHIPPING
+	if (FParse::Param(FCommandLine::Get(), TEXT("CRStreamAcceptance"))) GetWorld()->SpawnActor<ACRStreamingAcceptance>();
+#endif
 }
 
 FText ACRGameMode::GetObjectiveText() const
