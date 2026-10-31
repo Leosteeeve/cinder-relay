@@ -223,6 +223,8 @@ $game = Join-Path $phase02 'package\Windows\CinderRelay.exe'
 & $game -windowed -ResX=1920 -ResY=1080
 ```
 
+The project enables `bAllowHighDPIInGameMode=True` so Windows desktop scaling does not enlarge the requested game window beyond the visible screen. The existing local Phase02 package also has that same override in `Windows/CinderRelay/Saved/Config/Windows/Engine.ini`; future packages inherit the project setting. Do not change Windows scaling or shrink HUD fonts to mask a desktop-window crop.
+
 Ordinary play uses no automation flags. For the one authorized packaged acceptance/performance sample:
 
 ```powershell
