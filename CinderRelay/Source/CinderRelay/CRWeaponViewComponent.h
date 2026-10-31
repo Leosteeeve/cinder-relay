@@ -6,17 +6,28 @@ class UCRWeaponComponent;
 class USceneComponent;
 class UStaticMeshComponent;
 class UStaticMesh;
+struct FStreamableHandle;
 UCLASS(ClassGroup=(CinderRelay), meta=(BlueprintSpawnableComponent))
 class CINDERRELAY_API UCRWeaponViewComponent : public UActorComponent
 {
     GENERATED_BODY()
 public:
     UCRWeaponViewComponent();
+    UPROPERTY(EditDefaultsOnly, Category="Appearance") TSoftObjectPtr<UStaticMesh> RookAppearance;
+    UPROPERTY(EditDefaultsOnly, Category="Appearance") TSoftObjectPtr<UStaticMesh> SurveyAppearance;
+    void SetPresentationHidden(bool Hidden);
+    bool HasImportedAppearance() const;
     virtual void TickComponent(float Delta, ELevelTick TickType, FActorComponentTickFunction* ThisTick) override;
 protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 private:
+    UPROPERTY() TArray<TObjectPtr<UStaticMeshComponent>> FallbackParts;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> ImportedRook;
+    UPROPERTY() TObjectPtr<UStaticMeshComponent> ImportedOptic;
+    TSharedPtr<FStreamableHandle> AppearanceLoad;
+    bool bPresentationHidden=false;
+    UFUNCTION() void RefreshAppearance();
     UPROPERTY() TObjectPtr<UStaticMesh> Cube;
     UPROPERTY() TObjectPtr<USceneComponent> ViewRoot;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> Flash;

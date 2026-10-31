@@ -235,3 +235,66 @@ Get-Content -LiteralPath "$phase02\package\Windows\CinderRelay\Saved\Phase02\acc
 ```
 
 No allocation/callstack memory tracing requested in this combat sample. Native counters still record GT/RT/GPU; process memory is sampled separately. Read the actual game log and a freshly modified `package/Windows/CinderRelay/Saved/Phase02/acceptance.json`; a bootstrap code alone does not prove gameplay success. This run produced a PASS receipt and normal game exit log but bootstrap code777003; see MILESTONES. `summarize_combat.py <Saved/Phase02> <output.json>` only analyzes existing CSVs. Screenshots prove discrete frames, not human gunfeel/audio acceptance. Do not run this command again solely because the documented run has already completed.
+
+## Phase03 restoration
+
+Run commands from the repository root in PowerShell. Do not regenerate Phase01A or rerun Phase01B migration. Close Editor before a C++ build. The generation script preserves an existing ignored preflight inventory; on a fresh checkout it snapshots all non-Phase03 actors before any placement. Native transform changes call Modify before saving and saved rotations are checked after reload.
+
+```powershell
+Set-Location 'D:\Projects\FPS Game'
+$project = 'D:\Projects\FPS Game\CinderRelay\CinderRelay.uproject'
+$engine = 'D:\Engines\Unreal\UE_5.8'
+$blender = 'D:\Dev\Toolchains\Blender\blender-4.5.11-windows-x64\blender.exe'
+
+# Optional deliberate re-authoring of the original source; not needed to play.
+& $blender --background --factory-startup --python '.\CinderRelay\ArtSource\Blender\Phase03\create_restoration.py' -- --export-dir 'D:\Projects\FPS Game\.environment-local\phase-03\exports'
+& $blender --background '.\CinderRelay\ArtSource\Blender\Phase03\CR03_RookRestoration.blend' --python '.\CinderRelay\ArtSource\Blender\Phase03\validate_source.py' -- --receipt 'D:\Projects\FPS Game\.environment-local\phase-03\source-validation.json'
+
+& "$engine\Engine\Build\BatchFiles\Build.bat" CinderRelayEditor Win64 Development "-Project=$project" -WaitMutex -NoHotReloadFromIDE
+& "$engine\Engine\Binaries\Win64\UnrealEditor.exe" $project '-ExecutePythonScript=D:/Projects/FPS Game/CinderRelay/Scripts/generate_restoration.py' -unattended
+
+# Focused deterministic state check.
+& "$engine\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" $project -unattended -nullrhi '-ExecCmds=Automation RunTests CinderRelay.Restoration.Session' '-TestExit=Automation Test Queue Empty'
+# Bounded actual PIE acceptance; emits Saved/Phase03/acceptance.json and frame captures.
+& "$engine\Engine\Binaries\Win64\UnrealEditor.exe" $project '-ExecutePythonScript=D:/Projects/FPS Game/CinderRelay/Scripts/smoke_restoration.py' -CRRestorationCheck -unattended
+
+# One final Development package; inspect the exit code and receipts, not just file existence.
+& "$engine\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -target=CinderRelay -build -cook -stage -pak -archive '-archivedirectory=D:\Projects\FPS Game\.environment-local\phase-03\package' -nocompileeditor -installed -unattended -utf8output
+# Manual play (omit acceptance flags).
+& '.\.environment-local\phase-03\package\Windows\CinderRelay.exe' -windowed -ResX=1920 -ResY=1080
+```
+
+Open LS_CR03_RookRestoration in Sequencer with L_CH01_Persistent/Workshop loaded to inspect the actual skeletal track. Open the .blend to edit bones/weights/action and timeline beat markers. Generated export intermediates are local, not third-party source packs. UE GUI executables may detach when invoked directly from PowerShell; automation uses Start-Process -WindowStyle Hidden -Wait -PassThru and a fresh receipt/log to establish completion. Human review remains necessary for glove anatomy, contact quality and pacing.
+
+### Updating an existing Phase03 import
+
+`generate_restoration.py` intentionally reuses existing owned imported assets. It does **not** reimport changed FBX files. For a procedural animation-curve edit in `animate_restoration.py`, use the already verified targeted path below. `export_animation.py` re-authors the procedural action on the existing rig; it does not regenerate geometry. Do not use it to preserve hand-edited keyframes.
+
+```powershell
+Set-Location 'D:\Projects\FPS Game'
+$blender = 'D:\Dev\Toolchains\Blender\blender-4.5.11-windows-x64\blender.exe'
+& $blender --background 'D:/Projects/FPS Game/CinderRelay/ArtSource/Blender/Phase03/CR03_RookRestoration.blend' --python 'D:/Projects/FPS Game/CinderRelay/ArtSource/Blender/Phase03/export_animation.py' -- --export-dir 'D:/Projects/FPS Game/.environment-local/phase-03/exports'
+& 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe' 'D:/Projects/FPS Game/CinderRelay/CinderRelay.uproject' '-ExecutePythonScript=D:/Projects/FPS Game/CinderRelay/Scripts/reimport_restoration.py' -CR03AnimationOnly -unattended
+```
+
+For hand-edited animation, save the .blend, select only CR03_RestorationRig and SK_CR03_Restoration, and use Blender File > Export > FBX to the same ignored SK_CR03_Restoration.fbx. Enable Selected Objects, Mesh/Armature and Bake Animation; use frames0–660 at30fps, sample step1, simplify0, -Y Forward/Z Up, Apply Unit Scale, no leaf bones, no NLA strips and no All Actions. Do not run the procedural re-author command over those manual edits. Then run the same Unreal reimport command. Omit -CR03AnimationOnly only when deliberately updating the optic mesh and skeletal geometry as well. Inspect imported bones, duration and actual contact frames after changes; repackage only at the next relevant acceptance checkpoint.
+
+Use forward slashes in ExecutePythonScript paths: the installed Python launcher interprets sequences such as backslash-r in a Windows path as escaped characters. These export/reimport commands were executed successfully for this milestone; this is not an unexecuted pseudo-workflow.
+
+
+### Phase03 packaged acceptance and evidence
+
+The normal game command above has no acceptance flags. For a deliberate future acceptance checkpoint, use the actual Development package and the same reference conditions (do not rerun merely because this documented checkpoint already passed):
+
+```powershell
+Set-Location 'D:\Projects\FPS Game'
+$phase03 = 'D:\Projects\FPS Game\.environment-local\phase-03'
+$game = Join-Path $phase03 'package\Windows\CinderRelay.exe'
+$runArgs = '-CRRestorationCheck -windowed -ResX=1920 -ResY=1080 -ForceRes -NoVSync -ExecCmds="r.ScreenPercentage 100,r.DynamicRes.OperationMode 0,r.VSync 0,t.MaxFPS 0,sg.ViewDistanceQuality 3,sg.AntiAliasingQuality 3,sg.ShadowQuality 3,sg.GlobalIlluminationQuality 3,sg.ReflectionQuality 3,sg.PostProcessQuality 3,sg.TextureQuality 3,sg.EffectsQuality 3,sg.FoliageQuality 3,sg.ShadingQuality 3" -trace=cpu,gpu,frame,bookmark,loadtime -tracefile="D:/Projects/FPS Game/.environment-local/phase-03/restoration.utrace" -abslog="D:/Projects/FPS Game/.environment-local/phase-03/packaged-restoration.log"'
+$run = Start-Process -FilePath $game -ArgumentList $runArgs -WindowStyle Hidden -Wait -PassThru
+"Bootstrap exit: $($run.ExitCode)"
+Get-Content -LiteralPath "$phase03\package\Windows\CinderRelay\Saved\Phase03\acceptance.json"
+& 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\ThirdParty\Python3\Win64\python.exe' '.\CinderRelay\Scripts\summarize_combat.py' "$phase03\package\Windows\CinderRelay\Saved\Phase03" "$phase03\packaged-summary.json"
+```
+
+Inspect the fresh receipt, engine RequestExitWithStatus and runtime log together; this machine's bootstrap has returned777003 independently of the engine's result. The route uses actual movement, trace interactions, damage and native state. It is bounded at600s total/65s per stage. `-CRRestorationStart=1` is a Development-only corrective resume after scenario0 was separately proven; it is not a normal play option or a substitute for documenting omitted scenarios. PNG captures, pause and detailed tracing affect performance. Never treat this route as human animation/weapon-feel acceptance.

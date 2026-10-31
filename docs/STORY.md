@@ -28,3 +28,15 @@
 - 主角恢复设施的动机、秘密行动是否保留、最终结局与道德选择。
 
 本文件与用户后续批准的剧情共同构成 canon。每次重大剧情决定在决策日志中注明来源；引用外部作品仅用于分析，不复制其角色、对白、音乐或美术。
+
+## Phase03 provisional subtitles — not new canon
+
+These temporary English lines are inspectable in CRPlayerController/CRWorkbench. They do not define The Quieting's cause, MERIDIAN's nature or a radio operator's identity. No recorded voice or external audio is used.
+
+| Session flag | Trigger | Temporary subtitle |
+| --- | --- | --- |
+| CR03_WorkshopDiscovery | First objective advance to FindModule | ELIAS: A calibration bench. I can still put this place to use. |
+| CR03_AssemblyReflection | First actual presentation crossing4s | ELIAS: Funny. Machines remember what people forget. |
+| CR03_RelayEcho | Original relay advances to InvestigateSignal | [A broken carrier tone returns.] ELIAS: Something on the other end is still listening. |
+
+Flags live in the chapter GameMode and suppress replay after streamed-area returns. A reflection already heard before cancellation stays heard until Restart. Subtitles use the existing HUD, remain understandable without voice acting and clear after a bounded game-time duration. The final text remains exactly `MERIDIAN NETWORK` / `CONNECTION RESTORED`.

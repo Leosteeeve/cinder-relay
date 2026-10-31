@@ -19,11 +19,15 @@ public:
 	void SetCombat(float Health, int32 Magazine, int32 Reserve, bool Reloading);
 	void ShotFeedback(bool Hit);
 	void DamageFeedback();
+	void SetSubtitle(const FText& Text);
+	void SetAssembly(bool Active);
 protected:
 	virtual void NativeOnInitialized() override;
 	virtual void NativeTick(const FGeometry& Geometry, float Delta) override;
 	virtual FReply NativeOnKeyDown(const FGeometry& Geometry, const FKeyEvent& KeyEvent) override;
 private:
+	UPROPERTY(Transient) TObjectPtr<UTextBlock> SubtitleText;
+	UPROPERTY(Transient) TObjectPtr<UTextBlock> ControlsText;
 	UFUNCTION() void ResumeClicked();
 	UFUNCTION() void RestartClicked();
 	UFUNCTION() void ExitClicked();

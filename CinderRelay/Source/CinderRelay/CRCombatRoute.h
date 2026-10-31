@@ -27,6 +27,12 @@ private:
     FString Stage=TEXT("startup"),AfterWalk;
     double Started=0,StageStarted=0,LastShot=0,LastMemory=0;
     bool bFinished=false,bMoved=false,bReceivedDamage=false,bReloaded=false;
+    bool bRestoration=false,bAssemblyPaused=false;
+    int32 AssemblyCapture=0,AssemblyAmmo=0,AssemblyReserve=0;
+    float AssemblyHealth=0,PausePosition=0;
+    double PauseStarted=0;
+    FVector FirstHand;
+    bool RestorationStage(double Age);
     float HiddenHealth=0;
     FVector ScoutStart;
     void Next(const FString& Name);

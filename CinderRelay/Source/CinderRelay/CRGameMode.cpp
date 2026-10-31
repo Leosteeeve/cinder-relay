@@ -9,6 +9,21 @@
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 
+bool ACRGameMode::TryCollectSurveyOptic(FName SourceId)
+{
+	if (bSurveyOptic || SourceId.IsNone()) return false;
+	bSurveyOptic = true; SurveyOpticSource = SourceId;
+	UE_LOG(LogTemp, Display, TEXT("CR03_SALVAGE CR03_SurveyOptic source=%s"), *SourceId.ToString());
+	OnRestorationChanged.Broadcast(); return true;
+}
+bool ACRGameMode::TryApplySurveyUpgrade()
+{
+	if (!bSurveyOptic || bSurveyUpgrade) return false;
+	bSurveyUpgrade = true;
+	UE_LOG(LogTemp, Display, TEXT("CR03_UPGRADE CR03_Rook5_SurveyOptic applied"));
+	OnRestorationChanged.Broadcast(); return true;
+}
+
 ACRGameMode::ACRGameMode()
 {
 	DefaultPawnClass = ACRCharacter::StaticClass();
@@ -46,7 +61,7 @@ void ACRGameMode::BeginPlay()
 #if !UE_BUILD_SHIPPING
 	if (FParse::Param(FCommandLine::Get(), TEXT("CRStreamAcceptance"))) GetWorld()->SpawnActor<ACRStreamingAcceptance>();
 	if (FParse::Param(FCommandLine::Get(), TEXT("CRWeaponCheck"))) GetWorld()->SpawnActor<ACRCombatAcceptance>();
-	if (FParse::Param(FCommandLine::Get(), TEXT("CRCombatCheck"))) GetWorld()->SpawnActor<ACRCombatRoute>();
+	if (FParse::Param(FCommandLine::Get(), TEXT("CRCombatCheck")) || FParse::Param(FCommandLine::Get(), TEXT("CRRestorationCheck"))) GetWorld()->SpawnActor<ACRCombatRoute>();
 #endif
 }
 

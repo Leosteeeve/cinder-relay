@@ -47,7 +47,7 @@ Player/scout initial health is 100. Scouts use 8 damage and 1.8/2.05s shot inter
 
 目标时长 **12–16 分钟**，取代旧代号阶段的 10–15 分钟目标。三个已确认场景：废弃铁路场、维修工坊、地下中继站。
 
-早期节拍建议由 Phase02 的铁路场遭遇取代：铁路场建立目标并发生 First Contact，工坊回收，地下中继站恢复信号。最终各段时长仍待试玩，不能用等待凑时长。Ash Wardens 和 ROOK-5 已批准，武器装配与后续事件仍未实施。
+早期节拍建议由 Phase02 的铁路场遭遇取代：铁路场建立目标并发生 First Contact，工坊回收，地下中继站恢复信号。最终各段时长仍待试玩，不能用等待凑时长。Ash Wardens 和 ROOK-5 已批准；Phase03 adds the optional Survey Optic restoration below.
 
 切片需有可玩的开始与结束、明确下一步提示、一次完整遭遇、一段叙事、一个有作用的环境交互、一次区域转换、checkpoint 恢复、基本音频／动画及可复现 benchmark。
 
@@ -56,3 +56,11 @@ Player/scout initial health is 100. Scouts use 8 damage and 1.8/2.05s shot inter
 武器修复零件、后续敌人类别、完整潜行机制、移动动作、主角外观、配音／字幕语言、具体谜题、后续事件顺序、叙事结尾、资产费用与开发排期仍开放。不要据“末日”自动加入丧尸、核战争或生存建造。
 
 Phase 00 只创建原生工程与制作基础，不实现以上系统。多人、广域开放世界、完整制作经济、大型科技树和复杂分支剧情不纳入首个切片计划。
+
+## Phase03 approved optional restoration
+
+Explore -> recover `CR03_SurveyOptic` -> use the Workshop calibration bench -> watch or skip the22second restoration -> return with `CR03_Rook5_SurveyOptic`. This is one fictional exterior optical attachment, not a simulation of firearm internals. Elias starts with a functional ROOK-5. Either `CR03_YardCache` or `CR03_WorkshopBackup` satisfies the same logical requirement; the other disappears without granting a second item.
+
+The upgrade changes only ADS65→60degrees and appearance. Damage, capacity, shot interval and reload transfer rules remain unchanged. The original ReachWorkshop/FindModule/RestorePower/InvestigateSignal/Complete flow does not depend on salvage or the bench. No inventory grid, crafting database, new gun class, disk save or technology tree is introduced.
+
+Presentation beats: camera settle/place0–4s; inspect4–8s; optical alignment/calibration8–15s; activation15–19s; retrieve19–22s. Tab finalizes once; real cancellation grants nothing and allows retry. Esc pauses. Movement, fire and reload are locked only while the workbench owns the presentation. The imported segmented gloves are a functional, editable prototype; animation aesthetics require human review.

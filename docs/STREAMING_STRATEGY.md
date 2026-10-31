@@ -72,3 +72,9 @@ Phase 01B 在已接受的 Phase 01A 基础上实施。手工线性章节使用�
 | 连续室内/本章 | Persistent + 原生 scripted sublevels + 受控遮挡边界 |
 | 小枢纽 | 枢纽 + 必要邻区；远任务独立地图，根据回访预算决定 |
 | 大连续室外 | 另行评估 World Partition、sources、HLOD；不可据此改写本章 |
+
+## Phase03 Workshop presentation ownership
+
+The four existing maps and boundary policy remain unchanged. Added actors are owned only by L_CH01_RailYard (cache/stand/sign) and L_CH01_Workshop (calibration bench/backup/sign). The bench is at (2300,-350,0)cm, separate from the original power module at (2800,-365,127). Native LevelSequenceActor uses SpawnParameters.OverrideLevel=Workbench.GetLevel(). Its async handle and temporary hard references are released on EndPlay; the persistent controller's active workbench pointer is weak. The player cannot move during calibration, so normal coordinate-based streaming does not unload the occupied Workshop. No persistent streaming-controller changes, level pins or custom streaming framework are introduced.
+
+After Workshop reload, GameMode flags restore hidden salvage and completed workbench state. The pawn retains its own small weapon appearance assets and upgrade lookup. Restart travels to the existing persistent map and starts a fresh GameMode. A PIE asset load is not proof of cooked coverage; see the separate Phase03 Windows package evidence in MILESTONES.

@@ -10,7 +10,7 @@ public class CinderRelay : ModuleRules
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "AIModule", "NavigationSystem", "GameplayTasks" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "LevelSequence", "MovieScene" });
 		// Read native frame counters only in the opt-in Development acceptance runner.
 		if (Target.Configuration != UnrealTargetConfiguration.Shipping)
 			PrivateDependencyModuleNames.AddRange(new string[] { "RenderCore", "RHI" });

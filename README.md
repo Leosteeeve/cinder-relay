@@ -2,7 +2,7 @@
 
 A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 5.8, C++ and Unreal Blueprints.
 
-**当前授权阶段：Phase 02 — First Contact。** 在已合并的原生流送基础上加入 ROOK-5、健康/装填/命中反馈、两名 Ash Warden 侦察兵和铁路场遭遇。原四地图、探索目标和回访状态保持；实际验收状态见 MILESTONES。武器/敌人为明确标注的灰盒，声音为自制临时合成音效；没有最终动画、武器装配或磁盘存档，不自动开始 Phase03。
+**Active milestone: Phase03 — The Mechanic's Hands.** Optional Survey Optic salvage and a 22-second Workshop calibration presentation extend the existing ROOK-5. Editable Blender source, imported skeletal animation and a native Level Sequence live under Phase03. Segmented gloves and industrial geometry remain prototype art. Actual validation and unresolved issues are recorded in MILESTONES; Phase04 is not authorized.
 
 - 游戏名：CINDER RELAY。
 - 仓库：[Leosteeeve/cinder-relay](https://github.com/Leosteeeve/cinder-relay)，当前 **Public**（2026-10-31 远端查询；Phase 01A 未修改可见性）。
@@ -18,6 +18,12 @@ A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 
 WASD 移动、鼠标看、Shift 跑、Ctrl 蹲、Space 跳、E 交互、Esc 暂停；**LMB 射击、RMB 瞄准、R 装填，流送重试改为 F5**。铁路场可交战、退回或沿北侧铁路线绕行；侦察兵死亡不作为主线门槛。工坊前有一份有限弹药。进入工坊，在左侧工作台拿青色电力模块，沿后门坡道下行，在橙色 Relay Nine 终端安装，再调查青色信号台；死亡和结束菜单均支持重新开始。
 
 Phase02 的精确生成、编译、打包和验收命令见 [WINDOWS_SETUP](docs/WINDOWS_SETUP.md#phase02-first-contact)，实际结果见 [MILESTONES](docs/MILESTONES.md)。不要运行 Phase01A generator 或 Phase01B migration 重建当前地图。
+
+Phase03: recover the amber/teal Survey Optic from the cache near the Rail Yard starting area, or from the backup on the Workshop calibration bench. Press E at that bench, positioned separately from the original power module. Tab skips and applies the upgrade; Esc pauses. Completing or skipping adds the visible optic and changes ADS from65 to60degrees. The weapon works before the optional upgrade. Main objectives and `MERIDIAN NETWORK / CONNECTION RESTORED` are unchanged. Restart clears the upgrade and salvage session state.
+
+Phase03 local delivery: Windows Development package and bounded functional acceptance passed after one documented test-harness readiness correction. Human animation/pacing acceptance remains pending; segmented hands are prototype art, and assembly p95=22.108ms does not meet the60FPS target. Play the local package at `.environment-local/phase-03/package/Windows/CinderRelay.exe`; omit all test flags for normal play. See [validation and limits](docs/MILESTONES.md#phase03-final-local-delivery-evidence).
+
+Editable source: `CinderRelay/ArtSource/Blender/Phase03/CR03_RookRestoration.blend`. Unreal sequence: `/Game/Generated/Phase03/Sequences/LS_CR03_RookRestoration`. Use the existing persistent map; do not rerun older level generators. See [Phase03 setup](docs/WINDOWS_SETUP.md#phase03-restoration) for exact authoring, build and test commands.
 
 ## 游戏方向
 

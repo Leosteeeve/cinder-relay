@@ -33,3 +33,8 @@ Plugins/**/Intermediate/
 *.ucache
 # Local cooker/editor file-open traces generated during packaging
 /CinderRelay/Build/Windows/FileOpenOrder/*.log
+# Blender autosave/backups; the intentional editable .blend remains tracked.
+*.blend1
+*.blend2
+__pycache__/
+*.py[cod]
