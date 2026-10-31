@@ -5,7 +5,7 @@ A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 
 **当前阶段：Phase 01A — Playable Greybox: The Dead Station。** 在原生 CinderRelay 工程上增加第一人称控制、三连通区域、模块／终端交互、四步目标和原生 UMG。没有战斗、武器装配、AI、存档或流送；不自动进入 Phase 01B。
 
 - 游戏名：CINDER RELAY。
-- 仓库：[Leosteeeve/cinder-relay](https://github.com/Leosteeeve/cinder-relay)，**Private**。
+- 仓库：[Leosteeeve/cinder-relay](https://github.com/Leosteeeve/cinder-relay)，当前 **Public**（2026-10-31 远端查询；Phase 01A 未修改可见性）。
 - 工作目录：`D:\Projects\FPS Game`；工程：`CinderRelay/CinderRelay.uproject`。
 - 实际 Runtime 模块：`CinderRelay`；targets：`CinderRelay`、`CinderRelayEditor`。
 - 引擎基线：UE **5.8.4 / CL 58902052**；Windows PC／Visual Studio。

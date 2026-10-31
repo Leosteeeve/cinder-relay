@@ -17,7 +17,7 @@
 
 ## 已确认身份
 
-- 游戏名：**CINDER RELAY**；GitHub 仓库：`cinder-relay`，本轮采用 **Private**。
+- 游戏名：**CINDER RELAY**；GitHub 仓库：`cinder-relay`，Phase 01A 最终远端查询为 **Public**；用户允许 public 或 private，本轮未修改仓库设置。
 - Windows PC 单人、叙事驱动、末日题材 FPS；UE 5.8，C++ 核心与 Blueprint 编排。
 - 主角：**Elias Venn，28 岁，男性，机械维修技师**。
 - 时间：**2118 年**。全球基础设施灾难性停摆事件 **The Quieting** 已过去数十年。

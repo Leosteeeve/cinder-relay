@@ -22,7 +22,7 @@
 
 | 阶段 | 交付物 | 依赖 | 接受标准 | 验证方式 | 非目标 |
 | --- | --- | --- | --- | --- | --- |
-| P00 已完成 | 原生 Blank C++ 工程、Git/LFS、私有 GitHub、八份核心文档、审计记录 | 已安装 UE 5.8、GitHub 可用授权 | 真正 `.uproject`／模块；基线编译证据；main 与远端 SHA 一致；无秘密／生成缓存入库 | 文件／配置检查、一次 baseline 与实际配置变更所需的定向编译、staged diff、远端查询 | 不实现玩法或第一章地图 |
+| P00 已完成 | 原生 Blank C++ 工程、Git/LFS、GitHub、八份核心文档、审计记录 | 已安装 UE 5.8、GitHub 可用授权 | 真正 `.uproject`／模块；基线编译证据；main 与远端 SHA 一致；无秘密／生成缓存入库 | 文件／配置检查、一次 baseline 与实际配置变更所需的定向编译、staged diff、远端查询 | 不实现玩法或第一章地图 |
 | P01A 当前 | 三连通灰盒、第一人称控制、交互／四目标、UMG、真实生成资产 | P00；本轮用户批准规格 | 见本节合同与实际验证记录，不用编译代替玩法验收 | 一次初始编译、实际发现的定向修正、一次有界地图流程 | 无战斗、AI、装配、存档、streaming、最终美术 |
 | P01B 待批准 | 按既定边界拆分原生 Level Streaming、预载／卸载与 packaged 验证 | P01A 人工接受、回访规则、代表性资源预算 | 初入／返回／反复触发不穿地或重复叙事；cook 引用完整；测量重叠峰值 | 定向编译／Functional 检查、一次短人工转换、规定内存采样 | 无 WP、自制框架、combat 或章节扩展 |
 | P02 完整战斗遭遇 | 一个主要武器、一种敌人行为、命中／死亡／重试及基本动画音频 | P01；确认敌人／武器／伤害规则、合规资产 | 单次 3–5 分钟遭遇可完成和失败重试；射击、换弹等批准动作反馈一致；无状态卡死 | 定向规则测试、一次短人工遭遇验收、代表性 combat trace | 无多人、武器海、复杂技能树／潜行体系 |
@@ -46,6 +46,8 @@
 | 画面 | 实际查看 yard／workshop／bunker 原生截图与 Editor HUD；`.environment-local/phase-01a/ending-ui.png` 确认 MERIDIAN NETWORK / CONNECTION RESTORED 和 Restart／Exit 按钮；`yard-ui.png` 确认重开后的目标。截图不替代连续人工验收 |
 
 最终地图 SHA256：`C22AC1DAFE74F3006CA8F2498E7AD81BA8AC827890C44B3554F31D0D13D3E733`。PASS receipt SHA256：`E9BDD6AF687E49992DB2C09A09A580203B52592A4D14B24D338776255073703C`。原始日志、receipt 和截图保留本地并被 Git 忽略；本表为入库摘要。
+
+Git 交付：实现提交 `37326ff1ab96d30559f7a942c6fe62571ca3dd5c` 已推送 `origin/phase-01a-greybox`，25/25 LFS 对象上传成功，远端 SHA 与本地一致。最终 `gh repo view` 显示仓库为 **PUBLIC**，与 Phase 00 历史记录不同；本轮未更改可见性或其他设置，只补充文档纠正当前状态。最终文档补充提交以该分支 HEAD 为准，main 未合并。
 
 实际调试记录（不是声称所有步骤一次通过）：
 
