@@ -2,7 +2,8 @@
 
 No teleport, objective setters, or test-only runtime classes. Camera aims are
 scripted and action values injected: this is not a human feel/physical-key test.
-Run with -ExecutePythonScript in a rendering Editor, never a NullRHI commandlet.
+Run with -ExecutePythonScript in a rendering Editor for the complete route.
+Add -CRLookOnly for a short input-direction check (supports -NullRHI, exits Editor).
 """
 import json
 import math
@@ -12,6 +13,7 @@ from pathlib import Path
 import unreal
 
 MAP = '/Game/Generated/Phase01A/Maps/L_CH01_Greybox'
+LOOK_ONLY = '-crlookonly' in unreal.SystemLibrary.get_command_line().lower().split()
 OUT = Path(unreal.Paths.project_saved_dir()).resolve() / 'Phase01A'
 OUT.mkdir(parents=True, exist_ok=True)
 levels = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
@@ -102,7 +104,7 @@ class Smoke:
         receipt = {'passed': passed, 'stage': self.stage, 'error': error, 'checks': self.records,
                    'positions_cm': self.samples, 'input_method': 'Enhanced Input action injection; camera steering scripted',
                    'teleports': 0, 'manual_feel_acceptance': False, 'packaged_validation': False}
-        (OUT / 'smoke.json').write_text(json.dumps(receipt, indent=2), encoding='utf-8')
+        (OUT / ('look-smoke.json' if LOOK_ONLY else 'smoke.json')).write_text(json.dumps(receipt, indent=2), encoding='utf-8')
         if self.callback is not None:
             unreal.unregister_slate_post_tick_callback(self.callback)
             self.callback = None
@@ -110,7 +112,9 @@ class Smoke:
             unreal.log('CR_SMOKE_PASS')
         else:
             unreal.log_error('CR_SMOKE_FAIL ' + str(error))
-        # Keep the genuine Editor viewport open for inspection; no automatic retries.
+        # Only the dedicated short check exits its own Editor; never retry automatically.
+        if LOOK_ONLY:
+            unreal.SystemLibrary.quit_editor()
 
     def tick(self, delta):
         # Native screenshot capture can pump Slate while this callback is active.
@@ -131,7 +135,7 @@ class Smoke:
         # can arrive seconds later, before an injected action has been processed.
         age = (now-self.stage_started if self.stage in ['wait_pie', 'paused', 'ending', 'ending_capture', 'restart_wait']
                else unreal.GameplayStatics.get_time_seconds(self.world)-self.stage_started_game)
-        assert now-self.started < 240, 'Smoke exceeded its 240-second bound'
+        assert now-self.started < (30 if LOOK_ONLY else 240), 'Smoke exceeded its time bound'
         if self.stage == 'wait_pie':
             if self.bind_world():
                 self.record('PIE pawn and input subsystem ready')
@@ -154,10 +158,27 @@ class Smoke:
             if age < .35 or self.stage_ticks < 4:
                 self.inject('yaw_action', 3)
             else:
-                assert abs(self.pc.get_control_rotation().yaw-self.initial_yaw) > .1
-                self.record('look action changed yaw')
+                yaw_delta = self.pc.get_control_rotation().yaw-self.initial_yaw
+                assert yaw_delta > .1, 'Positive MouseX must turn right'
+                self.record('positive MouseX turned right', yaw_delta=yaw_delta)
                 self.pc.set_control_rotation(unreal.Rotator(pitch=0, yaw=0, roll=0))
-                self.advance('crouch')
+                self.advance('pitch_up')
+        elif self.stage in ['pitch_up', 'pitch_down']:
+            # FSceneViewport already flips screen-space cursor Y: up => positive MouseY.
+            direction = 1 if self.stage == 'pitch_up' else -1
+            if age < .35 or self.stage_ticks < 4:
+                self.inject('pitch_action', 3 * direction)
+            else:
+                camera_z = self.actor.get_component_by_class(unreal.CameraComponent).get_forward_vector().z
+                assert camera_z * direction > .01, f'{self.stage}: wrong camera direction, forward Z={camera_z}'
+                self.record(self.stage + ' moved camera correctly', camera_forward_z=camera_z)
+                self.pc.set_control_rotation(unreal.Rotator(pitch=0, yaw=0, roll=0))
+                if self.stage == 'pitch_up':
+                    self.advance('pitch_down')
+                elif LOOK_ONLY:
+                    self.finish(True)
+                else:
+                    self.advance('crouch')
         elif self.stage == 'crouch':
             self.inject('crouch_action')
             if age > .5 and self.stage_ticks >= 4:

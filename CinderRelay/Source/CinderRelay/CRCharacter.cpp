@@ -103,7 +103,8 @@ void ACRCharacter::MoveBack() { AddMovementInput(GetActorForwardVector(), -1.f);
 void ACRCharacter::MoveRight() { AddMovementInput(GetActorRightVector(), 1.f); }
 void ACRCharacter::MoveLeft() { AddMovementInput(GetActorRightVector(), -1.f); }
 void ACRCharacter::LookYaw(const FInputActionValue& Value) { AddControllerYawInput(Value.Get<float>() * MouseSensitivity); }
-void ACRCharacter::LookPitch(const FInputActionValue& Value) { AddControllerPitchInput(-Value.Get<float>() * MouseSensitivity); }
+// Unreal MouseY is already positive when the mouse moves up; preserve that sign.
+void ACRCharacter::LookPitch(const FInputActionValue& Value) { AddControllerPitchInput(Value.Get<float>() * MouseSensitivity); }
 void ACRCharacter::StartSprint() { GetCharacterMovement()->MaxWalkSpeed = SprintSpeed; }
 void ACRCharacter::StopSprint() { GetCharacterMovement()->MaxWalkSpeed = WalkSpeed; }
 void ACRCharacter::StartCrouch() { Crouch(); }

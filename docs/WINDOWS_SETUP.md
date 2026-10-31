@@ -37,6 +37,21 @@ if ($LASTEXITCODE -ne 0) { throw 'Greybox generation failed; inspect the exact P
 
 此命令启动有渲染的 Editor／PIE，以 Enhanced Input 注入驱动真实 CharacterMovement，程序化转向，不传送、不直接设置目标。240 秒有界，输出 `Saved/Phase01A/smoke.json` 与原生截图，完成／失败后注销回调并留下 Editor 供检查，需手动结束 PIE／关闭窗口。它不是人工手感验收，也不证明物理 Esc 键或 packaged cook；任何失败先读 stage／错误，只做针对性修正，不循环刷通过。
 
+只验证鼠标方向时，在关闭本工程游戏／Editor 后使用以下定向命令，不需要走完整关卡：
+
+```powershell
+$checkStarted = Get-Date
+& $ueCmd $project '-ExecutePythonScript=D:/Projects/FPS Game/CinderRelay/Scripts/smoke_greybox.py' -CRLookOnly -NullRHI -unattended -nosplash
+if ($LASTEXITCODE -ne 0) { throw 'Editor input check process failed.' }
+$receiptPath = 'D:\Projects\FPS Game\CinderRelay\Saved\Phase01A\look-smoke.json'
+if ((Get-Item -LiteralPath $receiptPath).LastWriteTime -lt $checkStarted) { throw 'No fresh input check receipt.' }
+$result = Get-Content -Raw -LiteralPath $receiptPath | ConvertFrom-Json
+if (-not $result.passed) { throw $result.error }
+$result.checks | Format-Table
+```
+
+该模式在真实 PIE 中注入正／负 pitch action，检查 camera forward Z 的方向，并核验正 MouseX 右转；30 秒运行上限，自动关闭自己的测试 Editor。NullRHI 不验证画面／物理鼠标，完整流程仍用上面的有渲染模式。
+
 官方依据：[Editor Python](https://dev.epicgames.com/documentation/en-us/unreal-engine/scripting-the-unreal-editor-using-python?application_version=5.8)。实际 API 同时核对本机 5.8.4 headers／反射结果；未引入第三方 MCP 或资产包。
 
 本机工作目录：`D:\Projects\FPS Game`。已安装引擎：`D:\Engines\Unreal\UE_5.8`，实际版本 5.8.4。VS 2026 Community 18.11.3，MSVC 产品版本 14.50.35739（目录 family 为 14.50.35717）。已安装 SDK 包含 10.0.26100.0；Phase 01A 两次 UBT 实际选择 **10.0.22621.0**，以当次日志为准。不要因 family 文件夹名而误判为旧的 banned compiler。

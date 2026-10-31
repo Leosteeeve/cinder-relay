@@ -65,6 +65,18 @@ Git 交付：实现提交 `37326ff1ab96d30559f7a942c6fe62571ca3dd5c` 已推送 `
 - Phase 00 已有的 13 条 UnifiedError 附近 `LogAutomationTest: Error: Condition failed` 仍出现在 Editor 启动；未修改引擎，也未声称 clean log。这不等于本项目 smoke 失败，但仍是独立未解决的引擎诊断。
 - 未 cook/package，未测 FPS／VRAM／冷加载，当前 shader／PSO 编译日志不能作为稳态性能报告。Phase 01B 前先人工接受，再做原生 Level Streaming 与 packaged 验证。
 
+## Phase 01A 试玩修正：鼠标纵轴（2026-10-31）
+
+用户在 Standalone 试玩发现上下视角反转。根因是 `FSceneViewport::OnMouseMove` 已通过 `MouseDelta.Y -= CursorDelta.Y` 转换屏幕坐标，而 `ACRCharacter::LookPitch` 又取反；当前配置关闭 legacy input scales，生成的 MouseY mapping 没有反向 modifier。仅去掉角色代码中的多余负号，保留灵敏度、水平输入、地图和二进制资产。
+
+在既有 smoke 中补充真实 camera forward Z 的正／负方向检查，`-CRLookOnly` 运行 30 秒以内的专用检查并退出其自身 Editor，支持 NullRHI；不重跑完整路线。
+
+- 修复前，原 DLL 在 `pitch_up` 正确复现失败：camera forward Z = **-0.125333**。
+- 修改后一次 CinderRelayEditor 定向编译 **Succeeded / exit 0 / 15.74 s / 4 actions**，记录在 `.environment-local/pitch-fix/build.log`。
+- 同一检查 **PASS**：向上 Z = **+0.125333**、向下 Z = **-0.125333**，正 MouseX yaw 增量 **+7.56°**；5 项记录（3 项方向检查，另有初始化和既有无效交互检查），动作阶段 1.31 s，不含 Editor 启动。
+- 证据：`.environment-local/pitch-fix/look-before.json`、`look-after.json` 和对应 logs；当前 receipt 为 `CinderRelay/Saved/Phase01A/look-smoke.json`。测试结果以 receipt 的 passed 字段为准，不能仅以 Editor 退出码判断。
+- 这是无渲染的 Enhanced Input／相机方向验证，未替用户再次操作物理鼠标或重新进行完整手感验收。现有完整路线证据保持为上文先前 revision 的结果。
+
 ## 单任务合同
 
 每个 Codex task 必须列出：目标、允许文件／系统、依赖、交付物、可测接受条件、具体验证、非目标、停止条件。阶段过大则切成仍可运行的子任务，避免一次生成所有类。
