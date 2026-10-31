@@ -92,6 +92,7 @@ def actor(label,cls,zone,location):
     a.modify()
     return a
 workbench=actor('CR03_CalibrationWorkbench',unreal.CRWorkbench,'Workshop',(2300,-350,0));workbench.surface.set_static_mesh(bench);workbench.hands.set_skeletal_mesh_asset(rig)
+workbench.camera.set_field_of_view(74) # Keep the raised inspecting hand inside the first-person frame.
 workbench.set_editor_property('assembly_mesh',rig);workbench.set_editor_property('activation_sound',sound)
 sequence=create('LS_CR03_RookRestoration','Sequences',unreal.LevelSequence,unreal.LevelSequenceFactoryNew())
 sequence.set_display_rate(unreal.FrameRate(30,1));sequence.set_playback_start(0);sequence.set_playback_end(660)

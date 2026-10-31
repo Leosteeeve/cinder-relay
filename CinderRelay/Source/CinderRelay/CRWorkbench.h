@@ -4,6 +4,7 @@
 #include "CRInteractable.h"
 #include "CRWorkbench.generated.h"
 class UStaticMeshComponent;
+class UBoxComponent;
 class USkeletalMeshComponent;
 class UCameraComponent;
 class ULevelSequence;
@@ -21,6 +22,7 @@ class CINDERRELAY_API ACRWorkbench:public AActor,public ICRInteractable
 public:
     ACRWorkbench();
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UStaticMeshComponent> Surface;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UBoxComponent> InteractionBounds;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<USkeletalMeshComponent> Hands;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UCameraComponent> Camera;
     UPROPERTY(EditAnywhere, Category="Assembly") TSoftObjectPtr<ULevelSequence> Sequence;

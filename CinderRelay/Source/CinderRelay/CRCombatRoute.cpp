@@ -27,6 +27,15 @@
 #include "RenderTimer.h"
 #include "DynamicRHI.h"
 #include "UnrealClient.h"
+#include "CRWorkbench.h"
+#include "CRSalvagePickup.h"
+#include "CRWeaponViewComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Misc/CommandLine.h"
+#include "Misc/Parse.h"
+#include "LevelSequenceActor.h"
+#include "LevelSequencePlayer.h"
 namespace { int32 CombatScenario=0; FString Events,Frames,Memory; double RunStarted=0; }
 #endif
 ACRCombatRoute::ACRCombatRoute()
@@ -40,9 +49,11 @@ void ACRCombatRoute::BeginPlay()
     Super::BeginPlay();
 #if !UE_BUILD_SHIPPING
     Started=StageStarted=FPlatformTime::Seconds();
-    if(!RunStarted) { RunStarted=Started; Frames=TEXT("elapsed,stage,scenario,frame_ms,game_thread_ms,render_thread_ms,gpu_ms,health,ammo,enemies,x,y,z\n"); Memory=TEXT("elapsed,stage,working_set_bytes,private_commit_bytes\n"); }
+    bRestoration=FParse::Param(FCommandLine::Get(),TEXT("CRRestorationCheck"));
+    if(!RunStarted) { RunStarted=Started; if(bRestoration) FParse::Value(FCommandLine::Get(),TEXT("CRRestorationStart="),CombatScenario); Frames=TEXT("elapsed,stage,scenario,frame_ms,game_thread_ms,render_thread_ms,gpu_ms,health,ammo,enemies,x,y,z\n"); Memory=TEXT("elapsed,stage,working_set_bytes,private_commit_bytes\n"); }
     for(TActorIterator<ACRChapterStreamingController> It(GetWorld());It;++It){Streaming=*It;break;}
     IFileManager::Get().MakeDirectory(*(FPaths::ProjectSavedDir()/TEXT("Phase02")),true);
+    if(bRestoration) IFileManager::Get().MakeDirectory(*(FPaths::ProjectSavedDir()/TEXT("Phase03")),true);
 #endif
 }
 void ACRCombatRoute::Tick(float Delta)
@@ -51,7 +62,7 @@ void ACRCombatRoute::Tick(float Delta)
 #if !UE_BUILD_SHIPPING
     if(bFinished)return;
     const double Now=FPlatformTime::Seconds(),Age=Now-StageStarted;
-    if(Now-RunStarted>360 || Age>65) { Finish(false,TEXT("Bounded combat route timeout: ")+Stage); return; }
+    if(Now-RunStarted>(bRestoration?600:360) || Age>65) { Finish(false,TEXT("Bounded combat route timeout: ")+Stage); return; }
     if(Stage==TEXT("startup"))
     {
         Player=Cast<ACRCharacter>(UGameplayStatics::GetPlayerPawn(this,0)); if(!Player.IsValid())return;
@@ -62,13 +73,14 @@ void ACRCombatRoute::Tick(float Delta)
         Check(Player->Health->Health==100&&Player->Weapon->Magazine==5&&Player->Weapon->Reserve==25,TEXT("Initial health and ROOK-5 ammo"));
         Check(GetWorld()->GetAuthGameMode<ACRGameMode>()->DefeatedEnemies.IsEmpty(),TEXT("Restart starts with empty defeated-enemy record")); if(bFinished)return;
         Scout=List[0]; ScoutStart=Scout->GetActorLocation();
-        if(CombatScenario==2) { Finish(true,TEXT("Real combat, native AI/nav, death/restart and streamed chapter route passed")); return; }
+        if(bRestoration) Check(!GetWorld()->GetAuthGameMode<ACRGameMode>()->HasSurveyOptic()&&!GetWorld()->GetAuthGameMode<ACRGameMode>()->HasSurveyUpgrade(),TEXT("Restart clears salvage and applied upgrade"));
+        if(CombatScenario==(bRestoration?4:2)) { Finish(true,TEXT("Combat, restoration, skip, cancel, streaming and optional ending route passed")); return; }
         if(CombatScenario==0)
         {
             auto* AI=Cast<ACRAshWardenController>(Scout->GetController()); Check(AI->InjectNavigationFailure()>0,TEXT("Native unreachable navigation request fails without endless retry"));
             auto* Path=UNavigationSystemV1::FindPathToLocationSynchronously(this,Scout->GetActorLocation(),FVector(-900,-1150,90),Scout.Get());
             Check(Path&&Path->IsValid()&&!Path->IsPartial()&&Path->PathPoints.Num()>2,TEXT("Native yard path routes around train cover"));
-            Walk({{-700,-350}},TEXT("receive"));
+            if(bRestoration) Walk({{-1280,-290}},TEXT("03_yard"));else Walk({{-700,-350}},TEXT("receive"));
         }
         else Walk({{-300,0}},TEXT("fight"));
         return;
@@ -80,6 +92,7 @@ void ACRCombatRoute::Tick(float Delta)
     if(Player->Health->IsDead()&&Stage!=TEXT("death")&&Stage!=TEXT("restart_death")) { Finish(false,TEXT("Unexpected defeat in ")+Stage); return; }
     if(Player->GetActorLocation().Z<-750){Finish(false,TEXT("Fell below streamed floor"));return;}
     auto* W=Player->Weapon.Get(); auto* GM=GetWorld()->GetAuthGameMode<ACRGameMode>();
+    if(bRestoration && RestorationStage(Age))return;
     if(Stage==TEXT("walk"))
     {
         if(Waypoints.IsEmpty()) { Next(AfterWalk);return; }
@@ -135,7 +148,7 @@ void ACRCombatRoute::Tick(float Delta)
         ACRAmmoPickup* Pickup=nullptr; for(TActorIterator<ACRAmmoPickup> It(GetWorld());It;++It){Pickup=*It;break;}
         Check(Pickup!=nullptr,TEXT("Limited ammo pickup exists in streamed yard"));if(bFinished)return;
         PC->SetControlRotation((Pickup->GetActorLocation()-Player->Camera->GetComponentLocation()).Rotation());
-        if(Age>.5) { if(!GM->IsPickupCollected(Pickup->PickupId))Inject(Player->InteractAction);else Walk({{1500,0},{1850,0},{2800,-170}},TEXT("module")); }
+        if(Age>.5) { if(!GM->IsPickupCollected(Pickup->PickupId))Inject(Player->InteractAction);else if(bRestoration&&CombatScenario!=3) Walk({{1500,0},{1850,0},{2130,-350}},TEXT("03_bench_empty"));else Walk({{1500,0},{1850,0},{2800,-170}},TEXT("module")); }
     }
     else if(Stage==TEXT("module"))
     {
@@ -163,19 +176,160 @@ void ACRCombatRoute::Tick(float Delta)
     }
     else if(Stage==TEXT("module_revisit")&&Age>.5)
     {
+        if(bRestoration && CombatScenario==1)
+        {
+            Check(GM->HasSurveyUpgrade()&&W->GetAimFOV()==60,TEXT("Upgrade survives actual Workshop unload and return"));
+            for(TActorIterator<ACRWorkbench> It(GetWorld());It;++It)Check(It->State==ECRAssemblyState::Completed,TEXT("Reloaded workbench reconciles completion without replay"));
+            for(TActorIterator<ACRSalvagePickup> It(GetWorld());It;++It)Check(It->IsHidden()&&!It->GetActorEnableCollision(),TEXT("Reloaded salvage remains consumed"));
+        }
         const auto* Item=FindItem(ECRInteractionKind::PowerModule); Check(Item&&Item->bUsed&&Item->IsHidden(),TEXT("Original power-module reconciliation preserved"));
         Walk({{3300,0},{3550,0},{5450,0},{6500,-250},{6700,0}},TEXT("signal"));
     }
     else if(Stage==TEXT("signal")) { if(Interact(FindItem(ECRInteractionKind::Signal)))Next(TEXT("ending")); }
     else if(Stage==TEXT("ending")&&Age>1)
     {
+        if(bRestoration&&CombatScenario==3)Check(!GM->HasSurveyOptic()&&!GM->HasSurveyUpgrade(),TEXT("Chapter ending reached without salvage or optional workbench"));
         Check(GM->GetObjective()==ECRObjective::Complete&&PC->bPrototypeEnded,TEXT("Original final signal and ending still work"));
         FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Phase02/ending.png"),true,false); Next(TEXT("final_restart"));
     }
-    else if(Stage==TEXT("final_restart")&&Age>1) { CombatScenario=2; Restart(); }
+    else if(Stage==TEXT("final_restart")&&Age>1) { CombatScenario=bRestoration&&CombatScenario==3?4:2; Restart(); }
 #endif
 }
 #if !UE_BUILD_SHIPPING
+bool ACRCombatRoute::RestorationStage(double Age)
+{
+    if(!Stage.StartsWith(TEXT("03_"))) return false;
+    auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>(); auto* W=Player->Weapon.Get();
+    ACRWorkbench* Bench=nullptr; for(TActorIterator<ACRWorkbench> It(GetWorld());It;++It){Bench=*It;break;}
+    auto AimAt=[this](AActor* A,FVector Point){PC->SetControlRotation((Point-Player->Camera->GetComponentLocation()).Rotation());};
+    if(Stage==TEXT("03_yard") || Stage==TEXT("03_collect"))
+    {
+        const bool Yard=Stage==TEXT("03_yard"); ACRSalvagePickup* Item=nullptr;
+        for(TActorIterator<ACRSalvagePickup> It(GetWorld());It;++It)if(It->SourceId==(Yard?TEXT("CR03_YardCache"):TEXT("CR03_WorkshopBackup"))){Item=*It;break;}
+        if(!Item)return true;
+        AimAt(Item,Item->Mesh->Bounds.Origin);
+        if(G->HasSurveyOptic())
+        {
+            Check(Item->IsHidden()&&!Item->GetActorEnableCollision(),TEXT("Collected salvage hides and disables its collision"));
+            Check(!G->TryCollectSurveyOptic(TEXT("OtherSource")),TEXT("Second logical component cannot duplicate rewards"));
+            if(Yard) { Check(G->DefeatedEnemies.IsEmpty(),TEXT("Yard salvage reached without defeating enemies"));Walk({{-700,-350}},TEXT("receive")); }
+            else Next(TEXT("03_start"));
+        }
+        else if(Age>.7)
+        {
+            if(!Player->CanInteractWith(Item))
+            {
+                FHitResult Hit;FCollisionQueryParams Params(SCENE_QUERY_STAT(CR03SalvageDiagnosis),false,Player.Get());
+                const FVector Eye=Player->Camera->GetComponentLocation(),End=Eye+Player->Camera->GetForwardVector()*Player->InteractionRange;
+                GetWorld()->LineTraceSingleByChannel(Hit,Eye,End,ECC_Visibility,Params);
+                UE_LOG(LogTemp,Warning,TEXT("CR03_TRACE eye=%s end=%s target=%s target_center=%s hit=%s component=%s distance=%.2f"),*Eye.ToString(),*End.ToString(),*Item->GetName(),*Item->Mesh->Bounds.Origin.ToString(),*GetNameSafe(Hit.GetActor()),*GetNameSafe(Hit.GetComponent()),Hit.Distance);
+                FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Phase03/trace-failure.png"),true,false);
+            }
+            Check(Player->CanInteractWith(Item)&&Item->CanInteract_Implementation(Player.Get()),TEXT("Salvage has a valid short-range camera trace"));if(!bFinished)Inject(Player->InteractAction);
+        }
+        return true;
+    }
+    if(!Bench) { Finish(false,TEXT("Workshop presentation actor missing"));return true; }
+    if(Stage==TEXT("03_bench_empty"))
+    {
+        AimAt(Bench,Bench->GetActorLocation()+FVector(0,0,96));
+        if(Age>.7 && Bench->IsReady())
+        {
+            Check(!G->HasSurveyOptic()&&!Bench->CanInteract_Implementation(Player.Get()),TEXT("Workbench rejects missing component"));
+            Check(W->GetAimFOV()==65,TEXT("Unmodified ROOK-5 preserves base ADS")); Next(TEXT("03_collect"));
+        }
+    }
+    else if(Stage==TEXT("03_start") || Stage==TEXT("03_start_again"))
+    {
+        const bool Again=Stage==TEXT("03_start_again");
+        AimAt(Bench,Bench->GetActorLocation()+FVector(0,0,96));
+        if(Bench->State==ECRAssemblyState::Playing)
+        {
+            Check(Bench->Hands->GetNumBones()>=39&&Bench->Hands->GetBoneIndex(TEXT("hand_R"))!=INDEX_NONE&&Bench->Hands->GetBoneIndex(TEXT("optic"))!=INDEX_NONE,TEXT("Imported rig has the authored hands, fingers and prop hierarchy"));
+            Check(PC->IsAssembling()&&W->IsPresentationLocked()&&!W->CanUse()&&PC->IsMoveInputIgnored()&&PC->IsLookInputIgnored(),TEXT("Assembly owns input and blocks fire/reload"));
+            Check(!Bench->CanInteract_Implementation(Player.Get()),TEXT("Duplicate workbench interaction rejected"));
+            AssemblyAmmo=W->Magazine;AssemblyReserve=W->Reserve;AssemblyHealth=Player->Health->Health;
+            Next(Again?TEXT("03_full"):CombatScenario==2?TEXT("03_skip"):TEXT("03_abort"));
+        }
+        else if(Age>.7)
+        {
+            Check(Bench->CanInteract_Implementation(Player.Get()),TEXT("Owned component starts actual trace-based bench interaction"));
+            if(!bFinished)Inject(Player->InteractAction);
+        }
+    }
+    else if(Stage==TEXT("03_abort") && Age>2)
+    {
+        bool Stopped=false;
+        for(TActorIterator<ALevelSequenceActor> It(GetWorld());It;++It) if(It->GetLevel()==Bench->GetLevel() && It->GetSequencePlayer() && It->GetSequencePlayer()->IsPlaying())
+        { It->GetSequencePlayer()->Stop();Stopped=true;break; }
+        Check(Stopped,TEXT("Injected a genuine native sequence stop before completion"));Next(TEXT("03_abort_verify"));
+    }
+    else if(Stage==TEXT("03_abort_verify") && Bench->State==ECRAssemblyState::Idle)
+    {
+        Check(!G->HasSurveyUpgrade()&&!PC->IsAssembling()&&!W->IsPresentationLocked()&&!PC->IsMoveInputIgnored()&&!PC->IsLookInputIgnored()&&Player->GetCharacterMovement()->IsMovingOnGround(),TEXT("Cancellation grants no upgrade and restores all controls"));
+        Check(W->Magazine==AssemblyAmmo&&W->Reserve==AssemblyReserve&&Player->Health->Health==AssemblyHealth,TEXT("Cancellation preserves ammunition and health"));
+        Next(TEXT("03_start_again"));
+    }
+    else if(Stage==TEXT("03_skip") && Age>2)
+    {
+        PC->SkipAssembly();Next(TEXT("03_skip_verify"));
+    }
+    else if(Stage==TEXT("03_skip_verify") && Bench->State==ECRAssemblyState::Completed)
+    {
+        Check(G->HasSurveyUpgrade()&&Bench->State==ECRAssemblyState::Completed&&!PC->IsAssembling()&&W->CanUse(),TEXT("Skip finalizes upgrade once and restores gameplay"));
+        Check(!G->TryApplySurveyUpgrade(),TEXT("Skipped upgrade cannot commit twice"));Next(TEXT("03_skip_restart"));
+    }
+    else if(Stage==TEXT("03_skip_restart") && Age>1) { CombatScenario=3;Restart(); }
+    else if(Stage==TEXT("03_full"))
+    {
+        const float Position=Bench->GetPresentationSeconds();
+        if(PC->bPrototypePaused)
+        {
+            if(FPlatformTime::Seconds()-PauseStarted>1.5)
+            {
+                Check(FMath::Abs(Position-PausePosition)<.1f,TEXT("Pause freezes actual Sequencer time"));PC->ResumePrototype();
+            }
+            return true;
+        }
+        if(Position>8 && !bAssemblyPaused)
+        { bAssemblyPaused=true;PausePosition=Position;PauseStarted=FPlatformTime::Seconds();PC->TogglePrototypePause();return true; }
+        const float CaptureTimes[]={3.f,7.f,13.f,18.f};
+        if(AssemblyCapture<4 && Position>=CaptureTimes[AssemblyCapture])
+        {
+            FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/FString::Printf(TEXT("Phase03/assembly-%02d.png"),AssemblyCapture),true,false);
+            if(AssemblyCapture==0)FirstHand=Bench->Hands->GetBoneLocation(TEXT("hand_R"));
+            if(AssemblyCapture==1)Check(FVector::Dist(FirstHand,Bench->Hands->GetBoneLocation(TEXT("hand_R")))>10,TEXT("Imported hand bone moves under actual Sequencer playback"));
+            ++AssemblyCapture;
+        }
+        if(Bench->State==ECRAssemblyState::Completed)
+        {
+            Check(AssemblyCapture==4&&G->HasSurveyUpgrade()&&!PC->IsAssembling()&&!PC->IsMoveInputIgnored()&&!PC->IsLookInputIgnored()&&W->CanUse(),TEXT("Natural 22-second sequence completes and releases gameplay"));
+            Check(W->Magazine==AssemblyAmmo&&W->Reserve==AssemblyReserve&&Player->Health->Health==AssemblyHealth,TEXT("Full presentation preserves ammunition and health"));
+            Check(Player->WeaponView->HasImportedAppearance(),TEXT("Imported ROOK-5 appearance loaded; cube fallback not active"));Next(TEXT("03_ads"));
+        }
+    }
+    else if(Stage==TEXT("03_ads"))
+    {
+        Inject(Player->AimAction);
+        if(Age>1)
+        {
+            Check(W->GetAimFOV()==60&&FMath::Abs(Player->Camera->FieldOfView-60)<.2f,TEXT("Applied optic changes actual ADS camera to 60 degrees"));
+            FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Phase03/upgraded-ads.png"),true,false);
+            Inject(Player->FireAction);Next(TEXT("03_fire"));
+        }
+    }
+    else if(Stage==TEXT("03_fire") && Age>1 && W->State==ECRWeaponState::Ready)
+    {
+        // Screenshot capture can stall between input injection and the accepted shot.
+        // Observe the native cycle state; wall time since injection is not weapon readiness.
+        Check(W->Magazine==AssemblyAmmo-1,TEXT("Upgraded weapon still fires and consumes one round"));Inject(Player->ReloadAction);Next(TEXT("03_reload"));
+    }
+    else if(Stage==TEXT("03_reload") && Age>3)
+    {
+        Check(W->State==ECRWeaponState::Ready&&W->Magazine==5,TEXT("Upgraded weapon completes original reload"));Walk({{2400,-170},{2800,-170}},TEXT("module"));
+    }
+    return true;
+}
 TArray<ACRAshWarden*> ACRCombatRoute::Enemies() const { TArray<ACRAshWarden*> List;for(TActorIterator<ACRAshWarden> It(GetWorld());It;++It)List.Add(*It);List.Sort([](const ACRAshWarden& A,const ACRAshWarden& B){return A.EnemyId.LexicalLess(B.EnemyId);});return List; }
 void ACRCombatRoute::Next(const FString& Name){if(bFinished)return;Stage=Name;StageStarted=FPlatformTime::Seconds();UE_LOG(LogTemp,Display,TEXT("CR02_ROUTE stage=%s scenario=%d"),*Stage,CombatScenario);}
 void ACRCombatRoute::Walk(TArray<FVector2D> Points,const FString& NextStage){Waypoints=MoveTemp(Points);AfterWalk=NextStage;Next(TEXT("walk"));}
@@ -197,7 +351,7 @@ void ACRCombatRoute::RecordFrame(float Delta)
 }
 void ACRCombatRoute::Finish(bool Passed,const FString& Message)
 {
-    if(bFinished)return;bFinished=true;const FString Dir=FPaths::ProjectSavedDir()/TEXT("Phase02");
+    if(bFinished)return;bFinished=true;const FString Dir=FPaths::ProjectSavedDir()/(bRestoration?TEXT("Phase03"):TEXT("Phase02"));
     const FString Receipt=FString::Printf(TEXT("{\"passed\":%s,\"mode\":\"combat\",\"scenario\":%d,\"message\":\"%s\"}"),Passed?TEXT("true"):TEXT("false"),CombatScenario,*Message);
     FFileHelper::SaveStringToFile(Receipt,*(Dir/TEXT("acceptance.json")));FFileHelper::SaveStringToFile(Events,*(Dir/TEXT("route.txt")));FFileHelper::SaveStringToFile(Frames,*(Dir/TEXT("frames.csv")));FFileHelper::SaveStringToFile(Memory,*(Dir/TEXT("memory.csv")));
     FString Settings;for(const TCHAR* Name:{TEXT("r.ScreenPercentage"),TEXT("r.DynamicRes.OperationMode"),TEXT("r.VSync"),TEXT("t.MaxFPS"),TEXT("sg.ViewDistanceQuality"),TEXT("sg.AntiAliasingQuality"),TEXT("sg.ShadowQuality"),TEXT("sg.GlobalIlluminationQuality"),TEXT("sg.ReflectionQuality"),TEXT("sg.PostProcessQuality"),TEXT("sg.TextureQuality"),TEXT("sg.EffectsQuality"),TEXT("sg.FoliageQuality"),TEXT("sg.ShadingQuality"),TEXT("r.AntiAliasingMethod"),TEXT("r.RayTracing"),TEXT("r.Lumen.HardwareRayTracing")})if(const auto* C=IConsoleManager::Get().FindConsoleVariable(Name))Settings+=FString::Printf(TEXT("%s=%s\n"),Name,*C->GetString());FFileHelper::SaveStringToFile(Settings,*(Dir/TEXT("settings.txt")));

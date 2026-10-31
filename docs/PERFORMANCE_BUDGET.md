@@ -128,3 +128,44 @@ Evidence for follow-up: GT `Sync_RenderingThread` total76.888s/max394.183ms over
 Analyzer limits: Insights reports30,663MemAllocTagTracker errors with this partial-channel capture,4LoadTime warnings, and GPU timestamp interleaving/reversal warnings(max~1.171ms). Memory-allocation analysis is not used. GPU table values above come from native RHI frame counters, not reconstructed invalid GPU event durations. Runtime has no Fatal/Error/Ensure, but expected native teardown/VSync/navigation-test warnings are listed in MILESTONES.
 
 Evidence: `.environment-local/phase-02/combat-summary.json`, `packaged-combat.log`, `combat.utrace`, `insights.log`, `insights-game-thread.csv`, `insights-render-thread.csv`, `insights-all-threads.csv`, and `package/Windows/CinderRelay/Saved/Phase02/{frames.csv,memory.csv,settings.txt,route.txt,acceptance.json}`. Raw logs/traces/package remain ignored. This bounded run is complete; no further package, cache clear or quality change was used to chase targets.
+
+## Phase03 measurement boundary
+
+The original1080p/Epic reference remains unchanged. The14asset restoration kit adds one6720vertex skeletal prototype (40imported bones), three static meshes, six constant-color materials, one short original SoundWave and one22s LevelSequence. These counts are content facts, not performance guarantees. The instrumented Phase02 combat p95=19.261ms is not a clean60FPS baseline.
+
+The bounded packaged route records native frame/GT/RT/GPU counters and1Hz process-memory samples, separated by gameplay, assembly, return-to-gameplay and backtracking stages. It includes actual screenshots, native sequence pause and restarts; report those costs/conditions explicitly. Editor frames are not packaged1080p measurements. No DDC clearing, silent quality reduction, speculative optimization or new expensive rendering feature is authorized by these measurements. Actual packaged results and the failed first attempt are reported below.
+
+
+### Phase03 packaged observations — 2026-10-31
+
+One Windows Development cook/package, followed by one focused game-binary rebuild for the documented acceptance-harness readiness race. No content re-cook, quality reduction or cache clearing. The corrected run resumed at scenario1 and passed scenarios1–4 in182.782s; scenario0 passed in the preserved first attempt. This is not a single uninterrupted full-start pass. Same RTX5070Laptop/32GB system, driver616.92; actual1920x1080 capture, all ten scalability groups3/Epic, ScreenPercentage100, DynamicRes0, VSync0, t.MaxFPS0, TSR4, RayTracing1 and LumenHWRT1. Windows desktop2560x1600/workarea2560x1528 confirms the existing DPI fix remains active. Power, thermal state and background desktop load were not controlled. No Editor or Blender render ran concurrently.
+
+Trace channels cpu,gpu,frame,bookmark,loadtime; no requested allocation/callstack capture. Automated movement, screenshots, one1.5s pause, restart and streaming are included. Native GT/RT/GPU counters refer to prior engine frames; do not add them. Segment seconds below sum recorded engine frame deltas, not independent wall-time measurements.
+
+| Corrected-run segment | Rows / recorded seconds | Frame p95 ms | GT p95 ms | RT p95 ms | GPU p95 ms |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| All recorded |13765 /180.688|16.663|2.539|16.553|15.402|
+| Three actual combat encounters |1844 /20.996|14.865|2.256|14.738|13.876|
+| Full assembly, pause and four captures |1429 /23.535|22.108|1.771|22.013|21.145|
+| Return: ADS, shot and reload |339 /5.349|20.432|2.142|20.374|19.374|
+| Scenario1 walking/backtracking |3766 /47.833|15.309|1.973|15.268|14.124|
+| Optional-workbench bypass walking |3637 /47.316|15.404|3.297|15.352|13.847|
+
+Assembly p95 exceeds the16.667ms target by5.441ms. All-recorded max frame delta400ms is engine-clamped, not an upper bound on wall-time stalls;16frames exceed50ms. GT max341.799ms, RT max32.997ms and GPU max27.381ms. Four assembly-capture spikes reached359.670ms frame delta; return-to-gameplay includes the400ms screenshot-associated spike. Therefore this is not clean60FPS acceptance, even though the aggregate p95 happens to be near the target. The failed first sample is retained:80.927s/6434rows, all-recorded p95=17.837ms, assembly p95=21.578ms, return p95=21.976ms. No results were discarded to manufacture a faster benchmark. Phase02 combat p95=19.261ms remains historical evidence; different route duration/cache/conditions prevent claiming a causal improvement from Phase03.
+
+Offline Unreal Insights exit0:437,559,051-byte trace,74CPUthreads,49,872,313CPUscopes. Visible CPU costs attributable to the new presentation are below. These are inclusive per-invocation statistics, not per-frame budgets; nested scopes overlap and must not be summed. The export also includes default GPU aggregate rows; only named CPU scopes are used here.
+
+| CPU scope | Calls | Total ms | Mean ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| CR_WeaponPresentation |13588|93.831|0.007|0.876|
+| USkeletalMeshComponent_TickAnimation |1603|72.743|0.045|0.208|
+| AnimSequencerInstance |3178|65.581|0.021|0.202|
+| MovieScene GameThread_UpdateSequenceInstances |1590|15.395|0.010|0.182|
+| FSkeletalMeshUpdater::ProcessUpload |1594|27.051|0.017|0.070|
+| AudioMixerSource::Init (all game sources) |79|2.560|0.032|0.153|
+
+These scopes show actual skeletal/Sequencer execution without a large measured GT cost. Assembly RT/GPU p95 is higher than ordinary traversal. That observation motivates a future same-camera render comparison; it does not isolate the incremental GPU cost of each new mesh/material or the original audio cue. There is no disabled-content A/B measurement, so no separate per-material/audio performance guarantee. PNG compression ran16times,total3366.704ms,max333.501ms; this supports capture instrumentation as a contributor to the large GT spikes. It does not prove every hitch has that cause. No unrelated optimization was performed.
+
+Peak working set1,863,364,608B(1.735GiB), private commit4,530,450,432B(4.219GiB). Samples: bench entry17.128s=1,818,439,680/4,520,050,688B; assembly22.174s=1,824,280,576/4,530,450,432B; post-reload51.390s=1,832,972,288/4,271,542,272B; return to Yard76.572s=1,745,321,984/4,181,856,256B; reloaded Workshop86.644s=1,736,302,592/4,172,029,952B (working set/commit). Final pre-restart182.782s=1,772,470,272/4,228,411,392B. No monotonic memory-growth pattern appears in this bounded sample, but different resident zones/restarts and allocator caching prevent a leak-free claim. These are process measurements, not dedicated VRAM or per-asset residency. Normal scripted unloads: A5/B6/C2, independently of3Restart travels; no forced GC per transition.
+
+Analyzer limits:30,667MemAlloc TagTracker errors with partial trace channels,4LoadTime warnings, GPU interleaved/reversed/negative-duration warnings(max0.252ms). Do not use this capture for allocation or reconstructed GPU-event claims; GPU table uses the native RHI frame counter. Runtime had no Error/Fatal/Ensure; expected deliberate cancellation and existing Recast teardown warnings remain. First-run startup commands also warn about execution time. Full settings, both receipts, CSVs, command lines, first-failed.utrace, restoration.utrace and Insights exports stay under ignored `.environment-local/phase-03/`. No further run was used to chase numbers.

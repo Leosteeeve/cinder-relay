@@ -79,6 +79,7 @@ void UCRWeaponViewComponent::TickComponent(float Delta,ELevelTick TickType,FActo
     Recoil=FMath::FInterpTo(Recoil,0,Delta,FMath::Max(1.f,D->RecoverySpeed));
     const bool Lower=Weapon->State==ECRWeaponState::Reloading || Weapon->bSprinting || Weapon->State==ECRWeaponState::Disabled;
     FVector Target=Aim?D->AimLocation:D->HipLocation; Target.Z-=Lower?9.f:CoverFraction*14.f; Target.X-=Recoil;
+    if(Aim) if(const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();G && G->HasSurveyUpgrade()) Target.Z-=2.f; // Imported optic aperture is 2cm above the original iron sight.
     ViewRoot->SetRelativeLocation(FMath::VInterpTo(ViewRoot->GetRelativeLocation(),Target,Delta,18));
     ViewRoot->SetRelativeRotation(FMath::RInterpTo(ViewRoot->GetRelativeRotation(),FRotator(Recoil-(Lower?25:CoverFraction*35),0,Lower?-10:0),Delta,18));
 }

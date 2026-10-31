@@ -61,7 +61,7 @@ void ACRGameMode::BeginPlay()
 #if !UE_BUILD_SHIPPING
 	if (FParse::Param(FCommandLine::Get(), TEXT("CRStreamAcceptance"))) GetWorld()->SpawnActor<ACRStreamingAcceptance>();
 	if (FParse::Param(FCommandLine::Get(), TEXT("CRWeaponCheck"))) GetWorld()->SpawnActor<ACRCombatAcceptance>();
-	if (FParse::Param(FCommandLine::Get(), TEXT("CRCombatCheck"))) GetWorld()->SpawnActor<ACRCombatRoute>();
+	if (FParse::Param(FCommandLine::Get(), TEXT("CRCombatCheck")) || FParse::Param(FCommandLine::Get(), TEXT("CRRestorationCheck"))) GetWorld()->SpawnActor<ACRCombatRoute>();
 #endif
 }
 

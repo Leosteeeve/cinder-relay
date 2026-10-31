@@ -108,7 +108,7 @@ bpy.ops.object.select_all(action='DESELECT');rig.select_set(True);sk.select_set(
 bpy.ops.export_scene.fbx(filepath=str(out/'SK_CR03_Restoration.fbx'),use_selection=True,object_types={'ARMATURE','MESH'},axis_forward='-Y',axis_up='Z',apply_unit_scale=True,add_leaf_bones=False,bake_anim=True,bake_anim_use_all_actions=False,bake_anim_use_nla_strips=False,bake_anim_simplify_factor=0,bake_anim_step=1)
 # Inspection camera / lighting are editable source aids, never part of the FBX export.
 bench.hide_render=False;bench.hide_set(False)
-bpy.ops.object.camera_add(location=(-62,0,166));cam=bpy.context.object;cam.name='AssemblyReviewCamera';cam.rotation_euler=(Vector((0,0,100))-cam.location).to_track_quat('-Z','Y').to_euler();cam.data.lens=28;cam.data.clip_start=.1;cam.data.clip_end=10000;scene.camera=cam
+bpy.ops.object.camera_add(location=(-62,0,166));cam=bpy.context.object;cam.name='AssemblyReviewCamera';cam.rotation_euler=(Vector((0,0,100))-cam.location).to_track_quat('-Z','Y').to_euler();cam.data.lens=24;cam.data.clip_start=.1;cam.data.clip_end=10000;scene.camera=cam
 bpy.ops.object.light_add(type='AREA',location=(-20,-20,220));lamp=bpy.context.object;lamp.data.energy=130;lamp.data.shape='DISK';lamp.data.size=150
 scene.render.resolution_x=1920;scene.render.resolution_y=1080;scene.render.resolution_percentage=100
 scene.world.color=(.15,.15,.15)

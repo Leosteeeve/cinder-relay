@@ -6,6 +6,8 @@
 #include "CRWeaponViewComponent.h"
 #include "CRPlayerController.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/BoxComponent.h"
+#include "Engine/SkeletalMesh.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -21,7 +23,11 @@ ACRWorkbench::ACRWorkbench()
 {
     PrimaryActorTick.bCanEverTick=false;
     Surface=CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CalibrationBench")); SetRootComponent(Surface);
-    Surface->SetCollisionProfileName(TEXT("BlockAllDynamic")); Surface->SetCanEverAffectNavigation(false);
+    Surface->SetCollisionEnabled(ECollisionEnabled::NoCollision); Surface->SetCanEverAffectNavigation(false);
+    // One native box ends at the real tabletop. The decorative rear rail must not seal empty air above it.
+    InteractionBounds=CreateDefaultSubobject<UBoxComponent>(TEXT("BenchCollision")); InteractionBounds->SetupAttachment(Surface);
+    InteractionBounds->SetBoxExtent(FVector(45,75,49)); InteractionBounds->SetRelativeLocation(FVector(0,0,49));
+    InteractionBounds->SetCollisionProfileName(TEXT("BlockAllDynamic")); InteractionBounds->SetCanEverAffectNavigation(false);
     Hands=CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("AssemblyHands")); Hands->SetupAttachment(Surface);
     Hands->SetCollisionEnabled(ECollisionEnabled::NoCollision); Hands->SetCanEverAffectNavigation(false);
     Hands->VisibilityBasedAnimTickOption=EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
@@ -36,7 +42,7 @@ void ACRWorkbench::BeginPlay()
 }
 void ACRWorkbench::AssetsLoaded()
 {
-    bAssetsReady=Sequence.IsValid() && AssemblyMesh.IsValid();
+    bAssetsReady=Sequence.IsValid() && AssemblyMesh.IsValid() && Sequence->FindBindingsByTag(TEXT("CR03_Hands")).Num()==1 && AssemblyMesh->GetRefSkeleton().FindBoneIndex(TEXT("hand_R"))!=INDEX_NONE;
     if(bAssetsReady) Hands->SetSkeletalMeshAsset(AssemblyMesh.Get());
     UE_LOG(LogTemp,Display,TEXT("CR03_ASSEMBLY AssetsReady=%d level=%s"),bAssetsReady,*GetLevel()->GetOutermost()->GetName());
 }
@@ -76,6 +82,7 @@ void ACRWorkbench::Interact_Implementation(ACRCharacter* P)
     PC->SetIgnoreMoveInput(true); PC->SetIgnoreLookInput(true); bInputOwned=true; PC->SetAssembly(this);
     Hands->SetVisibility(true); PC->SetViewTargetWithBlend(this,.8f,VTBlend_Cubic);
     State=ECRAssemblyState::Playing; bReflectionPlayed=false; bActivationPlayed=false;
+    PC->ShowSubtitle(FText::GetEmpty(),.1f);
     Playback->Play(); GetWorldTimerManager().SetTimer(CueTimer,this,&ACRWorkbench::PresentationCues,.05f,true);
     UE_LOG(LogTemp,Display,TEXT("CR03_ASSEMBLY Playing duration=%.3f"),Playback->GetDuration().AsSeconds());
 }
@@ -84,7 +91,8 @@ float ACRWorkbench::GetPresentationSeconds() const
 void ACRWorkbench::PresentationCues()
 {
     if(State!=ECRAssemblyState::Playing) return;
-    if(!Player.IsValid() || Player->Health->IsDead() || !Controller.IsValid() || !SequenceActor || !SequenceActor->GetSequencePlayer()) { Abort(); return; }
+    if(!Player.IsValid() || Player->Health->IsDead() || !Controller.IsValid() || !IsValid(SequenceActor) || !SequenceActor->GetSequencePlayer()) { Abort(); return; }
+    if(!SequenceActor->GetSequencePlayer()->IsPlaying() && !SequenceActor->GetSequencePlayer()->IsPaused()) { Stopped(); return; }
     const float Seconds=GetPresentationSeconds();
     if(Seconds>=4 && !bReflectionPlayed)
     {
@@ -102,12 +110,24 @@ void ACRWorkbench::Finished()
 {
     if(State!=ECRAssemblyState::Playing || !Player.IsValid() || Player->Health->IsDead()) { Abort(); return; }
     State=ECRAssemblyState::Finalizing;
-    auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>(); const bool Applied=G && G->TryApplySurveyUpgrade();
-    Restore(Applied); State=Applied?ECRAssemblyState::Completed:ECRAssemblyState::Idle;
-    UE_LOG(LogTemp,Display,TEXT("CR03_ASSEMBLY Finalized applied=%d"),Applied);
+    // Leave MovieScene's callback stack before stopping/destroying its player. This is lifecycle
+    // deferral, not a timed completion test: only OnFinished or explicit Skip can enter Finalizing.
+    GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this]()
+    {
+        if(State!=ECRAssemblyState::Finalizing) return;
+        if(!Player.IsValid() || Player->Health->IsDead()) { Abort(); return; }
+        auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>(); const bool Applied=G && G->TryApplySurveyUpgrade();
+        Restore(Applied); State=Applied?ECRAssemblyState::Completed:ECRAssemblyState::Idle;
+        UE_LOG(LogTemp,Display,TEXT("CR03_ASSEMBLY Finalized applied=%d"),Applied);
+    }));
 }
 void ACRWorkbench::Skip() { if(State==ECRAssemblyState::Playing && !GetWorld()->IsPaused()) { UE_LOG(LogTemp,Display,TEXT("CR03_ASSEMBLY Skip")); Finished(); } }
-void ACRWorkbench::Stopped() { if(State==ECRAssemblyState::Playing) Abort(); }
+void ACRWorkbench::Stopped()
+{
+    // UE5.8 FinishPlaybackInternal calls StopInternal (OnStop) BEFORE broadcasting OnFinished.
+    GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this,[this]()
+    { if(State==ECRAssemblyState::Playing) Abort(); }));
+}
 void ACRWorkbench::Abort()
 {
     if(State==ECRAssemblyState::Idle || State==ECRAssemblyState::Completed || State==ECRAssemblyState::Aborting) return;
@@ -117,11 +137,12 @@ void ACRWorkbench::Abort()
 void ACRWorkbench::Restore(bool Successful)
 {
     GetWorldTimerManager().ClearTimer(CueTimer);
-    if(SequenceActor)
+    if(IsValid(SequenceActor))
     {
         if(auto* Playback=SequenceActor->GetSequencePlayer()) { Playback->OnFinished.RemoveAll(this); Playback->OnStop.RemoveAll(this); Playback->Stop(); }
         SequenceActor->Destroy(); SequenceActor=nullptr;
     }
+    SequenceActor=nullptr;
     Hands->SetVisibility(false);
     if(Player.IsValid())
     {
