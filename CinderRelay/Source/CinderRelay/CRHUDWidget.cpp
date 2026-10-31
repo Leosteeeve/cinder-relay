@@ -35,6 +35,8 @@ void UCRHUDWidget::NativeOnInitialized()
 	PromptText = MakeText(TEXT("Prompt"), TEXT(""), 22, Amber);
 	PromptText->SetJustification(ETextJustify::Center);
 	auto* PromptSlot = Root->AddChildToCanvas(PromptText); PromptSlot->SetAnchors(FAnchors(0.5f, 1.f)); PromptSlot->SetAlignment(FVector2D(0.5f, 1.f)); PromptSlot->SetPosition(FVector2D(0, -82)); PromptSlot->SetAutoSize(true);
+	StreamingText = MakeText(TEXT("StreamingStatus"), TEXT(""), 18, Amber);
+	auto* StreamingSlot = Root->AddChildToCanvas(StreamingText); StreamingSlot->SetPosition(FVector2D(36, 150)); StreamingSlot->SetAutoSize(true);
 	UTextBlock* Controls = MakeText(TEXT("Controls"), TEXT("WASD Move   Mouse Look   Shift Sprint   Ctrl Crouch   Space Jump   E Interact   Esc Pause"), 14, FLinearColor(0.8f, 0.85f, 0.88f));
 	auto* ControlsSlot = Root->AddChildToCanvas(Controls); ControlsSlot->SetAnchors(FAnchors(0.f, 1.f)); ControlsSlot->SetAlignment(FVector2D(0.f, 1.f)); ControlsSlot->SetPosition(FVector2D(36, -26)); ControlsSlot->SetAutoSize(true);
 	UTextBlock* Reticle = MakeText(TEXT("Reticle"), TEXT("+"), 18, FLinearColor::White);
@@ -64,13 +66,14 @@ void UCRHUDWidget::NativeOnInitialized()
 
 void UCRHUDWidget::SetObjective(const FText& Text) { if (ObjectiveText) ObjectiveText->SetText(Text); }
 void UCRHUDWidget::SetPrompt(const FText& Text) { if (PromptText) PromptText->SetText(Text); }
+void UCRHUDWidget::SetStreamingStatus(const FText& Text) { if (StreamingText && !StreamingText->GetText().EqualTo(Text)) StreamingText->SetText(Text); }
 void UCRHUDWidget::SetMenu(bool bVisible, bool bEnded)
 {
 	if (!MenuBackdrop) return;
 	MenuBackdrop->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	ResumeButton->SetVisibility(bEnded ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	MenuTitle->SetText(FText::FromString(bEnded ? TEXT("MERIDIAN NETWORK") : TEXT("PAUSED")));
-	MenuBody->SetText(FText::FromString(bEnded ? TEXT("CONNECTION RESTORED\n\nEnd of Phase 01A prototype") : TEXT("The Dead Station\nEsc or Resume to continue")));
+	MenuBody->SetText(FText::FromString(bEnded ? TEXT("CONNECTION RESTORED\n\nEnd of The Dead Station prototype") : TEXT("The Dead Station\nEsc or Resume to continue")));
 }
 FReply UCRHUDWidget::NativeOnKeyDown(const FGeometry& Geometry, const FKeyEvent& KeyEvent)
 {

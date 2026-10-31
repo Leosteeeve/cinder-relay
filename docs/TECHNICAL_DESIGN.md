@@ -26,7 +26,17 @@
 
 本地输入 context 在 BeginPlay 及 PawnClientRestart 幂等安装；保存所属 subsystem 弱引用，EndPlay 只移除本角色 context。暂停清理 sprint／jump／crouch 请求并 flush keys。镜头位于 capsule 内，85° FOV、pitch 限制 ±80°，无 head bob；蹲姿仍由原生站起空间检查控制。默认 walk/sprint/crouch 为 300/500/160 cm/s，交互距离 250 cm。
 
-目标序列：到工坊 → 找模块 → 在 Relay Nine 安装 → 查看恢复信号 →结束菜单。结束只暂停当前世界，Restart 使用原生 map travel 重置本章；这是显式菜单转换，不在交互路径同步加载大资源。尚无 combat、AI、save、streaming 或动画装配。
+目标序列：到工坊 → 找模块 → 在 Relay Nine 安装 → 查看恢复信号 →结束菜单。结束只暂停当前世界，Restart 使用原生 map travel 重置本章；这是显式菜单转换，不在交互路径同步加载大资源。尚无 combat、AI、磁盘 save 或动画装配。
+
+### Phase 01B 增量
+
+保留全部 Phase 01A 类型、Blueprint 和输入资产。新增 `ACRChapterStreamingController`（三个原生 sublevel 的需求/就绪/失败/卸载）、`ACRStreamingGate`（遮挡门和预载/保留/门口 overlap）；详见 [STREAMING_STRATEGY](STREAMING_STRATEGY.md)。没有新增 runtime plugin、UnrealEd 依赖或自制资源流送框架。
+
+`ACRGameMode` 增加 A 就绪前暂缓初始角色生成；正常跨区保留同一角色、Controller、GameMode。`ACRInteractionActor::BeginPlay` 从 GameMode 恢复 bUsed 和已取模块的隐藏/碰撞状态，不重播完成事件。`ACRPlayerController` 增加 R 重试，UMG 增加轻量状态文本；原目标/暂停/结束逻辑保留。
+
+`ACRStreamingAcceptance` 是显式 `-CRStreamAcceptance` 开关的非 Shipping 验收器，不放置进地图，正常游戏不生成。它只驱动原生移动/输入和公开交互，记录 frame CSV、进程内存及通过/失败 receipt。非 Shipping 的 RenderCore/RHI 私有依赖仅用于读取引擎原生线程和 GPU frame 计数器；不是渲染系统改写。
+
+Editor 脚本 `migrate_streaming.py` 用复制世界及 MoveActorsToLevel，验证 155 个 Actor 无丢失/重复/属性改变。`smoke_streaming.py` 在新进程重开四图验证归属再 PIE。命令行窗口退出码、资产 receipt、实际玩法 receipt 三者分别报告；Editor Python 清理错误不能被吞掉或当作玩法成功。
 
 项目实际路径：`CinderRelay/CinderRelay.uproject`；源码：`CinderRelay/Source/CinderRelay/`；与根目录文档共用一个 Git 仓库，不嵌套 Git。
 

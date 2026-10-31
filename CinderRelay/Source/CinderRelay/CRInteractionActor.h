@@ -22,4 +22,6 @@ public:
 	virtual FText GetInteractionPrompt_Implementation(ACRCharacter* Player) const override;
 	virtual void Interact_Implementation(ACRCharacter* Player) override;
 	UFUNCTION(BlueprintImplementableEvent, Category="Interaction") void OnInteractionCompleted();
+protected:
+	virtual void BeginPlay() override;
 };

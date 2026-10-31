@@ -31,3 +31,5 @@ Plugins/**/Intermediate/
 # Generated profiling captures
 *.utrace
 *.ucache
+# Local cooker/editor file-open traces generated during packaging
+/CinderRelay/Build/Windows/FileOpenOrder/*.log

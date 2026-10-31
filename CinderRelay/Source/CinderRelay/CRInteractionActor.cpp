@@ -31,6 +31,20 @@ bool ACRInteractionActor::CanInteract_Implementation(ACRCharacter* Player) const
 	return IsValid(Player) && !bUsed && Mode && Mode->GetObjective() == RequiredObjective(Kind) && Player->CanInteractWith(this);
 }
 
+void ACRInteractionActor::BeginPlay()
+{
+	Super::BeginPlay();
+	const auto* Mode = GetWorld()->GetAuthGameMode<ACRGameMode>();
+	bUsed = Mode && Mode->GetObjective() > RequiredObjective(Kind);
+	if (bUsed && Kind == ECRInteractionKind::PowerModule)
+	{
+		SetActorHiddenInGame(true);
+		SetActorEnableCollision(false);
+	}
+	// Restore state silently: narrative/Blueprint completion events must never replay on streaming.
+	if (bUsed) UE_LOG(LogTemp, Display, TEXT("CR_INTERACTION Reconciled kind=%d objective=%d"), int32(Kind), int32(Mode->GetObjective()));
+}
+
 FText ACRInteractionActor::GetInteractionPrompt_Implementation(ACRCharacter* Player) const
 {
 	if (bUsed) return FText::GetEmpty();
