@@ -9,6 +9,21 @@
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
 
+bool ACRGameMode::TryCollectSurveyOptic(FName SourceId)
+{
+	if (bSurveyOptic || SourceId.IsNone()) return false;
+	bSurveyOptic = true; SurveyOpticSource = SourceId;
+	UE_LOG(LogTemp, Display, TEXT("CR03_SALVAGE CR03_SurveyOptic source=%s"), *SourceId.ToString());
+	OnRestorationChanged.Broadcast(); return true;
+}
+bool ACRGameMode::TryApplySurveyUpgrade()
+{
+	if (!bSurveyOptic || bSurveyUpgrade) return false;
+	bSurveyUpgrade = true;
+	UE_LOG(LogTemp, Display, TEXT("CR03_UPGRADE CR03_Rook5_SurveyOptic applied"));
+	OnRestorationChanged.Broadcast(); return true;
+}
+
 ACRGameMode::ACRGameMode()
 {
 	DefaultPawnClass = ACRCharacter::StaticClass();

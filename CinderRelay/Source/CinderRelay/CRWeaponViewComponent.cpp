@@ -3,6 +3,9 @@
 #include "CRWeaponData.h"
 #include "CRHealthComponent.h"
 #include "CRCharacter.h"
+#include "CRGameMode.h"
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
 #include "Camera/CameraComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -14,6 +17,8 @@
 UCRWeaponViewComponent::UCRWeaponViewComponent()
 {
     PrimaryComponentTick.bCanEverTick = true;
+    RookAppearance=TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Generated/Phase03/Meshes/SM_CR03_Rook5.SM_CR03_Rook5")));
+    SurveyAppearance=TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Generated/Phase03/Meshes/SM_CR03_SurveyOptic.SM_CR03_SurveyOptic")));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Mesh(TEXT("/Engine/BasicShapes/Cube.Cube")); Cube = Mesh.Object;
 }
 void UCRWeaponViewComponent::BeginPlay()
@@ -30,7 +35,7 @@ void UCRWeaponViewComponent::BeginPlay()
         P->SetupAttachment(ViewRoot); P->SetStaticMesh(Cube); P->SetCollisionEnabled(ECollisionEnabled::NoCollision);
         P->SetCastShadow(false); P->SetCanEverAffectNavigation(false); P->SetOnlyOwnerSee(true);
         P->SetRelativeLocation(Position); P->SetRelativeScale3D(Scale/100.f);
-        P->SetMaterial(0,Accent?Weapon->Data->AccentMaterial:Weapon->Data->MetalMaterial); P->RegisterComponent(); return P;
+        P->SetMaterial(0,Accent?Weapon->Data->AccentMaterial:Weapon->Data->MetalMaterial); P->RegisterComponent(); FallbackParts.Add(P); return P;
     };
     // Intentional abstract greybox: these pieces are silhouettes, not mechanical assembly instructions.
     Part(TEXT("RookBody"),FVector(0,0,0),FVector(30,6,10),false);
@@ -44,6 +49,16 @@ void UCRWeaponViewComponent::BeginPlay()
     Flash=Part(TEXT("RookFlash"),FVector(44,0,2),FVector(10,5,5),true); Flash->SetVisibility(false);
     ImpactMarker=Part(TEXT("RookImpact"),FVector::ZeroVector,FVector(3,3,3),true);
     ImpactMarker->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform); ImpactMarker->SetVisibility(false);
+    FallbackParts.Remove(Flash); FallbackParts.Remove(ImpactMarker);
+    auto Imported=[this,Player](const TCHAR* Name)
+    {
+        auto* P=NewObject<UStaticMeshComponent>(Player,FName(Name)); Player->AddInstanceComponent(P);
+        P->SetupAttachment(ViewRoot); P->SetCollisionEnabled(ECollisionEnabled::NoCollision); P->SetCastShadow(false);
+        P->SetOnlyOwnerSee(true); P->SetCanEverAffectNavigation(false); P->RegisterComponent(); return P;
+    };
+    ImportedRook=Imported(TEXT("RookImported")); ImportedOptic=Imported(TEXT("SurveyOpticImported"));
+    if(auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>()) G->OnRestorationChanged.AddDynamic(this,&UCRWeaponViewComponent::RefreshAppearance);
+    AppearanceLoad=UAssetManager::GetStreamableManager().RequestAsyncLoad({RookAppearance.ToSoftObjectPath(),SurveyAppearance.ToSoftObjectPath()},FStreamableDelegate::CreateUObject(this,&UCRWeaponViewComponent::RefreshAppearance));
     Weapon->OnShot.AddDynamic(this,&UCRWeaponViewComponent::Shot); Weapon->OnCue.AddDynamic(this,&UCRWeaponViewComponent::Cue);
     if (auto* Health=Player->FindComponentByClass<UCRHealthComponent>()) Health->OnHealthChanged.AddDynamic(this,&UCRWeaponViewComponent::Hurt);
 }
@@ -60,7 +75,7 @@ void UCRWeaponViewComponent::TickComponent(float Delta,ELevelTick TickType,FActo
         CoverFraction=GetWorld()->LineTraceSingleByChannel(Hit,P->Camera->GetComponentLocation(),P->Camera->GetComponentLocation()+P->Camera->GetForwardVector()*95,ECC_Visibility,Params)?1.f:0.f;
     }
     const bool Aim=Weapon->bAiming && Weapon->CanUse();
-    P->Camera->SetFieldOfView(FMath::FInterpTo(P->Camera->FieldOfView,Aim?D->AimFOV:BaseFOV,Delta,3.f/FMath::Max(.01f,D->AimSeconds)));
+    P->Camera->SetFieldOfView(FMath::FInterpTo(P->Camera->FieldOfView,Aim?Weapon->GetAimFOV():BaseFOV,Delta,3.f/FMath::Max(.01f,D->AimSeconds)));
     Recoil=FMath::FInterpTo(Recoil,0,Delta,FMath::Max(1.f,D->RecoverySpeed));
     const bool Lower=Weapon->State==ECRWeaponState::Reloading || Weapon->bSprinting || Weapon->State==ECRWeaponState::Disabled;
     FVector Target=Aim?D->AimLocation:D->HipLocation; Target.Z-=Lower?9.f:CoverFraction*14.f; Target.X-=Recoil;
@@ -89,8 +104,22 @@ void UCRWeaponViewComponent::HideFlash() { if (Flash) Flash->SetVisibility(false
 void UCRWeaponViewComponent::HideImpact() { if (ImpactMarker) ImpactMarker->SetVisibility(false); }
 void UCRWeaponViewComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
+    if(AppearanceLoad) { AppearanceLoad->CancelHandle(); AppearanceLoad.Reset(); }
+    if(auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>()) G->OnRestorationChanged.RemoveDynamic(this,&UCRWeaponViewComponent::RefreshAppearance);
     if (GetWorld()) { GetWorld()->GetTimerManager().ClearTimer(FlashTimer); GetWorld()->GetTimerManager().ClearTimer(ImpactTimer); }
     if (Weapon.IsValid()) { Weapon->OnShot.RemoveDynamic(this,&UCRWeaponViewComponent::Shot); Weapon->OnCue.RemoveDynamic(this,&UCRWeaponViewComponent::Cue); }
     if (auto* Health=GetOwner()->FindComponentByClass<UCRHealthComponent>()) Health->OnHealthChanged.RemoveDynamic(this,&UCRWeaponViewComponent::Hurt);
     Super::EndPlay(Reason);
 }
+bool UCRWeaponViewComponent::HasImportedAppearance() const { return ImportedRook && ImportedRook->GetStaticMesh(); }
+void UCRWeaponViewComponent::RefreshAppearance()
+{
+    if(!ImportedRook || !ImportedOptic) return;
+    ImportedRook->SetStaticMesh(RookAppearance.Get()); ImportedOptic->SetStaticMesh(SurveyAppearance.Get());
+    const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();
+    ImportedRook->SetVisibility(!bPresentationHidden && HasImportedAppearance());
+    ImportedOptic->SetVisibility(!bPresentationHidden && HasImportedAppearance() && G && G->HasSurveyUpgrade());
+    for(const auto& P:FallbackParts) P->SetVisibility(!bPresentationHidden && !HasImportedAppearance());
+}
+void UCRWeaponViewComponent::SetPresentationHidden(bool Hidden)
+{ bPresentationHidden=Hidden; HideFlash(); HideImpact(); RefreshAppearance(); }

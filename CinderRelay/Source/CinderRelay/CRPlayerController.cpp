@@ -11,6 +11,8 @@
 #include "Engine/World.h"
 #include "CRChapterStreamingController.h"
 #include "EngineUtils.h"
+#include "CRWorkbench.h"
+#include "TimerManager.h"
 
 void ACRPlayerController::BeginPlay()
 {
@@ -35,6 +37,7 @@ void ACRPlayerController::SetupInputComponent()
 	FInputKeyBinding& PauseBinding = InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &ACRPlayerController::TogglePrototypePause);
 	PauseBinding.bExecuteWhenPaused = true;
 	InputComponent->BindKey(EKeys::F5, IE_Pressed, this, &ACRPlayerController::RetryStreaming);
+	InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ACRPlayerController::SkipAssembly);
 }
 
 void ACRPlayerController::SetStreamingStatus(const FText& Text) { if (HUD) HUD->SetStreamingStatus(Text); }
@@ -75,10 +78,17 @@ void ACRPlayerController::RefreshCombat()
 }
 void ACRPlayerController::HealthChanged(float,float Damage) { RefreshCombat(); if (HUD && Damage>0) HUD->DamageFeedback(); }
 void ACRPlayerController::ShotFeedback(FVector,bool Hit,bool) { if (HUD) HUD->ShotFeedback(Hit); }
-void ACRPlayerController::PlayerDefeated() { bPrototypeDefeated=true; ApplyPause(true); }
+void ACRPlayerController::PlayerDefeated() { AbortAssembly(); bPrototypeDefeated=true; ApplyPause(true); }
 
 void ACRPlayerController::ObjectiveChanged(ECRObjective Objective)
 {
+	if(auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>())
+	{
+		if(Objective==ECRObjective::FindModule && G->ClaimStoryBeat(TEXT("CR03_WorkshopDiscovery")))
+			ShowSubtitle(FText::FromString(TEXT("ELIAS: A calibration bench. I can still put this place to use.")));
+		if(Objective==ECRObjective::InvestigateSignal && G->ClaimStoryBeat(TEXT("CR03_RelayEcho")))
+			ShowSubtitle(FText::FromString(TEXT("[A broken carrier tone returns.]\nELIAS: Something on the other end is still listening.")));
+	}
 	if (Objective == ECRObjective::Complete)
 	{
 		bPrototypeEnded = true;
@@ -124,7 +134,21 @@ void ACRPlayerController::TogglePrototypePause() { if (!bPrototypeEnded && !bPro
 void ACRPlayerController::ResumePrototype() { if (!bPrototypeEnded && !bPrototypeDefeated) ApplyPause(false); }
 void ACRPlayerController::RestartPrototype()
 {
+	AbortAssembly();
 	ApplyPause(false);
 	UGameplayStatics::OpenLevel(this, FName(*UGameplayStatics::GetCurrentLevelName(this, true)));
 }
-void ACRPlayerController::ExitPrototype() { UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit, false); }
+void ACRPlayerController::ExitPrototype() { AbortAssembly(); UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit, false); }
+void ACRPlayerController::SetAssembly(ACRWorkbench* Workbench)
+{ ActiveWorkbench=Workbench; if(HUD) HUD->SetAssembly(Workbench!=nullptr); }
+void ACRPlayerController::SkipAssembly()
+{ if(!bPrototypePaused && ActiveWorkbench.IsValid()) ActiveWorkbench->Skip(); }
+void ACRPlayerController::AbortAssembly()
+{ if(ActiveWorkbench.IsValid()) ActiveWorkbench->Abort(); }
+void ACRPlayerController::ShowSubtitle(const FText& Text,float Seconds)
+{
+	if(!HUD) return; HUD->SetSubtitle(Text);
+	GetWorldTimerManager().SetTimer(SubtitleTimer,FTimerDelegate::CreateWeakLambda(this,[this](){ if(HUD) HUD->SetSubtitle(FText::GetEmpty()); }),Seconds,false);
+}
+void ACRPlayerController::EndPlay(const EEndPlayReason::Type Reason)
+{ AbortAssembly(); GetWorldTimerManager().ClearTimer(SubtitleTimer); Super::EndPlay(Reason); }

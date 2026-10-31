@@ -1,5 +1,6 @@
 #include "CRWeaponComponent.h"
 #include "CRWeaponData.h"
+#include "CRGameMode.h"
 #include "CRCharacter.h"
 #include "CRHealthComponent.h"
 #include "Camera/CameraComponent.h"
@@ -21,8 +22,15 @@ void UCRWeaponComponent::EndPlay(const EEndPlayReason::Type Reason) { Disable();
 bool UCRWeaponComponent::CanUse() const
 {
     const auto* Health = GetOwner()->FindComponentByClass<UCRHealthComponent>();
-    return Data && State != ECRWeaponState::Disabled && GetWorld() && !GetWorld()->IsPaused() && (!Health || !Health->IsDead());
+    return !bPresentationLocked && Data && State != ECRWeaponState::Disabled && GetWorld() && !GetWorld()->IsPaused() && (!Health || !Health->IsDead());
 }
+float UCRWeaponComponent::GetAimFOV() const
+{
+    const auto* G=GetWorld()?GetWorld()->GetAuthGameMode<ACRGameMode>():nullptr;
+    return G && G->HasSurveyUpgrade()?60.f:Data?Data->AimFOV:65.f;
+}
+void UCRWeaponComponent::SetPresentationLocked(bool Locked)
+{ bPresentationLocked=Locked; if(Locked) { bAiming=false; bSprinting=false; } OnChanged.Broadcast(); }
 bool UCRWeaponComponent::TryFire()
 {
     TRACE_CPUPROFILER_EVENT_SCOPE(CR_WeaponShot);

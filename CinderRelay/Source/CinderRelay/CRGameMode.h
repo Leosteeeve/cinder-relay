@@ -11,6 +11,7 @@ enum class ECRObjective : uint8
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCRObjectiveChanged, ECRObjective, Objective);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCRRestorationChanged);
 
 /** One chapter-local state, intentionally not a quest framework. */
 UCLASS()
@@ -20,6 +21,12 @@ class CINDERRELAY_API ACRGameMode : public AGameModeBase
 public:
 	ACRGameMode();
 	UPROPERTY(BlueprintAssignable) FCRObjectiveChanged OnObjectiveChanged;
+	UPROPERTY(BlueprintAssignable) FCRRestorationChanged OnRestorationChanged;
+	UFUNCTION(BlueprintPure) bool HasSurveyOptic() const { return bSurveyOptic; }
+	UFUNCTION(BlueprintPure) bool HasSurveyUpgrade() const { return bSurveyUpgrade; }
+	bool TryCollectSurveyOptic(FName SourceId);
+	bool TryApplySurveyUpgrade();
+	bool ClaimStoryBeat(FName Id) { return !Id.IsNone() && !StoryBeats.Contains(Id) ? (StoryBeats.Add(Id), true) : false; }
 	UFUNCTION(BlueprintPure) ECRObjective GetObjective() const { return Objective; }
 	UFUNCTION(BlueprintPure) FText GetObjectiveText() const;
 	bool TryAdvance(ECRObjective Expected);
@@ -34,6 +41,10 @@ protected:
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual void BeginPlay() override;
 private:
+	UPROPERTY(VisibleInstanceOnly, Category="Chapter|Restoration") bool bSurveyOptic = false;
+	UPROPERTY(VisibleInstanceOnly, Category="Chapter|Restoration") bool bSurveyUpgrade = false;
+	UPROPERTY(VisibleInstanceOnly, Category="Chapter|Restoration") FName SurveyOpticSource;
+	UPROPERTY() TSet<FName> StoryBeats;
 	TWeakObjectPtr<APlayerController> WaitingPlayer;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Chapter", meta=(AllowPrivateAccess="true"))
 	ECRObjective Objective = ECRObjective::ReachWorkshop;

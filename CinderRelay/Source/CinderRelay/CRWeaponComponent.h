@@ -30,10 +30,14 @@ public:
     UFUNCTION(BlueprintCallable) void Disable();
     UFUNCTION(BlueprintCallable) int32 AddReserve(int32 Amount);
     UFUNCTION(BlueprintPure) bool CanUse() const;
+    UFUNCTION(BlueprintPure) float GetAimFOV() const;
+    bool IsPresentationLocked() const { return bPresentationLocked; }
+    void SetPresentationLocked(bool Locked);
 protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 private:
+    bool bPresentationLocked=false;
     FTimerHandle CycleTimer, ReloadTimer;
     double NextShot = 0, LastDry = -1;
     void CompleteCycle();

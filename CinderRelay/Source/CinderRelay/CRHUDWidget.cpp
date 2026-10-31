@@ -43,6 +43,10 @@ void UCRHUDWidget::NativeOnInitialized()
 	DamageBorder->SetBrushColor(FLinearColor(.8f,.025f,.01f,.22f)); DamageBorder->SetVisibility(ESlateVisibility::HitTestInvisible); DamageBorder->SetRenderOpacity(0);
 	auto* DamageSlot=Root->AddChildToCanvas(DamageBorder); DamageSlot->SetAnchors(FAnchors(0,0,1,1)); DamageSlot->SetOffsets(FMargin(0));
 	UTextBlock* Controls = MakeText(TEXT("Controls"), TEXT("WASD Move   Shift Sprint   Ctrl Crouch   Space Jump   LMB Fire   RMB Aim   R Reload   E Interact   Esc Pause"), 14, FLinearColor(0.8f, 0.85f, 0.88f));
+	ControlsText=Controls;
+	SubtitleText=MakeText(TEXT("Subtitle"),TEXT(""),22,FLinearColor::White);
+	SubtitleText->SetJustification(ETextJustify::Center); SubtitleText->SetAutoWrapText(true);
+	auto* SubSlot=Root->AddChildToCanvas(SubtitleText); SubSlot->SetAnchors(FAnchors(.15f,1.f,.85f,1.f)); SubSlot->SetOffsets(FMargin(0,-210,0,92));
 	auto* ControlsSlot = Root->AddChildToCanvas(Controls); ControlsSlot->SetAnchors(FAnchors(0.f, 1.f)); ControlsSlot->SetAlignment(FVector2D(0.f, 1.f)); ControlsSlot->SetPosition(FVector2D(36, -26)); ControlsSlot->SetAutoSize(true);
 	UTextBlock* Reticle = MakeText(TEXT("Reticle"), TEXT("+"), 18, FLinearColor::White);
 	ReticleText=Reticle;
@@ -71,6 +75,13 @@ void UCRHUDWidget::NativeOnInitialized()
 }
 
 void UCRHUDWidget::SetObjective(const FText& Text) { if (ObjectiveText) ObjectiveText->SetText(Text); }
+void UCRHUDWidget::SetSubtitle(const FText& Text) { if(SubtitleText) SubtitleText->SetText(Text); }
+void UCRHUDWidget::SetAssembly(bool Active)
+{
+	for(UTextBlock* T : {ObjectiveText.Get(),PromptText.Get(),CombatText.Get(),ReticleText.Get()})
+		if(T) T->SetVisibility(Active?ESlateVisibility::Collapsed:ESlateVisibility::HitTestInvisible);
+	if(ControlsText) ControlsText->SetText(FText::FromString(Active?TEXT("SURVEY OPTIC CALIBRATION     Tab Skip & apply upgrade     Esc Pause"):TEXT("WASD Move   Shift Sprint   Ctrl Crouch   Space Jump   LMB Fire   RMB Aim   R Reload   E Interact   Esc Pause")));
+}
 void UCRHUDWidget::SetPrompt(const FText& Text) { if (PromptText) PromptText->SetText(Text); }
 void UCRHUDWidget::SetStreamingStatus(const FText& Text) { if (StreamingText && !StreamingText->GetText().EqualTo(Text)) StreamingText->SetText(Text); }
 void UCRHUDWidget::SetMenu(bool bVisible, bool bEnded, bool bDefeated)

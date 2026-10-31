@@ -126,9 +126,9 @@ void ACRCharacter::MoveLeft() { AddMovementInput(GetActorRightVector(), -1.f); }
 void ACRCharacter::LookYaw(const FInputActionValue& Value) { AddControllerYawInput(Value.Get<float>() * MouseSensitivity); }
 // Unreal MouseY is already positive when the mouse moves up; preserve that sign.
 void ACRCharacter::LookPitch(const FInputActionValue& Value) { AddControllerPitchInput(Value.Get<float>() * MouseSensitivity); }
-void ACRCharacter::StartSprint() { if (!Health->IsDead()) { GetCharacterMovement()->MaxWalkSpeed = SprintSpeed; Weapon->SetSprinting(true); } }
+void ACRCharacter::StartSprint() { if (!Health->IsDead() && !Weapon->IsPresentationLocked()) { GetCharacterMovement()->MaxWalkSpeed = SprintSpeed; Weapon->SetSprinting(true); } }
 void ACRCharacter::StopSprint() { GetCharacterMovement()->MaxWalkSpeed = WalkSpeed; Weapon->SetSprinting(false); }
-void ACRCharacter::StartCrouch() { Crouch(); }
+void ACRCharacter::StartCrouch() { if(!Weapon->IsPresentationLocked()) Crouch(); }
 void ACRCharacter::StopCrouch() { UnCrouch(); }
 void ACRCharacter::ClearHeldActions() { StopSprint(); StopJumping(); UnCrouch(); AimStop(); }
 void ACRCharacter::Fire() { Weapon->TryFire(); }
@@ -154,7 +154,7 @@ void ACRCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdj
 
 AActor* ACRCharacter::TraceTarget() const
 {
-	if (!GetWorld() || !Controller || GetWorld()->IsPaused() || Health->IsDead()) return nullptr;
+	if (!GetWorld() || !Controller || GetWorld()->IsPaused() || Health->IsDead() || Weapon->IsPresentationLocked()) return nullptr;
 	FHitResult Hit;
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(CRInteraction), false, this);
 	const FVector Start = Camera->GetComponentLocation();
