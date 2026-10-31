@@ -8,6 +8,10 @@ class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
 class UEnhancedInputLocalPlayerSubsystem;
+class UCRHealthComponent;
+class UCRWeaponComponent;
+class UCRWeaponViewComponent;
+class UCRWeaponData;
 struct FInputActionValue;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCRPromptChanged, FText, Prompt);
@@ -18,6 +22,14 @@ class CINDERRELAY_API ACRCharacter : public ACharacter
 	GENERATED_BODY()
 public:
 	ACRCharacter();
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") TObjectPtr<UCRHealthComponent> Health;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") TObjectPtr<UCRWeaponComponent> Weapon;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") TObjectPtr<UCRWeaponViewComponent> WeaponView;
+	UPROPERTY(EditDefaultsOnly, Category="Combat") TObjectPtr<UCRWeaponData> RookData;
+	UPROPERTY(EditDefaultsOnly, Category="Input") TObjectPtr<UInputMappingContext> CombatMappingContext;
+	UPROPERTY(EditDefaultsOnly, Category="Input") TObjectPtr<UInputAction> FireAction;
+	UPROPERTY(EditDefaultsOnly, Category="Input") TObjectPtr<UInputAction> AimAction;
+	UPROPERTY(EditDefaultsOnly, Category="Input") TObjectPtr<UInputAction> ReloadAction;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera") TObjectPtr<UCameraComponent> Camera;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Movement", meta=(ClampMin="50", ClampMax="600")) float WalkSpeed = 300.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Movement", meta=(ClampMin="50", ClampMax="800")) float SprintSpeed = 500.f;
@@ -48,6 +60,11 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 private:
+	void Fire();
+	void Reload();
+	void AimStart();
+	void AimStop();
+	UFUNCTION() void Died();
 	void InstallInputContext();
 	TWeakObjectPtr<UEnhancedInputLocalPlayerSubsystem> InputSubsystem;
 	AActor* TraceTarget() const;

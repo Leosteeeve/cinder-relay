@@ -176,7 +176,7 @@ void ACRChapterStreamingController::Reconcile()
     bool bWaiting = false, bFailed = false;
     for (int32 I = 0; I < 3; ++I) { bWaiting |= Wanted[I] && !IsZoneReady(I); bFailed |= Wanted[I] && Zones[I].bFailed; }
     if (auto* PC = Cast<ACRPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
-        PC->SetStreamingStatus(bFailed ? NSLOCTEXT("Cinder", "StreamRetry", "Access unavailable. Press R to retry.") : bWaiting ? NSLOCTEXT("Cinder", "StreamWait", "Preparing access...") : FText::GetEmpty());
+        PC->SetStreamingStatus(bFailed ? NSLOCTEXT("Cinder", "StreamRetry", "Access unavailable. Press F5 to retry.") : bWaiting ? NSLOCTEXT("Cinder", "StreamWait", "Preparing access...") : FText::GetEmpty());
 }
 void ACRChapterStreamingController::RetryFailedLoads()
 {

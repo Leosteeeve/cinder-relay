@@ -24,6 +24,12 @@ public:
 	UFUNCTION(BlueprintPure) FText GetObjectiveText() const;
 	bool TryAdvance(ECRObjective Expected);
 	void ReleaseStartingPlayer();
+	UFUNCTION(BlueprintPure) bool IsEnemyDefeated(FName Id) const { return DefeatedEnemies.Contains(Id); }
+	UFUNCTION(BlueprintCallable) void RecordEnemyDefeated(FName Id) { if(!Id.IsNone()) DefeatedEnemies.Add(Id); }
+	UFUNCTION(BlueprintPure) bool IsPickupCollected(FName Id) const { return CollectedPickups.Contains(Id); }
+	UFUNCTION(BlueprintCallable) void RecordPickupCollected(FName Id) { if(!Id.IsNone()) CollectedPickups.Add(Id); }
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Chapter|Combat") TSet<FName> DefeatedEnemies;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Chapter|Combat") TSet<FName> CollectedPickups;
 protected:
 	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
 	virtual void BeginPlay() override;

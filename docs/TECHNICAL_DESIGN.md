@@ -32,7 +32,7 @@
 
 保留全部 Phase 01A 类型、Blueprint 和输入资产。新增 `ACRChapterStreamingController`（三个原生 sublevel 的需求/就绪/失败/卸载）、`ACRStreamingGate`（遮挡门和预载/保留/门口 overlap）；详见 [STREAMING_STRATEGY](STREAMING_STRATEGY.md)。没有新增 runtime plugin、UnrealEd 依赖或自制资源流送框架。
 
-`ACRGameMode` 增加 A 就绪前暂缓初始角色生成；正常跨区保留同一角色、Controller、GameMode。`ACRInteractionActor::BeginPlay` 从 GameMode 恢复 bUsed 和已取模块的隐藏/碰撞状态，不重播完成事件。`ACRPlayerController` 增加 R 重试，UMG 增加轻量状态文本；原目标/暂停/结束逻辑保留。
+`ACRGameMode` 增加 A 就绪前暂缓初始角色生成；正常跨区保留同一角色、Controller、GameMode。`ACRInteractionActor::BeginPlay` 从 GameMode 恢复 bUsed 和已取模块的隐藏/碰撞状态，不重播完成事件。`ACRPlayerController` 增加流送重试，UMG 增加轻量状态文本；原目标/暂停/结束逻辑保留。Phase02 为装填保留 R，重试现为 F5。
 
 `ACRStreamingAcceptance` 是显式 `-CRStreamAcceptance` 开关的非 Shipping 验收器，不放置进地图，正常游戏不生成。它只驱动原生移动/输入和公开交互，记录 frame CSV、进程内存及通过/失败 receipt。非 Shipping 的 RenderCore/RHI 私有依赖仅用于读取引擎原生线程和 GPU frame 计数器；不是渲染系统改写。
 
@@ -63,6 +63,22 @@ Windows 项目显式停用未使用的内置 AndroidFileServer 插件。其 Edit
 这是职责分配，不是本轮的类生成清单。C++ 定义规则和所有权，Blueprint 编排内容；只暴露需调节的属性，使用合理类别／范围／默认值。普通配置先用 Data Asset，确需 ID／bundle 管理才用 Primary Data Asset。[C++ 与 Blueprint](https://dev.epicgames.com/documentation/en-us/unreal-engine/coding-in-unreal-engine-blueprint-vs-cplusplus)、[Enhanced Input](https://dev.epicgames.com/documentation/en-us/unreal-engine/enhanced-input-in-unreal-engine)。
 
 ## 生命周期与可调试性
+
+### Phase02 combat increment
+
+`UCRHealthComponent` owns clamped health and native OnTakeAnyDamage subscription; death fires once. `UCRWeaponData`/DA_Rook5 owns tunable balance and small required audio/material references. `UCRWeaponComponent` owns ammo, accepted shots, native camera/muzzle collision traces, ApplyPointDamage, cycling/reload timers and aim/sprint flags. `UCRWeaponViewComponent` subscribes to presentation events and interpolates first-person primitives/FOV independently; only cosmetic interpolation uses Tick. It checks nearby cover at 10Hz, without per-frame asset discovery. Timers pause with the world; EndPlay/death cancel them. UMG updates ammo/health from events, with short native visual pulses for hits/damage.
+
+`ACRAshWarden` is one Character class with health and an abstract humanoid silhouette. `ACRAshWardenController` uses AI Perception sight/hearing, weak target reference, last-known position and bounded memory. Native BT_AshWarden executes one C++ `UCRBTTaskWarden` followed by a 0.25s native Wait; BB_AshWarden exposes State/HasSight/LastKnown. Decisions are Idle → Investigate/Combat → Search → Return, with WaitingNavigation and Dead states. Attack requires perceived sight plus a fresh collision trace; hearing alone cannot authorize a shot. Move requests coalesce, failed requests back off and stop after two failures until a new legitimate stimulus/state reset. No EQS/GAS/networking.
+
+Native dynamic Recast covers the small yard only. The bounds and two scouts belong to L_CH01_RailYard; the native navigation-data actor is shared infrastructure. AI waits for projection onto a usable NavMesh and for active generation to settle, with a 12s bounded readiness watch and native navigation-generation event recovery. Destruction/unload stops brain/perception/movement, clears timers/delegates and weak targets. DefeatedEnemies and CollectedPickups are small FName sets in the existing GameMode, independent of ECRObjective; restarted actors reconcile those IDs. They are not disk saves.
+
+`ACRAmmoPickup` uses the existing interactable interface and a stable session ID. `ACRCombatAcceptance` is the opt-in focused weapon fixture (`-CRWeaponCheck`); `ACRCombatRoute` is the opt-in actual-input encounter/story route (`-CRCombatCheck`). Neither is placed in a map or spawned normally/in Shipping. The focused fixture intentionally sets zero reserve to test that edge case and applies native damage for the death boundary; the integrated route must obtain combat damage from the actual gun and enemies. Editor NullRHI checks do not establish visual or GPU quality.
+
+`Scripts/generate_combat.py` creates only owned Phase02 assets and makes explicit additions to the existing yard/persistent maps. It never reruns original generation/migration; `audit_combat.py` imports only pure snapshot definitions through AST filtering to compare all155 original actors without executing migration code. `smoke_combat.py` supervises a fresh receipt, ends PIE, then closes Editor. Binary assets are produced and saved by Editor APIs.
+
+Future Blender attachment contract: replace temporary components at RookViewRoot; author viewmodel/arms with consistent centimetre scale, forward +X, aim/sight anchor and muzzle/cue attachment points. Bind shot/cycle/reload presentation to existing weapon events, with AnimBP/Montages/Notifies when a real skeleton exists. Gameplay state retains authoritative timers; visual duration cannot duplicate ammo transfers. Scout hit/death tilts are placeholders, not skeletal animation or ragdolls.
+
+Official references checked for UE5.8: [AI Perception](https://dev.epicgames.com/documentation/unreal-engine/ai-perception-in-unreal-engine), [Behavior Trees](https://dev.epicgames.com/documentation/unreal-engine/behavior-trees-in-unreal-engine), [Navigation System](https://dev.epicgames.com/documentation/unreal-engine/navigation-system-in-unreal-engine), [Dynamic navigation](https://dev.epicgames.com/documentation/en-us/unreal-engine/overview-of-how-to-modify-the-navigation-mesh-in-unreal-engine). Current installed headers verified dynamic navigation delegate signatures, Pawn controller level ownership, BT Wait's FValueOrBBKey_Float and native damage APIs.
 
 - GameMode 管当前世界规则；PlayerController 管玩家控制。跨地图保留少量数据可用 GameInstance／有明确职责的 subsystem，不把世界 Actor 或整章资源长久挂在其中。
 - 保存稳定 ID 与值，不保存运行中的 Actor 指针。恢复顺序为读取数据→准备区域→等待对象就绪→幂等恢复→交还控制。考虑坏存档、旧版本、失败写入与重复触发。

@@ -102,9 +102,9 @@ C++ 修改后运行相关 target 编译；数据／Blueprint 变化运行对应�
 
 验证预算以用户本次指令为准：不为逐类 TDD 重复编译完整 Unreal target；同一故障两次修复失败后停止并诊断。非目标：战斗、AI、最终美术、磁盘存档、自制异步资源框架、模块重命名、性能重写。
 
-## 后续任务边界
+## Phase01B 当时的任务边界（历史记录）
 
-Phase 01B 已授权；Phase 02 仍需用户另行启动。不得将本章转换为 World Partition，也不得在尚未验证 packaged 加载时声称无缝。
+Phase01B 交付时 Phase02 尚未授权；本页后面的 Phase02 contract 记录了后续明确授权。不得将本章转换为 World Partition，也不得在尚未验证 packaged 加载时声称无缝。
 
 ## Phase 01B 实际交付与验证 — 2026-10-31
 
@@ -153,3 +153,87 @@ CR_ACCEPT_FINISH {"passed":true,"restart_verified":true,"message":"Restart verif
 - 60FPS目标未通过；trace指出渲染/同步等待值得进一步定位，不能归因为“C++慢”或用重写/降画质解决。先处理有界性能对照与用户短试玩，再决定Phase02单次战斗遭遇；不会自动开始。
 
 所有原始日志、trace、包和备份位于ignored `.environment-local/phase-01b/`；入库的是此可追溯摘要、源码、四图和现有文档更新。
+
+## Phase 02 First Contact — implementation contract (2026-10-31)
+
+Approved specification: owner's attached “CINDER RELAY — PHASE 02”, all sections 0–21. Baseline verified: PR #2 merged at `0da035de78f642e12f4a71aef3a6442e9276eac0`. Clean main fast-forwarded; branch `phase-02-first-contact`, same local project. This section is the plan and execution ledger; raw evidence remains under `.environment-local/phase-02/`.
+
+Goal: one playable, bypassable Rail Yard encounter, with ROOK-5 gunplay and two Ash Warden scouts, preserving the original chapter and native streaming.
+
+Architecture: small health and weapon components; gameplay timers/damage separated from cosmetic viewmodel motion/audio. Existing Character/Controller/UMG receive input and event-driven feedback. One humanoid enemy class and AIController use native Perception/Navigation; inspect actual Editor bindings for authored Behavior Tree/Blackboard assets. Dynamic Recast is confined to the small yard; enemies wait for local navigation and unload with their zone. GameMode stores defeated enemy and collected pickup IDs separately from ECRObjective.
+
+Ruling: implement in the specified existing checkout/feature branch, without an extra worktree or another design approval — the owner explicitly requests implementation on this baseline. Follow the owner's bounded checkpoint validation instead of repeated per-class full Unreal RED/GREEN builds. Existing material primitives and original synthesized prototype audio avoid new licensing/download dependencies. R becomes Reload; streaming Retry moves to F5.
+
+- [x] Preflight: verify real assets/Editor APIs and original map hash; reuse the unchanged Phase01B executable once at 1080p/Epic/100%, without allocation tracing. Record frame/GT/RT/GPU and load observations before rendering additions.
+- [x] 02A: implement `UCRHealthComponent`, `UCRWeaponData`, `UCRWeaponComponent`, `UCRWeaponViewComponent`; integrate Character, Controller and HUD. Editor creates 3 input actions, IMC_Combat, one tuning asset, prototype audio/materials and configured player Blueprint. Acceptance: one shot/one ammo/one damage, cooldown spam rejection, cover blocking, partial/empty/zero-reserve reload, pause/death/restart cancellation, reversible ADS/recoil. Compile Editor once at the checkpoint and run focused native checks; integrate the coherent foundation. No AI or multiple weapons in this checkpoint.
+- [x] 02B: one `ACRAshWarden`, `ACRAshWardenController`, minimal inspectable BT/Blackboard if supported, session defeated-ID record. Perception drives visible target/last-known location; native moves have bounded retries, and expired target memory stops pursuit/attacks. Acceptance: sight gain/loss behind geometry, no through-wall damage, actual nav path around cover, bounded failure recovery, dead/unloaded actors stop behavior. No EQS/GAS/custom nav framework.
+- [x] 02C: Editor adds exactly two yard scouts, one ammo pickup and small navigation bounds; preserve all original actor transforms/components and map registrations. Add bounded opt-in combat acceptance and performance recording, then one integrated Editor route and one Windows Development package. Verify actual combat damage, death/restart, bypass, old objective flow, unloading/revisit dead-state persistence, final signal, reset and cooked assets. No final art, skeletal-animation claims, weapon assembly or Phase03.
+- Delivery procedure: one fresh whole-branch review before final packaging where practical; evidence-supported corrections only; review explicit diff/staging, commit coherent tasks, push feature and create PR to main without merging. Document exact settings, known failures, manual acceptance limits and next task.
+
+Shared interfaces: weapon uses native ApplyPointDamage -> health OnTakeAnyDamage; health OnHealthChanged/OnDeath drives both UI and AI cleanup. Weapon presentation subscribes to accepted-shot/reload/hit events, never determines ammo. GameMode session IDs survive zone unload but reset on Restart. AI consumes health and stable IDs; encounter assets consume these classes. Story objective code remains independent of kills.
+
+Review focus: pause/death while reload timer is pending; R reload versus streaming retry conflict; perception stale targets after unload/death; NavMesh unavailable during streamed startup; level unload/reload while defeated IDs are recorded. Targeted tests belong to 02A/02B and one integrated route, not repeated full chapter tests after tuning.
+
+Preflight complete: existing Phase01B game executable SHA matched the accepted package; one same-settings run passed three cycles and Restart. Only frame/bookmark trace channels; no allocation/CPU/GPU scope tracing. Three-cycle p95 frame/GT/RT/GPU = 14.998/2.5315/14.9679/13.512 ms; no >50 ms frame in the cycle segment. Startup/early maximum RT 374.200 ms remains. Settings unchanged (1080p,100%,Epic,RT/Lumen). The read-only NullRHI Editor audit briefly overlapped this run, so it is a bounded diagnostic rather than a controlled final benchmark. Heavy-run persistent RT hitch did not reproduce; no architecture rewrite justified.
+
+Editor baseline verified 155 original actors and absence of weapon/health/enemy classes before implementation. Native BT root editing is supported; CubeBuilder is not exported, so navigation will use the Editor's native volume actor factory and verify real bounds. 02A initial compile failed only on two `auto*` deductions from TObjectPtr; `.Get()` correction passed in 7.74s. Actual gunplay assets generated and saved, Editor exit0. First focused weapon check passed damage/ammo/cooldown but exposed same-tick camera rotation in the test harness; log showed the old direction hit the target. Split aim and fire into separate stages. Ruling: fold that focused correction into the pending 02B compile, not an extra full build. No gameplay aim rewrite was made for a test timing issue.
+
+02A focused check now PASS (`weapon-check-fixed.log`, saved receipt under `weapon-check-evidence`): single damage/ammo, cooldown spam, miss, real collision cover, partial/empty/full/zero-reserve reload, no duplicate transfer, sprint, paused reload, ADS reversal, death cancellation and Restart reset. The original failed receipt remains in the prior log; Editor exit0 alone was not treated as a pass.
+
+02B compile corrected three reported API/type issues once (static lambda capture, inherited Pawn name shadow, native navigation dynamic-delegate pointer signature), then passed in22.17s. 02C route compiled in27.93s. Editor key-type aliases required `load_class` by the verified reflection path; this fixed asset creation. Native NavBounds registration queues until the navigation tick, so generation now observes real Recast data with a30s bound rather than asserting synchronously. Actual asset generation then PASS/exit0; fresh Editor audit found zero property differences for all155 originals, two distinct scout IDs in RailYard, unchanged original map hash and unchanged streaming registrations.
+
+First integrated route proved nav readiness, real path around train cover and visible-player perception but timed out waiting for enemy damage. Engine BaseEngine.ini proves Pawn defaults ignore Visibility, so enemy hitscan could not hit the player body. Corrected the Character capsule response to Block; no damage bypass or test health manipulation was used. Also corrected double counting of one failed MoveTo request when the native completion callback fires synchronously. These are evidence-supported functional fixes, not tuning to hide failures.
+
+Collision repair then passed actual enemy damage, real train occlusion, finite memory expiry and recovery movement. The harness subsequently stopped at(-1154,-997,98): its diagonal return waypoint crossed the train. Replaced it with the reverse flank waypoints; no teleport or geometry modification. Independent read-only whole-branch review found no new Critical/Important production defect, identified this known acceptance blocker, and flagged miss feedback as Minor. Ruling: promote false impact feedback to a correctness fix because the approved combat-feedback contract requires distinguishing a surface hit from empty space; OnShot now carries native bBlockingHit and cosmetics suppress miss impacts. This is the one review fix pass, no re-review. Remaining unjudged areas are packaged/integrated outcomes and manual feel, which must be evidenced separately; arbitrary destruction of nav/floors and live tuning changes remain outside current gameplay.
+
+### Phase02 actual acceptance — 2026-10-31
+
+**Engineering functionality PASS in Editor and a real Windows Development package. Human gunfeel/audio acceptance and clean 60FPS performance acceptance remain open.** This supersedes the pending items in the execution ledger above; it does not turn placeholders into final art.
+
+| Check | Actual result / local evidence under `.environment-local/phase-02/` |
+| --- | --- |
+| Final Editor target | `build-route-feedback.log`: Succeeded,63.93s,exit0. Earlier checkpoint failures and focused repairs are retained above. No engine rebuild. |
+| Real asset preservation | `asset-audit.json`: passed=true,preserved_originals=155,differences=[]; fresh Editor load, not a filename-only check. Original Phase01A SHA unchanged. Only Persistent/RailYard maps modified; Workshop/RelayBunker bytes unchanged. |
+| Editor integrated route | `editor-combat-routefix.log`, `editor-combat-pass/acceptance.json`: passed=true,scenario2; real damage, death/restart, two enemy kills, ammo, original objectives and return traversal. NullRHI; no visual/GPU claim. |
+| One final packaging pass | `package.log`: BuildCookRun261.30s, BUILD SUCCESSFUL, AutomationTool ExitCode=0. Game target compile108.54s; cook reports0errors/0warnings. ReferencedSet includes all four maps and all20 Phase02 assets. |
+| Actual packaged gameplay | `packaged-combat.log` and `package/Windows/CinderRelay/Saved/Phase02/acceptance.json`: passed=true,scenario2. Route completion98.206s; frame-recorded window97.547s/5876rows. Enhanced Input moves/fires/reloads/interacts; no teleport, synthetic combat damage or direct objective progress. |
+| AI / damage | Actual enemy fire damages and kills player. Real train geometry blocks sight/damage; memory expires. Native unreachable MoveTo fails, then AI actually moves after legitimate perception. Four accepted player shots defeat two scouts; real reload and player damage verified. |
+| State / streaming | A unloads after leaving yard; return A reconciles both defeated IDs and consumed ammo. B/C genuinely unload on return. Old module stays collected, relay progression remains3, final signal completes4; Restart restores health100,ammo5+25,two scouts,empty defeated set. Same player persists through normal transitions. |
+| Discrete visual evidence | Actually viewed1920x1080 `combat.png`, `combat-after.png`, `defeat.png`, `ending.png`: visible greybox weapon/enemy, hit/ammo/health feedback, defeat and ending menus. Not continuous manual input/audio/animation acceptance. |
+| Exit evidence / limitation | Game logs `RequestExitWithStatus(0,0)`, normal subsystem teardown and `LogExit: Exiting`, no Fatal/Error/Ensure. The bootstrap process returned777003 to PowerShell; its source is absent from the installed SDK and the code remains unexplained. Do not claim an OS process exit0 for this run. The fresh gameplay receipt and normal game log support functional PASS independently. |
+| Offline profiling | `combat-summary.json`, `insights-*.csv`, `combat.utrace`; Insights exit0. Conditions, actual deficits and analyzer warnings are in PERFORMANCE_BUDGET. No repeated playtest/package to improve numbers. |
+
+Map inventory after creation: Persistent19 / RailYard91 / Workshop22 / RelayBunker32, total164 named level actors (155 originals + three Phase01B shared actors + five new yard actors + native Recast). New20 assets: six original synthesized SoundWaves, four materials, three Blueprints, three Input Actions plus context, one weapon DataAsset, BT and Blackboard. No downloaded raw packs, fabricated skeletons or new map hierarchy.
+
+Reproducibility hashes:
+- validated98 Source/Config/Content/uproject inputs: manifest SHA256 `5F525C76D03EAC31BF57E36F11D4485FC284DEB86A1941DF686964DEF7571036`; rechecked after packaging,0changed.
+- actual game executable: `EB6F3111B25CD1605DDD54BBFDB816ABBFF02B5C5FEA16EBB855D88445FD2A9E`.
+- packaged acceptance receipt: `DF1143AEE1E1EAFC2CA34561D3E82E139BF723CF2E3E4ED01AD67DD752D8EEF2`.
+
+Representative actual packaged events (world time resets on Restart):
+
+```text
+CR02_ROUTE PASS Native perception acquired visible player; enemy inflicted real damage
+CR02_ROUTE PASS Real train geometry blocks sight and enemy damage
+CR02_ROUTE PASS Lost-target memory expires; no omniscient pursuit
+CR02_ROUTE PASS Two scouts defeated by accepted player shots; player also received damage
+CR_STREAM A Unloaded t=18.945 request=2 state=0 loaded=0 visible=0 wanted=0 player=B witness_valid=1
+CR_ENEMY ReconciledDefeated id=CR02_Scout_1
+CR_ENEMY ReconciledDefeated id=CR02_Scout_2
+CR_STREAM A Ready t=36.201 request=3 state=3 loaded=1 visible=1 wanted=1 player=B witness_valid=1
+CR02_FINISH {"passed":true,"mode":"combat","scenario":2,"message":"Real combat, native AI/nav, death/restart and streamed chapter route passed"}
+```
+
+Remaining limits: prototype primitive humanoids and weapon transforms, no skeletal animation; synthesized temporary audio, not human-listened acceptance. HUD/readability checked in still frames; physical mouse feel, ADS obstruction, close-wall transitions and full bypass-to-ending route need one short user playtest (retreat/flank and unrestricted objective code are verified; the packaged route chose combat). No observed functional blocker in the completed route. Restart/exit logs have native CrowdManager/Recast teardown warnings; intentional navigation failure emits a warning and VSync command priority warnings keep0. These are recorded, not called a clean runtime log. The unexplained bootstrap exit code and instrumented frame spikes remain follow-up items, not reasons for an unrelated architecture rewrite.
+
+Next proposed task: short manual acceptance of aim/recoil/reload/audio, cover and retreat/bypass, then bounded tuning only for observed problems. A separately authorized clean performance sample should disable screenshots and detailed scope tracing to isolate their overhead, at the same quality. Do not start Phase03, weapon assembly, more weapons, final art or checkpoint work automatically.
+
+### Packaged desktop DPI correction — owner playtest follow-up
+
+The owner reported clipped bottom controls/right-hand health-ammo in the packaged executable. The physical display is2560x1600; their actual `-windowed -ResX=1920 -ResY=1080` run logged a1707x1067 desktop/workarea1707x1019. The installed engine's default `bAllowHighDPIInGameMode=False` and SlateApplication::InitHighDPI explain the DPI-virtualized coordinates. This is a desktop window sizing issue, not evidence that16:10 cannot display the HUD.
+
+Reproduced visually using the existing package, paused at spawn: right-hand combat text fell beyond the desktop. One controlled rerun changed only `-ini:Engine:[/Script/Engine.UserInterfaceSettings]:bAllowHighDPIInGameMode=True`; the log then reported2560x1600/workarea2560x1528, and the actual window showed both complete bottom control text and `HEALTH100 ROOK-5 5/25`. No HUD/gameplay rewrite, OS scale change, compile, cook or combat regression route. Raw before/after logs are under `.environment-local/phase-02/dpi-check/`.
+
+Persist the verified engine setting in DefaultEngine.ini for future packages. The already delivered local package uses the same key in its ignored Saved/Config/Windows/Engine.ini; its executable/content bytes remain unchanged. This configuration correction does not update the earlier benchmark or establish human combat-feel acceptance. Official setting: [UUserInterfaceSettings, UE5.8](https://dev.epicgames.com/documentation/unreal-engine/API/Runtime/Engine/UUserInterfaceSettings).
+
+Persistence verification: a final ordinary launch with no command-line DPI override logged2560x1600 and showed complete controls/health/ammo with the weapon visible. The same existing executable SHA remains EB6F3111B25CD1605DDD54BBFDB816ABBFF02B5C5FEA16EBB855D88445FD2A9E. The game was left open for the owner; no movement/fire input or gameplay automation was injected. Evidence: dpi-check/persisted.log.

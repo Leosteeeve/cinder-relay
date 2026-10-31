@@ -1,4 +1,8 @@
 #include "CRCharacter.h"
+#include "CRHealthComponent.h"
+#include "CRWeaponComponent.h"
+#include "CRWeaponViewComponent.h"
+#include "CRPlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -14,7 +18,12 @@
 ACRCharacter::ACRCharacter()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	Health = CreateDefaultSubobject<UCRHealthComponent>(TEXT("Health"));
+	Weapon = CreateDefaultSubobject<UCRWeaponComponent>(TEXT("Rook5"));
+	WeaponView = CreateDefaultSubobject<UCRWeaponViewComponent>(TEXT("RookView"));
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.f);
+	// Pawn defaults ignore Visibility; the combat body must receive enemy hitscan traces.
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	bUseControllerRotationYaw = true;
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	Camera->SetupAttachment(GetCapsuleComponent());
@@ -32,7 +41,9 @@ ACRCharacter::ACRCharacter()
 
 void ACRCharacter::BeginPlay()
 {
+	Weapon->Data = RookData;
 	Super::BeginPlay();
+	Health->OnDeath.AddDynamic(this, &ACRCharacter::Died);
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeedCrouched = CrouchSpeed;
 	InstallInputContext();
@@ -55,6 +66,7 @@ void ACRCharacter::InstallInputContext()
 			{
 				InputSubsystem = Input;
 				Input->AddMappingContext(MappingContext, 0);
+				if (CombatMappingContext) Input->AddMappingContext(CombatMappingContext, 1);
 			}
 		}
 	}
@@ -64,6 +76,7 @@ void ACRCharacter::EndPlay(const EEndPlayReason::Type Reason)
 {
 	GetWorldTimerManager().ClearTimer(PromptTimer);
 	if (InputSubsystem.IsValid() && MappingContext) InputSubsystem->RemoveMappingContext(MappingContext);
+	if (InputSubsystem.IsValid() && CombatMappingContext) InputSubsystem->RemoveMappingContext(CombatMappingContext);
 	Super::EndPlay(Reason);
 }
 
@@ -71,6 +84,14 @@ void ACRCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	auto* Input = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
+	if (FireAction) Input->BindAction(FireAction, ETriggerEvent::Started, this, &ACRCharacter::Fire);
+	if (ReloadAction) Input->BindAction(ReloadAction, ETriggerEvent::Started, this, &ACRCharacter::Reload);
+	if (AimAction)
+	{
+		Input->BindAction(AimAction, ETriggerEvent::Started, this, &ACRCharacter::AimStart);
+		Input->BindAction(AimAction, ETriggerEvent::Completed, this, &ACRCharacter::AimStop);
+		Input->BindAction(AimAction, ETriggerEvent::Canceled, this, &ACRCharacter::AimStop);
+	}
 	if (ForwardAction) Input->BindAction(ForwardAction, ETriggerEvent::Triggered, this, &ACRCharacter::MoveForward);
 	if (BackAction) Input->BindAction(BackAction, ETriggerEvent::Triggered, this, &ACRCharacter::MoveBack);
 	if (RightAction) Input->BindAction(RightAction, ETriggerEvent::Triggered, this, &ACRCharacter::MoveRight);
@@ -105,11 +126,20 @@ void ACRCharacter::MoveLeft() { AddMovementInput(GetActorRightVector(), -1.f); }
 void ACRCharacter::LookYaw(const FInputActionValue& Value) { AddControllerYawInput(Value.Get<float>() * MouseSensitivity); }
 // Unreal MouseY is already positive when the mouse moves up; preserve that sign.
 void ACRCharacter::LookPitch(const FInputActionValue& Value) { AddControllerPitchInput(Value.Get<float>() * MouseSensitivity); }
-void ACRCharacter::StartSprint() { GetCharacterMovement()->MaxWalkSpeed = SprintSpeed; }
-void ACRCharacter::StopSprint() { GetCharacterMovement()->MaxWalkSpeed = WalkSpeed; }
+void ACRCharacter::StartSprint() { if (!Health->IsDead()) { GetCharacterMovement()->MaxWalkSpeed = SprintSpeed; Weapon->SetSprinting(true); } }
+void ACRCharacter::StopSprint() { GetCharacterMovement()->MaxWalkSpeed = WalkSpeed; Weapon->SetSprinting(false); }
 void ACRCharacter::StartCrouch() { Crouch(); }
 void ACRCharacter::StopCrouch() { UnCrouch(); }
-void ACRCharacter::ClearHeldActions() { StopSprint(); StopJumping(); UnCrouch(); }
+void ACRCharacter::ClearHeldActions() { StopSprint(); StopJumping(); UnCrouch(); AimStop(); }
+void ACRCharacter::Fire() { Weapon->TryFire(); }
+void ACRCharacter::Reload() { Weapon->TryReload(); }
+void ACRCharacter::AimStart() { Weapon->SetAiming(true); }
+void ACRCharacter::AimStop() { Weapon->SetAiming(false); }
+void ACRCharacter::Died()
+{
+	Weapon->Disable(); ClearHeldActions(); GetCharacterMovement()->DisableMovement();
+	if (auto* PC=Cast<ACRPlayerController>(Controller)) PC->PlayerDefeated();
+}
 
 void ACRCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
 {
@@ -124,7 +154,7 @@ void ACRCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdj
 
 AActor* ACRCharacter::TraceTarget() const
 {
-	if (!GetWorld() || !Controller || GetWorld()->IsPaused()) return nullptr;
+	if (!GetWorld() || !Controller || GetWorld()->IsPaused() || Health->IsDead()) return nullptr;
 	FHitResult Hit;
 	FCollisionQueryParams Params(SCENE_QUERY_STAT(CRInteraction), false, this);
 	const FVector Start = Camera->GetComponentLocation();

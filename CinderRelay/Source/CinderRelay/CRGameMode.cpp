@@ -3,6 +3,8 @@
 #include "CRPlayerController.h"
 #include "CRChapterStreamingController.h"
 #include "CRStreamingAcceptance.h"
+#include "CRCombatAcceptance.h"
+#include "CRCombatRoute.h"
 #include "EngineUtils.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
@@ -43,6 +45,8 @@ void ACRGameMode::BeginPlay()
 	Super::BeginPlay();
 #if !UE_BUILD_SHIPPING
 	if (FParse::Param(FCommandLine::Get(), TEXT("CRStreamAcceptance"))) GetWorld()->SpawnActor<ACRStreamingAcceptance>();
+	if (FParse::Param(FCommandLine::Get(), TEXT("CRWeaponCheck"))) GetWorld()->SpawnActor<ACRCombatAcceptance>();
+	if (FParse::Param(FCommandLine::Get(), TEXT("CRCombatCheck"))) GetWorld()->SpawnActor<ACRCombatRoute>();
 #endif
 }
 
