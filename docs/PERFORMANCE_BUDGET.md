@@ -80,3 +80,51 @@ Unreal Insights 已实际离线分析 trace，exit 0；解析 76 个 CPU threads
 进一步按真实 `RenderThread 0` 导出的22–32s片段显示 Scene scope 可达83.34ms；完整trace有 `WaitForVisibilityTasks`（最大56.23ms）与 `UpdateAllPrimitiveSceneInfos`（启动/初期最大1.805s）。`insights-render-hitch.csv` 含明确ThreadName；统计表默认也带GPU聚合项，不能把整张表当成单线程时间相加。计数器目录和Memory Insights事件均已实际解析。第一次导出线程名/文件引号不符合此版本接口，按真实名称修正后定向导出成功；没有再运行游戏。
 
 下一性能任务应先做与当前场景/设置相同的短定向、关闭高开销 memory trace 的对照，定位渲染/同步尖峰；保留图像质量，不进行架构重写。此次未自动启动该额外 benchmark 或优化。
+
+## Phase02 preflight — existing package, lower-overhead comparison
+
+The owner explicitly authorized one preflight comparison. Reused the exact Phase01B executable (SHA E1C74DDE2C0ABAB85217452DEF087C3F921FF4B8D14838BC3382449BD7F61A42); no new packaging, quality reduction or cache clearing. Same1920×1080/100%/Epic/TSR/Lumen HWRT settings and native frame counters. Only `frame,bookmark` trace channels, no allocation/callstack or CPU/GPU scope trace. Three-cycle route and Restart PASS,143.497s/11714rows.
+
+| Three-cycle segment (8610 rows) | median ms | p95 ms | p99 ms | max ms |
+| --- | ---: | ---: | ---: | ---: |
+| Frame delta | 12.796 | 14.998 | 17.269 | 36.566 |
+| Game Thread | 1.405 | 2.532 | 3.842 | 22.810 |
+| Render Thread | 12.784 | 14.968 | 17.035 | 36.535 |
+| GPU | 11.857 | 13.512 | 13.897 | 14.574 |
+
+No cycle-segment frame >50ms; the earlier sustained ~71ms p95 RT problem did not recur. Startup/early all-recorded max RT374.200ms and frame120.558ms remain; this is not zero-hitch certification. Peak working set1,777,156,096B and commit4,246,114,304B. Same-C checkpoint commit growth4,063,232B across three cycles. Raw results `.environment-local/phase-02/preflight-*`.
+
+This is evidence against attributing the old sustained hitch to the native streaming controller. It does not isolate one causal variable perfectly: a read-only NullRHI Editor asset audit briefly overlapped the later portion, and OS/driver cache/power conditions were not fully controlled. No render/streaming rewrite was performed. Phase02 combat must be measured separately with its tracing conditions and segment length reported.
+
+## Phase02 packaged combat sample — measured, not a clean benchmark
+
+One actual Windows Development run, same RTX5070Laptop8151MiB /32GB platform, driver616.92. Window1920x1080,ScreenPercentage100,DynamicRes0,VSync0,t.MaxFPS0, all ten scalability groups3(Epic),TSR(4),RayTracing1,LumenHWRT1. No settings lowered or caches cleared. Power/thermal/background desktop conditions were not fully controlled; no concurrent Unreal Editor audit in this run. Trace channels: cpu,gpu,frame,bookmark,loadtime; no requested allocation/callstack tracing. Automated route and PNG captures add overhead. Native thread/GPU counters refer to previous engine frames and must not be summed.
+
+| Segment | Rows / recorded seconds | Frame p95 ms | GT p95 ms | RT p95 ms | GPU p95 ms |
+| --- | --- | ---: | ---: | ---: | ---: |
+| All recorded, including restart/streaming/capture |5876 /97.547|20.451|6.166|20.007|14.448|
+| Actual player combat (`fight`) |477 /7.090|19.261|5.049|19.187|15.185|
+| AI/nav/cover diagnostic stages |1130|23.644|15.321|22.277|11.585|
+| Post-combat walking / streaming |3029|18.514|3.230|18.441|14.819|
+
+Combat median frame12.671ms,p9921.519ms,max378.478ms;2frames>50ms. All-recorded12frames>50ms,max frame delta400ms (engine-clamped DeltaSeconds, not an upper bound on wall-time pauses),GT341.583ms,RT429.930ms,GPU22.424ms. The instrumented combat p95 exceeds the16.667ms60FPS budget by2.594ms. This does not establish the clean game's FPS, nor final-art performance. Compared with the low-overhead Phase01B preflight, sustained~71msRT p95 still did not recur; scope tracing, route/camera/content and captures differ, so the difference cannot be assigned entirely to combat.
+
+Peak process working set1,691,394,048B(1.575GiB),private commit4,413,399,040B(4.110GiB); these are not dedicated VRAM or an asset-residency total. Two normal A unloads, three B unloads, one C unload occurred, independently of two Restart map travels. Return A logs both `ReconciledDefeated` IDs; no strong combat actor ownership in the session sets. No repeated forced GC or claim that cached GPU memory implies failed unloading. Single combat-return sample does not establish leak freedom.
+
+Offline Insights analyzed191,456,648B trace,75CPUthreads/21,625,437scopes,exit0. Named CPU scopes below are inclusive per invocation, not per frame; nested times must not be added. The export also includes default GPU aggregate rows, so only identified CPU scopes are used here.
+
+| CPU scope | Calls | Total ms | Mean ms | Max ms |
+| --- | ---: | ---: | ---: | ---: |
+| CR_WeaponPresentation |5789|51.697|0.009|0.588|
+| CR_WeaponShot |4|1.787|0.447|0.782|
+| CR_WardenDecision |237|23.111|0.098|7.147|
+| RecastNavMesh-Default tick |5797|7.465|0.001|0.095|
+| UNavigationSystemV1::OnWorldPostActorTick |5799|1.790|<0.001|0.029|
+
+Native path creation/failure/recovery and readiness are functionally proven; this trace does not separately attribute every asynchronous Recast tile-build worker task. These small visible scopes therefore are not a total navigation budget. No optimization inferred merely from using C++.
+
+Evidence for follow-up: GT `Sync_RenderingThread` total76.888s/max394.183ms overlaps its child wait; RT `FDeferredShadingSceneRenderer_Render` max418.584ms and `WaitUntilTasksComplete` max395.648ms show render/synchronization work. PNG compression ran5times (some overwrite the same screenshot path),total961.554ms/max320.160ms. Thus screenshot instrumentation is a plausible contributor to captured GT spikes; the trace does not prove it explains all hitches. Readiness/load transitions and restart also coexist with spikes. Preserve the native architecture; next performance work should isolate these observations under separately authorized same-quality conditions.
+
+Analyzer limits: Insights reports30,663MemAllocTagTracker errors with this partial-channel capture,4LoadTime warnings, and GPU timestamp interleaving/reversal warnings(max~1.171ms). Memory-allocation analysis is not used. GPU table values above come from native RHI frame counters, not reconstructed invalid GPU event durations. Runtime has no Fatal/Error/Ensure, but expected native teardown/VSync/navigation-test warnings are listed in MILESTONES.
+
+Evidence: `.environment-local/phase-02/combat-summary.json`, `packaged-combat.log`, `combat.utrace`, `insights.log`, `insights-game-thread.csv`, `insights-render-thread.csv`, `insights-all-threads.csv`, and `package/Windows/CinderRelay/Saved/Phase02/{frames.csv,memory.csv,settings.txt,route.txt,acceptance.json}`. Raw logs/traces/package remain ignored. This bounded run is complete; no further package, cache clear or quality change was used to chase targets.

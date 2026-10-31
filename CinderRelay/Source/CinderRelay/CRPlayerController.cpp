@@ -1,5 +1,7 @@
 #include "CRPlayerController.h"
 #include "CRCharacter.h"
+#include "CRHealthComponent.h"
+#include "CRWeaponComponent.h"
 #include "CRHUDWidget.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Kismet/GameplayStatics.h"
@@ -32,7 +34,7 @@ void ACRPlayerController::SetupInputComponent()
 	// Pause must remain available when the game is paused; movement uses Enhanced Input assets.
 	FInputKeyBinding& PauseBinding = InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &ACRPlayerController::TogglePrototypePause);
 	PauseBinding.bExecuteWhenPaused = true;
-	InputComponent->BindKey(EKeys::R, IE_Pressed, this, &ACRPlayerController::RetryStreaming);
+	InputComponent->BindKey(EKeys::F5, IE_Pressed, this, &ACRPlayerController::RetryStreaming);
 }
 
 void ACRPlayerController::SetStreamingStatus(const FText& Text) { if (HUD) HUD->SetStreamingStatus(Text); }
@@ -49,10 +51,31 @@ void ACRPlayerController::OnPossess(APawn* InPawn)
 
 void ACRPlayerController::BindPawn()
 {
-	if (ObservedPawn.IsValid()) ObservedPawn->OnPromptChanged.RemoveDynamic(this, &ACRPlayerController::PromptChanged);
+	if (ObservedPawn.IsValid())
+	{
+		ObservedPawn->OnPromptChanged.RemoveDynamic(this, &ACRPlayerController::PromptChanged);
+		ObservedPawn->Health->OnHealthChanged.RemoveDynamic(this, &ACRPlayerController::HealthChanged);
+		ObservedPawn->Weapon->OnChanged.RemoveDynamic(this, &ACRPlayerController::RefreshCombat);
+		ObservedPawn->Weapon->OnShot.RemoveDynamic(this, &ACRPlayerController::ShotFeedback);
+	}
 	ObservedPawn = Cast<ACRCharacter>(GetPawn());
-	if (ObservedPawn.IsValid()) ObservedPawn->OnPromptChanged.AddDynamic(this, &ACRPlayerController::PromptChanged);
+	if (ObservedPawn.IsValid())
+	{
+		ObservedPawn->OnPromptChanged.AddDynamic(this, &ACRPlayerController::PromptChanged);
+		ObservedPawn->Health->OnHealthChanged.AddDynamic(this, &ACRPlayerController::HealthChanged);
+		ObservedPawn->Weapon->OnChanged.AddDynamic(this, &ACRPlayerController::RefreshCombat);
+		ObservedPawn->Weapon->OnShot.AddDynamic(this, &ACRPlayerController::ShotFeedback);
+	}
+	RefreshCombat();
 }
+
+void ACRPlayerController::RefreshCombat()
+{
+	if (HUD && ObservedPawn.IsValid()) HUD->SetCombat(ObservedPawn->Health->Health, ObservedPawn->Weapon->Magazine, ObservedPawn->Weapon->Reserve, ObservedPawn->Weapon->State==ECRWeaponState::Reloading);
+}
+void ACRPlayerController::HealthChanged(float,float Damage) { RefreshCombat(); if (HUD && Damage>0) HUD->DamageFeedback(); }
+void ACRPlayerController::ShotFeedback(FVector,bool Hit,bool) { if (HUD) HUD->ShotFeedback(Hit); }
+void ACRPlayerController::PlayerDefeated() { bPrototypeDefeated=true; ApplyPause(true); }
 
 void ACRPlayerController::ObjectiveChanged(ECRObjective Objective)
 {
@@ -74,7 +97,8 @@ void ACRPlayerController::RefreshHUD()
 	if (!HUD) return;
 	if (const auto* Mode = GetWorld()->GetAuthGameMode<ACRGameMode>()) HUD->SetObjective(Mode->GetObjectiveText());
 	HUD->SetPrompt(!bPrototypePaused && ObservedPawn.IsValid() ? ObservedPawn->GetCurrentPrompt() : FText::GetEmpty());
-	HUD->SetMenu(bPrototypePaused, bPrototypeEnded);
+	HUD->SetMenu(bPrototypePaused, bPrototypeEnded, bPrototypeDefeated);
+	RefreshCombat();
 }
 
 void ACRPlayerController::ApplyPause(bool bPause)
@@ -96,8 +120,8 @@ void ACRPlayerController::ApplyPause(bool bPause)
 	else SetInputMode(FInputModeGameOnly());
 }
 
-void ACRPlayerController::TogglePrototypePause() { if (!bPrototypeEnded) ApplyPause(!bPrototypePaused); }
-void ACRPlayerController::ResumePrototype() { if (!bPrototypeEnded) ApplyPause(false); }
+void ACRPlayerController::TogglePrototypePause() { if (!bPrototypeEnded && !bPrototypeDefeated) ApplyPause(!bPrototypePaused); }
+void ACRPlayerController::ResumePrototype() { if (!bPrototypeEnded && !bPrototypeDefeated) ApplyPause(false); }
 void ACRPlayerController::RestartPrototype()
 {
 	ApplyPause(false);

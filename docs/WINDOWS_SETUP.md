@@ -187,3 +187,49 @@ $game = Join-Path $evidence 'package\Windows\CinderRelay.exe'
 ```
 
 新进程不清 OS/DDC/驱动缓存。非 Shipping 记录保存到该包 `CinderRelay/Saved/Phase01B`（若平台重定向 Saved，以启动日志的实际目录为准）。`acceptance.json`、`route.txt`、`frames.csv`、`memory.csv`、`settings.txt` 和原生结束截图分别证明不同事项。运行 `Scripts/summarize_streaming.py <Saved/Phase01B> <game-log> <output.json>` 只汇总已有数据，不重复运行游戏。Memory trace 有额外开销，应单独标明，不能充当无追踪的最终美术性能基线。
+## Phase02 First Contact
+
+Use the existing checkout and Engine5.8.4. Never run the Phase01A generator or destructive migration against the accepted maps. Phase02 creation only updates its owned content, adds encounter actors and changes the persistent GameMode to a derived combat configuration.
+
+```powershell
+$repo = 'D:\Projects\FPS Game'
+$ueRoot = 'D:\Engines\Unreal\UE_5.8'
+$project = Join-Path $repo 'CinderRelay\CinderRelay.uproject'
+$phase02 = Join-Path $repo '.environment-local\phase-02'
+& "$ueRoot\Engine\Build\BatchFiles\Build.bat" CinderRelayEditor Win64 Development "-Project=$project" -WaitMutex -NoHotReloadFromIDE
+if ($LASTEXITCODE -ne 0) { throw 'Read the actual compile error before repair.' }
+$editorArgs = '"{0}" "-ExecutePythonScript={1}\CinderRelay\Scripts\generate_combat.py" -CRCreateEncounter -unattended -nosplash' -f $project,$repo
+Start-Process -FilePath "$ueRoot\Engine\Binaries\Win64\UnrealEditor.exe" -ArgumentList $editorArgs -WindowStyle Hidden -Wait
+```
+
+Inspect Output Log for `CR02_ENCOUNTER_ASSETS_PASS`, not just a launcher exit code. The Editor creates the real BT/Blackboard, audio, input/data/Blueprint assets and nav bounds. It waits for native navigation data to exist before saving; it does not fabricate brush data. Complete reruns reuse owned labels/assets. Refuse ownership conflicts instead of deleting content.
+
+Focused weapon fixture uses `-CRWeaponCheck`; actual encounter route uses `-CRCombatCheck`. Run the appropriate checkpoint only, not both after every edit:
+
+```powershell
+$editorArgs = '"{0}" "-ExecutePythonScript={1}\CinderRelay\Scripts\smoke_combat.py" -CRCombatCheck -NullRHI -unattended -nosplash' -f $project,$repo
+Start-Process -FilePath "$ueRoot\Engine\Binaries\Win64\UnrealEditor.exe" -ArgumentList $editorArgs -WindowStyle Hidden -Wait
+Get-Content -LiteralPath "$repo\CinderRelay\Saved\Phase02\acceptance.json"
+```
+
+NullRHI validates logic/collision/navigation, not visuals or GPU performance. The focused weapon test uses controlled edge-case fixtures; the combat route drives Enhanced Input and actual enemy/player damage, never teleports or directly sets objective progress. The supervisor requires a new receipt, ends PIE and then closes Editor.
+
+Once integrated Editor checks pass, one Windows Development package:
+
+```powershell
+& "$ueRoot\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$project" -noP4 -platform=Win64 -clientconfig=Development -target=CinderRelay -build -cook -stage -pak -archive "-archivedirectory=$phase02\package" -nocompileeditor -installed -unattended -utf8output
+if ($LASTEXITCODE -ne 0) { throw 'Packaging failed; retain the log and diagnose.' }
+$game = Join-Path $phase02 'package\Windows\CinderRelay.exe'
+& $game -windowed -ResX=1920 -ResY=1080
+```
+
+Ordinary play uses no automation flags. For the one authorized packaged acceptance/performance sample:
+
+```powershell
+$combatArgs = '-CRCombatCheck -windowed -ResX=1920 -ResY=1080 -ForceRes -NoVSync -ExecCmds="r.ScreenPercentage 100,r.DynamicRes.OperationMode 0,r.VSync 0,t.MaxFPS 0" -trace=cpu,gpu,frame,bookmark,loadtime "-tracefile={0}\combat.utrace" "-abslog={0}\packaged-combat.log"' -f $phase02
+$run = Start-Process -FilePath $game -ArgumentList $combatArgs -WindowStyle Hidden -Wait -PassThru
+"Bootstrap exit code: $($run.ExitCode)"
+Get-Content -LiteralPath "$phase02\package\Windows\CinderRelay\Saved\Phase02\acceptance.json"
+```
+
+No allocation/callstack memory tracing requested in this combat sample. Native counters still record GT/RT/GPU; process memory is sampled separately. Read the actual game log and a freshly modified `package/Windows/CinderRelay/Saved/Phase02/acceptance.json`; a bootstrap code alone does not prove gameplay success. This run produced a PASS receipt and normal game exit log but bootstrap code777003; see MILESTONES. `summarize_combat.py <Saved/Phase02> <output.json>` only analyzes existing CSVs. Screenshots prove discrete frames, not human gunfeel/audio acceptance. Do not run this command again solely because the documented run has already completed.

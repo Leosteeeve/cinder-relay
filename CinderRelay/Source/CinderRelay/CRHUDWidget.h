@@ -15,9 +15,13 @@ public:
 	void SetObjective(const FText& Text);
 	void SetPrompt(const FText& Text);
 	void SetStreamingStatus(const FText& Text);
-	void SetMenu(bool bVisible, bool bEnded);
+	void SetMenu(bool bVisible, bool bEnded, bool bDefeated=false);
+	void SetCombat(float Health, int32 Magazine, int32 Reserve, bool Reloading);
+	void ShotFeedback(bool Hit);
+	void DamageFeedback();
 protected:
 	virtual void NativeOnInitialized() override;
+	virtual void NativeTick(const FGeometry& Geometry, float Delta) override;
 	virtual FReply NativeOnKeyDown(const FGeometry& Geometry, const FKeyEvent& KeyEvent) override;
 private:
 	UFUNCTION() void ResumeClicked();
@@ -26,6 +30,10 @@ private:
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> ObjectiveText;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> PromptText;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> StreamingText;
+	UPROPERTY(Transient) TObjectPtr<UTextBlock> CombatText;
+	UPROPERTY(Transient) TObjectPtr<UTextBlock> ReticleText;
+	UPROPERTY(Transient) TObjectPtr<UBorder> DamageBorder;
+	float ShotPulse=0, HitPulse=0, HurtPulse=0;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> MenuTitle;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> MenuBody;
 	UPROPERTY(Transient) TObjectPtr<UBorder> MenuBackdrop;

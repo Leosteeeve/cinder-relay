@@ -2,7 +2,7 @@
 
 - Communicate with the owner in Chinese; write implementation prompts in English.
 - Read `README.md`, `docs/MILESTONES.md`, and `docs/TECHNICAL_DESIGN.md` first.
-- Current authorization: Phase 01B native Level Streaming, safe map migration, packaged Development validation, commit/push and PR. Preserve accepted Phase 01A gameplay and its rollback map. Stop before Phase 02.
+- Current authorization: Phase 02 First Contact: one ROOK-5, two Ash Warden scouts, Rail Yard encounter, bounded validation, commit/push and PR. Preserve accepted Phase 01B streaming and the Phase 01A rollback map. Stop before Phase 03.
 - Canon lives in `docs/GAME_DESIGN.md` and `docs/STORY.md`; mark new creative proposals, never silently invent canon.
 - Priorities: reliability, gameplay quality, maintainability, performance, then visual fidelity.
 - Preserve existing work. Audit before edits; never upgrade the engine or rewrite working architecture without authorization.
@@ -18,4 +18,4 @@
 - Profile before optimizing. Never equate C++, a successful build, or screenshots with performance or gameplay acceptance.
 - Report commands, exit codes, evidence paths, and unverified work. Keep raw local logs under ignored `.environment-local/`; summarize durable findings in the milestone.
 - Inspect explicit staging paths and staged diff for secrets, generated files, and unlicensed raw packs before commits. Never overwrite or force-push remote history.
-- Work on `phase-01b-streaming`; target `main` with a PR, never auto-merge. Do not change repository visibility or force-push. Use scripted native streaming only; never regenerate the Phase 01A map during migration.
+- Work on `phase-02-first-contact`; target `main` with a PR, never auto-merge. Do not change repository visibility or force-push. Use scripted native streaming only; never rerun old map generators/migration destructively. Reload uses R; streaming retry must move to a distinct key.

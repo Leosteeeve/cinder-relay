@@ -2,7 +2,7 @@
 
 A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 5.8, C++ and Unreal Blueprints.
 
-**当前阶段：Phase 01B — Native Level Streaming。** 在已接受的 Phase 01A 上增加 persistent + 三个原生动态子关卡、安全遮挡门、双向预载/卸载、失败重试和交互状态恢复。保留原地图、角色、输入与目标/HUD。没有战斗、AI、武器装配或磁盘存档；不自动开始 Phase 02。
+**当前授权阶段：Phase 02 — First Contact。** 在已合并的原生流送基础上加入 ROOK-5、健康/装填/命中反馈、两名 Ash Warden 侦察兵和铁路场遭遇。原四地图、探索目标和回访状态保持；实际验收状态见 MILESTONES。武器/敌人为明确标注的灰盒，声音为自制临时合成音效；没有最终动画、武器装配或磁盘存档，不自动开始 Phase03。
 
 - 游戏名：CINDER RELAY。
 - 仓库：[Leosteeeve/cinder-relay](https://github.com/Leosteeeve/cinder-relay)，当前 **Public**（2026-10-31 远端查询；Phase 01A 未修改可见性）。
@@ -15,9 +15,9 @@ A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 
 
 打开 `D:\Projects\FPS Game\CinderRelay\CinderRelay.uproject`，默认地图为 `/Game/Generated/Phase01B/Maps/L_CH01_Persistent`。Play 下拉选择 **Standalone Game**：普通 PIE 的 Esc 默认会结束 Editor 试玩，Standalone 中 Esc 才作为游戏暂停键。原图 `/Game/Generated/Phase01A/Maps/L_CH01_Greybox` 保留为回滚参考，不由新地图加载。
 
-WASD 移动、鼠标看、Shift 跑、Ctrl 蹲、Space 跳、E 交互、Esc 暂停；加载失败时 R 重试。进入工坊，在左侧工作台拿青色电力模块，沿后门坡道下行，在橙色 Relay Nine 终端安装，再调查青色信号台；结束菜单支持重新开始。终点前可自由回访；门在邻区就绪后自动放行。所有推进都通过正常走动和交互，不需要开发者控制台。
+WASD 移动、鼠标看、Shift 跑、Ctrl 蹲、Space 跳、E 交互、Esc 暂停；**LMB 射击、RMB 瞄准、R 装填，流送重试改为 F5**。铁路场可交战、退回或沿北侧铁路线绕行；侦察兵死亡不作为主线门槛。工坊前有一份有限弹药。进入工坊，在左侧工作台拿青色电力模块，沿后门坡道下行，在橙色 Relay Nine 终端安装，再调查青色信号台；死亡和结束菜单均支持重新开始。
 
-Phase 01B 的精确生成、编译、打包和验收命令见 [WINDOWS_SETUP](docs/WINDOWS_SETUP.md#phase-01b-native-streaming)，实际结果见 [MILESTONES](docs/MILESTONES.md)。不要运行 Phase 01A generator 重建当前地图。
+Phase02 的精确生成、编译、打包和验收命令见 [WINDOWS_SETUP](docs/WINDOWS_SETUP.md#phase02-first-contact)，实际结果见 [MILESTONES](docs/MILESTONES.md)。不要运行 Phase01A generator 或 Phase01B migration 重建当前地图。
 
 ## 游戏方向
 
@@ -45,10 +45,10 @@ Phase 01B 的精确生成、编译、打包和验收命令见 [WINDOWS_SETUP](do
 
 ## 仓库与验证边界
 
-源码、Config、descriptor 和真实 Editor 生成内容纳入版本控制。保留原 25 个资产，01B 新增 4 张真实地图，二进制沿用 Git LFS。155 个原 Actor 迁移后分为 persistent 15、A 86、B 22、C 32；另外新增三个 persistent Actor。Binaries、Intermediate、Saved、DDC、打包输出、本机日志和 `environment-setup.json` 被忽略。没有外部素材包、凭据或手造二进制文件入库。
+源码、Config、descriptor 和真实 Editor 生成内容纳入版本控制，二进制沿用 Git LFS。Phase02 增加20个真实资产，修改原生流送的 persistent 与 RailYard 地图：铁路场新增两名侦察兵、一份弹药、导航边界和警示文字，共5个 Actor；persistent 增加原生 Recast 数据。155个原 Actor 的类别、世界/组件变换、碰撞、材质和交互设置比较无差异；原图和工坊/地堡地图保留。Binaries、Intermediate、Saved、DDC、打包输出、本机日志和 `environment-setup.json` 被忽略。没有外部素材包、凭据或手造二进制文件入库。
 
 Phase 01A 已由用户接受。01B 的 Editor 路线已验证三轮回访、门保护、模块/终端防重复、结束和重开；NullRHI 结果不证明渲染或性能。Editor 启动仍有 Phase 00 已知的引擎自测条件错误，不能声称 clean log。packaged 结果、性能口径与剩余限制统一记录在 [MILESTONES](docs/MILESTONES.md) 和 [PERFORMANCE_BUDGET](docs/PERFORMANCE_BUDGET.md)。
 
 保留 CinderRelay 模块、EngineAssociation GUID 和模板渲染设置；未改引擎源码。01B 在功能验证后将默认地图改到 persistent，Packaging 明确包含四图。Python/EditorScriptingUtilities 仍仅 Editor target；AndroidFileServer 继续停用。
 
-下一步由用户在 packaged 版本短试玩，确认遮挡门、回头路线、曝光和手感，再决定下一里程碑。不会自动开始战斗开发。
+Phase02 的武器、AI、资产生成与验证记录见现有 TECHNICAL_DESIGN / MILESTONES。用户短试玩负责枪感、瞄准遮挡和遭遇节奏；自动路线与截图不能代替这些判断。不会自动开始 Phase03。

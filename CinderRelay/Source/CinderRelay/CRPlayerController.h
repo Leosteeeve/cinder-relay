@@ -18,6 +18,11 @@ public:
 	UFUNCTION(BlueprintCallable) void RefreshHUD();
 	void SetStreamingStatus(const FText& Text);
 	void RetryStreaming();
+	void PlayerDefeated();
+	UFUNCTION() void RefreshCombat();
+	UFUNCTION() void HealthChanged(float Health, float Damage);
+	UFUNCTION() void ShotFeedback(FVector Impact, bool bHitTarget, bool bBlockingHit);
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="UI") bool bPrototypeDefeated = false;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="UI") bool bPrototypePaused = false;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="UI") bool bPrototypeEnded = false;
 protected:

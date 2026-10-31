@@ -38,7 +38,7 @@ Phase 01B 在已接受的 Phase 01A 基础上实施。手工线性章节使用�
 - 通常只有当前区；接近门时保留当前区和必要邻区。极短边界重叠可临时保留三者，不允许卸载当前区。
 - 最大 sprint 500 cm/s。800 cm 几何提前量约 1.6 s；最终是否有足够余量以 packaged 实测表为准，不能用 PIE 延迟证明。
 
-失败时门保持关闭，HUD 显示 `Access unavailable. Press R to retry.`。R 重置请求期限并重试；UE 原生 FailedToLoad 状态仅在无 loaded level 时，通过 `SetWorldAsset` 重新设置相同软引用恢复 Unloaded（本机 5.8.4 源码已核对）。缺失地图文件无法靠重试补齐，仍须修复 cook；重试不能打开不满足条件的门。
+失败时门保持关闭，HUD 显示 `Access unavailable. Press F5 to retry.`。Phase02 将重试移到 F5，为 R 装填让出键位；重置请求期限与恢复语义不变。UE 原生 FailedToLoad 状态仅在无 loaded level 时，通过 `SetWorldAsset` 重新设置相同软引用恢复 Unloaded（本机 5.8.4 源码已核对）。缺失地图文件无法靠重试补齐，仍须修复 cook；重试不能打开不满足条件的门。
 
 ## 目标与卸载引用
 
