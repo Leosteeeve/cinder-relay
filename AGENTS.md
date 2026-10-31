@@ -1,0 +1,21 @@
+# CINDER RELAY — agent rules
+
+- Communicate with the owner in Chinese; write implementation prompts in English.
+- Read `README.md`, `docs/MILESTONES.md`, and `docs/TECHNICAL_DESIGN.md` first.
+- Phase 00 covers native project bootstrap, documentation, Git/LFS, and the authorized private GitHub repository. Stop before Phase 01 gameplay.
+- Canon lives in `docs/GAME_DESIGN.md` and `docs/STORY.md`; mark new creative proposals, never silently invent canon.
+- Priorities: reliability, gameplay quality, maintainability, performance, then visual fidelity.
+- Preserve existing work. Audit before edits; never upgrade the engine or rewrite working architecture without authorization.
+- Target UE 5.8; installed baseline is 5.8.4. Verify `Build.version` and actual project targets before using build commands.
+- Prefer Unreal-native systems, C++ foundations, and Blueprint authoring. Add modules/plugins only for a demonstrated requirement.
+- Use events/delegates where suitable. Avoid synchronous asset loads in interactive paths and unnecessary cross-level hard references.
+- Chapter 01 uses handcrafted linear zones: prefer native Level Streaming, not mandatory World Partition or a custom streaming framework.
+- Follow `docs/ASSET_SOURCES.md` before importing external content. Binary Unreal assets require a working Editor pathway; never fabricate them.
+- Never rename an existing C++ module without an explicit migration plan. `CinderRelay` was created only after verifying no ThresholdFPS module existed.
+- Keep each task bounded by deliverables, dependencies, acceptance criteria, verification, and non-goals.
+- Compile relevant C++ changes once, run focused checks, and request one short manual milestone pass. Do not rebuild or run every test without new evidence.
+- After two unsuccessful repair attempts on the same failure, stop editing and present an evidence-based diagnosis before continuing.
+- Profile before optimizing. Never equate C++, a successful build, or screenshots with performance or gameplay acceptance.
+- Report commands, exit codes, evidence paths, and unverified work. Keep raw local logs under ignored `.environment-local/`; summarize durable findings in the milestone.
+- Inspect explicit staging paths and staged diff for secrets, generated files, and unlicensed raw packs before commits. Never overwrite or force-push remote history.
+- The owner authorized initial commit and push to private `Leosteeeve/cinder-relay`. Other publication, purchases, or access changes require matching task authorization.

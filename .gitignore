@@ -1,0 +1,33 @@
+# Unreal Engine generated files
+.vs/
+.idea/
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Plugins/**/Binaries/
+Plugins/**/Intermediate/
+*.sln
+*.slnx
+*.suo
+*.VC.db
+*.VC.opendb
+*.opensdf
+*.sdf
+*.ipch
+# Local environment verification and installer logs
+.environment-local/
+# Machine-local environment audit; retain locally, never publish it
+/environment-setup.json
+# Credentials and local environment overrides
+.env
+.env.*
+!.env.example
+.aws/
+.ssh/
+*.pem
+*.pfx
+*.p12
+# Generated profiling captures
+*.utrace
+*.ucache
