@@ -1,10 +1,23 @@
 # CINDER RELAY — Game Design
 
+## Phase 01A 可玩探索原型
+
+用户批准三个区域连通的单地图灰盒：铁路场出生、工坊发现电力模块、下行通道进入中继站。模块只承担目标状态，不是背包或武器装配系统。
+
+目标原文依次为：
+
+1. Reach the maintenance workshop.
+2. Find a functional power module.
+3. Restore power to Relay Nine.
+4. Investigate the restored signal.
+
+最后显示 `MERIDIAN NETWORK / CONNECTION RESTORED`，提供重新开始与退出。WASD／鼠标、Shift 跑、Ctrl 蹲、Space 跳、E 交互、Esc 暂停。01A 是短探索闭环，不声称已达到最终 12–16 分钟精修切片目标。
+
 状态：用户于 2026-10-31 批准的制作方向；实施范围以 [MILESTONES](MILESTONES.md) 为准。
 
 ## 已确认身份
 
-- 游戏名：**CINDER RELAY**；GitHub 仓库：`cinder-relay`，本轮采用 **Private**。
+- 游戏名：**CINDER RELAY**；GitHub 仓库：`cinder-relay`，Phase 01A 最终远端查询为 **Public**；用户允许 public 或 private，本轮未修改仓库设置。
 - Windows PC 单人、叙事驱动、末日题材 FPS；UE 5.8，C++ 核心与 Blueprint 编排。
 - 主角：**Elias Venn，28 岁，男性，机械维修技师**。
 - 时间：**2118 年**。全球基础设施灾难性停摆事件 **The Quieting** 已过去数十年。

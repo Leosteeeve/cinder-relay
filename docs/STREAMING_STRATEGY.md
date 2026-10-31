@@ -2,7 +2,22 @@
 
 ## 决定与概念区域
 
-第一章是手工线性章节，含少量探索支路。采用 **非 World Partition 的 persistent level + 原生 Level Streaming**作为实施默认，不实现自定义流送框架。本轮只规划，不创建三个玩法区。
+第一章是手工线性章节，含少量探索支路。后续采用 **非 World Partition 的 persistent level + 原生 Level Streaming**作为实施默认，不实现自定义流送框架。Phase 01A 先用单地图验证空间和玩法。
+
+## Phase 01A 实际灰盒与 Phase 01B 边界
+
+01A 按最新授权只创建 **一个非 WP 地图 L_CH01_Greybox**，三个区域已由真实几何连通，没有 sublevel／streaming 实现。单位为 cm，+X 为主要前进方向，地面与坡道使用原生静态碰撞。
+
+| 分区 | 精确空间边界 | 未来拆分入口 |
+| --- | --- | --- |
+| A Rail Yard | X -2000～1600，Y -1400～1400，地面 Z=0 | 工坊入口平面 X=1600，门洞 Y ±180，净高 350 |
+| B Workshop | X 1600～3600，Y -700～700，地面 Z=0 | 后门 X=3600，门洞 Y ±180；到达触发器中心 (1790,0,160) |
+| C Access ramp | X 3600～5400，Y ±180，地面 Z 0→-600 | 约 18.4° 连续坡道，归 C 所有；地下入口 X=5400 |
+| C Relay Bunker | X 5400～7200，Y ±650，地面 Z=-600 | 终端 (6200,-320,-455)，结束监视台 (6900,0,-450) |
+
+生成对象带 `CR_Zone_A_RailYard`／`CR_Zone_B_Workshop`／`CR_Zone_C_RelayBunker`／`CR_Zone_Shared` tags 及同名 Editor folders，可据此迁移到原生 sublevels。这些是编辑组织，不是 Runtime Data Layers。生成脚本目前只适用于单地图；01B 开始后先更新所有权／生成协议，不能直接重跑并覆盖已拆分的关卡。
+
+01B 建议在 X≈1200 接近工坊时预载 B，在工坊后半段预载 C；位置仅是初始触发候选，最终距离取决于最大 500 cm/s 移速和 packaged 加载测量。先明确是否全章可回访，再确定 A/B 卸载；当前灰盒允许回头。GameMode 目标状态属于同一个 persistent world，不能迁进易卸载区域。迁移后重新验证 late callbacks、卸载引用、冷启动 cook 覆盖与回头路径；不自动实施。
 
 | 概念区域 | 作用 | 驻留边界建议 |
 | --- | --- | --- |

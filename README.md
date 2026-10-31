@@ -2,14 +2,20 @@
 
 A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 5.8, C++ and Unreal Blueprints.
 
-**当前阶段：Phase 00 — Repository Bootstrap and Production Foundation。** 已通过原生 Unreal Editor 创建 Blank C++ 基础工程；没有实现第一人称角色、战斗、修复、剧情或第一章地图。不要把模板预览场景当作游戏内容。
+**当前阶段：Phase 01A — Playable Greybox: The Dead Station。** 在原生 CinderRelay 工程上增加第一人称控制、三连通区域、模块／终端交互、四步目标和原生 UMG。没有战斗、武器装配、AI、存档或流送；不自动进入 Phase 01B。
 
 - 游戏名：CINDER RELAY。
-- 仓库：[Leosteeeve/cinder-relay](https://github.com/Leosteeeve/cinder-relay)，**Private**。
+- 仓库：[Leosteeeve/cinder-relay](https://github.com/Leosteeeve/cinder-relay)，当前 **Public**（2026-10-31 远端查询；Phase 01A 未修改可见性）。
 - 工作目录：`D:\Projects\FPS Game`；工程：`CinderRelay/CinderRelay.uproject`。
 - 实际 Runtime 模块：`CinderRelay`；targets：`CinderRelay`、`CinderRelayEditor`。
 - 引擎基线：UE **5.8.4 / CL 58902052**；Windows PC／Visual Studio。
 - 目标硬件：RTX 5070 Laptop 8 GB VRAM、32 GB RAM。
+
+## 打开原型
+
+打开工程后，默认地图为 `/Game/Generated/Phase01A/Maps/L_CH01_Greybox`。Play 下拉选择 **Standalone Game**：普通 PIE 的 Esc 默认会结束 Editor 试玩，Standalone 中 Esc 才作为游戏暂停键。独立启动命令见 [WINDOWS_SETUP](docs/WINDOWS_SETUP.md)。
+
+WASD 移动、鼠标看、Shift 跑、Ctrl 蹲、Space 跳、E 交互、Esc 暂停。进入工坊，在左侧工作台拿青色电力模块，沿后门坡道下行，在橙色 Relay Nine 终端安装，再调查青色信号台；结束菜单支持重新开始。所有推进都通过正常走动和交互，不需要开发者控制台。
 
 ## 游戏方向
 
@@ -30,17 +36,17 @@ A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 
 | 三分区流送 | [STREAMING_STRATEGY.md](docs/STREAMING_STRATEGY.md) |
 | 性能预算／benchmark 协议 | [PERFORMANCE_BUDGET.md](docs/PERFORMANCE_BUDGET.md) |
 | 来源与许可登记 | [ASSET_SOURCES.md](docs/ASSET_SOURCES.md) |
-| 里程碑与英文 Phase 01 提示 | [MILESTONES.md](docs/MILESTONES.md) |
+| Phase 01A 计划、验证与后续门槛 | [MILESTONES.md](docs/MILESTONES.md) |
 | 精确 Editor 步骤／PowerShell 命令 | [WINDOWS_SETUP.md](docs/WINDOWS_SETUP.md) |
 | 审计、构建证据与限制 | [PHASE00_VALIDATION.md](docs/PHASE00_VALIDATION.md) |
 | 官方资料／决策记录 | [研究依据](docs/engineering/research-notes.md)、[决策日志](docs/engineering/decision-log.md) |
 
 ## 仓库与验证边界
 
-源码、Config、descriptor 和真实内容纳入版本控制。LFS 已覆盖 `.uasset`、`.umap` 等二进制；当前 Content 为空，仅保留 `.gitkeep`，不伪造资源。Binaries、Intermediate、Saved、DDC、本机日志和 `environment-setup.json` 被忽略；原环境文件仍在本机保留。没有原始第三方素材包或凭据入库。
+源码、Config、descriptor 和真实 Editor 生成内容纳入版本控制。25 个生成资产包含 map、8 个纯色材质、11 个输入资产和 5 个配置 Blueprint，二进制使用 Git LFS。地图有 155 个具名生成 Actor，重复生成不增加数量。Binaries、Intermediate、Saved、DDC、本机日志和 `environment-setup.json` 被忽略；原环境文件保留。没有外部素材包、凭据或手造二进制占位文件入库。
 
-Editor 创建流程的 UBT baseline 显示 `Result: Succeeded`，包含 UHT、C++ 编译和 DLL 链接；下述插件配置调整后的一次定向编译也成功，直接捕获 exit code 0。Editor 已打开模块并显示默认场景，但启动日志有 13 条引擎自动测试条件错误，尚未逐项归因；不是 clean-log 验收。没有运行项目自动化套件、packaged 验证、性能 benchmark 或人工玩法验收，详见验证记录。
+Phase 01A 首次 CinderRelayEditor 编译成功（87.44 秒，exit 0）；修正独立审查发现的输入 possession 生命周期后定向编译也成功（20.95 秒，exit 0）。地图生成及幂等检查由真实 Editor 执行；最终 PIE smoke **11 项通过**，实际走动、三次 E 交互、结尾和重开均通过，没有传送。玩法证据、调试记录和剩余限制见 [MILESTONES](docs/MILESTONES.md)。Editor 启动仍有 Phase 00 已知的 13 条引擎自测条件错误，不能声称 clean log。工坊入口偏亮，物理键鼠和手感待人工接受；没有 packaged／正式性能 benchmark。
 
-旧代号 ThresholdFPS 从未成为此目录中的实际模块；本轮没有重命名 C++ 模块。旧文档路径只保留兼容链接。原生模板的 EngineAssociation GUID、默认 OpenWorld map、渲染配置和 Editor-only Modeling Tools 插件保持原样；跨机器使用明确的 5.8 安装路径，首个游戏地图在 P01 建立。唯一功能配置收敛是停用 Windows 项目未使用的 AndroidFileServer 插件，并移除其自动生成、含本机 SecurityToken 的配置段，防止凭据入库；没有修改引擎源码。
+保留 CinderRelay 模块、EngineAssociation GUID 和模板渲染设置；未改引擎源码。01A 仅将默认地图切到灰盒、关闭旧输入附加缩放／平滑，并启用两个 Editor-only 资产生产插件。AndroidFileServer 继续停用。源码职责与配置变更理由见技术文档。
 
-下一步建议 **Phase 01：原生第一人称控制 + 单个非 WP 灰盒地图 + 一次包启动验收**。本轮不执行。所有实现任务需明确接受条件和非目标，后续不得用“可编译”替代手感、视觉或性能证据。
+下一步建议先人工确认移动、光照和空间可读性，再批准 **Phase 01B：原生 Level Streaming 的区域拆分与 packaged 验证**。精确分区边界已记录；本轮不实施流送。

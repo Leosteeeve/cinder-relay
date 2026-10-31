@@ -33,3 +33,10 @@
 - `Engine\Source\Runtime\Engine\Classes\Kismet\GameplayStatics.h`：存在 `AsyncSaveGameToSlot`；通过代码检查并不等于执行过存档。
 
 本轮没有依赖论坛传闻决定架构；后续 CINDER RELAY bootstrap 通过已安装 Editor 的 Blank C++ 模板正式生成工程，没有下载外部资源包。具体本机审计、命令与执行边界见 [Phase 00](../PHASE00_VALIDATION.md)。
+
+## Phase 01A 补充依据
+
+- [Unreal MCP in Unreal Editor](https://dev.epicgames.com/documentation/unreal-engine/unreal-mcp-in-unreal-editor)：5.8 官方编辑器 MCP；请求在 game thread 串行执行。本机 ModelContextProtocol 插件存在且标 Experimental。本阶段原生 Python 已能生成与验证资产，未启用 MCP 或接入第三方 server。
+- [Unreal MCP plugin index](https://dev.epicgames.com/documentation/unreal-engine/API/PluginIndex/ModelContextProtocol)：官方路径为 Engine/Plugins/Experimental/ModelContextProtocol。
+- [Editor Python](https://dev.epicgames.com/documentation/en-us/unreal-engine/scripting-the-unreal-editor-using-python?application_version=5.8)：只用于 Editor 资产作者流程；不能把 Python 管线当成 packaged runtime 逻辑。
+- 实际 5.8.4 反射核验：Rotator(1,2,3) 为 pitch=2、yaw=3、roll=1；所有生成旋转改为关键字轴。Key 使用 key_name 属性；DirectionalLight 用 get_component_by_class；BlueprintInternalUseOnly getter 未导出 Python，用一次性 class-filtered ObjectIterator 找 local-player input subsystem，仅测试设置时调用。

@@ -2,7 +2,7 @@
 
 - Communicate with the owner in Chinese; write implementation prompts in English.
 - Read `README.md`, `docs/MILESTONES.md`, and `docs/TECHNICAL_DESIGN.md` first.
-- Phase 00 covers native project bootstrap, documentation, Git/LFS, and the authorized private GitHub repository. Stop before Phase 01 gameplay.
+- Current authorization: Phase 01A greybox, first-person controls, four-step interaction/objective flow, UMG, Editor generation, and feature-branch push. Stop before Phase 01B streaming.
 - Canon lives in `docs/GAME_DESIGN.md` and `docs/STORY.md`; mark new creative proposals, never silently invent canon.
 - Priorities: reliability, gameplay quality, maintainability, performance, then visual fidelity.
 - Preserve existing work. Audit before edits; never upgrade the engine or rewrite working architecture without authorization.
@@ -18,4 +18,4 @@
 - Profile before optimizing. Never equate C++, a successful build, or screenshots with performance or gameplay acceptance.
 - Report commands, exit codes, evidence paths, and unverified work. Keep raw local logs under ignored `.environment-local/`; summarize durable findings in the milestone.
 - Inspect explicit staging paths and staged diff for secrets, generated files, and unlicensed raw packs before commits. Never overwrite or force-push remote history.
-- The owner authorized initial commit and push to private `Leosteeeve/cinder-relay`. Other publication, purchases, or access changes require matching task authorization.
+- Work on `phase-01a-greybox`; the owner authorized its commit and push to existing origin. Do not change repository visibility, force-push, or start Phase 01B.

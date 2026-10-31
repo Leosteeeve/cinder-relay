@@ -1,6 +1,60 @@
 # Windows Setup and Reproduction
 
-本机工作目录：`D:\Projects\FPS Game`。已安装引擎：`D:\Engines\Unreal\UE_5.8`，实际版本 5.8.4。VS 2026 Community 18.11.3，MSVC 产品版本 14.50.35739（目录 family 为 14.50.35717），Windows SDK 10.0.26100.0。不要因 family 文件夹名而误判为旧的 banned compiler。
+## Phase 01A：打开与游玩
+
+工程默认启动地图已设为 `/Game/Generated/Phase01A/Maps/L_CH01_Greybox`。打开 `CinderRelay.uproject` 后可在 Content Browser 找到 Generated → Phase01A → Maps。Play 下拉选择 **Standalone Game**，以便 Esc 交给游戏暂停菜单；普通 PIE 的 Esc 默认会被 Editor 的 StopPlaySession 快捷键截获。PIE 释放鼠标可用 Shift+F1。这是 Editor 快捷键边界，不修改用户的全局快捷键。
+
+也可直接启动未打包的独立游戏窗口（需要本机已编译的 Editor target）：
+
+```powershell
+Set-Location -LiteralPath 'D:\Projects\FPS Game'
+$ueEditor = 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe'
+$projectArg = '"D:\Projects\FPS Game\CinderRelay\CinderRelay.uproject"'
+Start-Process -FilePath $ueEditor -ArgumentList @($projectArg, '/Game/Generated/Phase01A/Maps/L_CH01_Greybox', '-game', '-windowed', '-ResX=1280', '-ResY=720')
+```
+
+WASD 移动、鼠标看、Shift 按住跑、Ctrl 按住蹲、Space 跳、E 交互、Esc 暂停／释放鼠标。进入蓝色标识工坊，查看左侧工作台拿模块；沿后门坡道下行，在橙色 Relay Nine 终端安装，再到青色信号台交互。结束菜单可以 Restart／Exit，无需控制台。
+
+## Phase 01A：生成资产与有界 smoke
+
+脚本仅支持原生 Editor Python，不能用普通 Python 运行 `import unreal`。启用的两个编辑插件只对 Editor target 生效。下面命令会打开／切换地图，所以先保存个人工作并关闭其他 CinderRelay Editor；不要在已有未保存关卡里直接运行生成器。
+
+```powershell
+Set-Location -LiteralPath 'D:\Projects\FPS Game'
+$ueCmd = 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
+$project = 'D:\Projects\FPS Game\CinderRelay\CinderRelay.uproject'
+& $ueCmd $project -run=pythonscript '-script=D:/Projects/FPS Game/CinderRelay/Scripts/generate_greybox.py' -NullRHI -unattended -nosplash
+if ($LASTEXITCODE -ne 0) { throw 'Greybox generation failed; inspect the exact Python error before retrying.' }
+```
+
+`-script` 值使用正斜杠，避免 UE quoted-string parser 将 `\r` 等解析为转义字符。脚本使用 LevelEditorSubsystem／EditorActorSubsystem／EditorAssetSubsystem，地图通过 `new_level(..., False)` 和 `save_current_level()` 保存。Rotator 必须用 `pitch=...`／`yaw=...`／`roll=...`，Python 位置参数顺序不同于 C++。只处理 `/Game/Generated/Phase01A` 与带 `CR_Phase01A_Generated` tag 的稳定命名 Actor；遇到未拥有资产或同名用户对象就报错，不删除用户内容。第一次保存立即写 ownership checkpoint。自定义资产应放在生成目录外；修改生成对象的脚本控制字段可能被下一次生成覆盖。可读 receipt：`CinderRelay/Saved/Phase01A/generation.json`。
+
+只有里程碑或相关故障才执行一次 smoke：
+
+```powershell
+& $ueCmd $project '-ExecutePythonScript=D:/Projects/FPS Game/CinderRelay/Scripts/smoke_greybox.py' -nosplash -unattended -windowed -ResX=1280 -ResY=720
+```
+
+此命令启动有渲染的 Editor／PIE，以 Enhanced Input 注入驱动真实 CharacterMovement，程序化转向，不传送、不直接设置目标。240 秒有界，输出 `Saved/Phase01A/smoke.json` 与原生截图，完成／失败后注销回调并留下 Editor 供检查，需手动结束 PIE／关闭窗口。它不是人工手感验收，也不证明物理 Esc 键或 packaged cook；任何失败先读 stage／错误，只做针对性修正，不循环刷通过。
+
+只验证鼠标方向时，在关闭本工程游戏／Editor 后使用以下定向命令，不需要走完整关卡：
+
+```powershell
+$checkStarted = Get-Date
+& $ueCmd $project '-ExecutePythonScript=D:/Projects/FPS Game/CinderRelay/Scripts/smoke_greybox.py' -CRLookOnly -NullRHI -unattended -nosplash
+if ($LASTEXITCODE -ne 0) { throw 'Editor input check process failed.' }
+$receiptPath = 'D:\Projects\FPS Game\CinderRelay\Saved\Phase01A\look-smoke.json'
+if ((Get-Item -LiteralPath $receiptPath).LastWriteTime -lt $checkStarted) { throw 'No fresh input check receipt.' }
+$result = Get-Content -Raw -LiteralPath $receiptPath | ConvertFrom-Json
+if (-not $result.passed) { throw $result.error }
+$result.checks | Format-Table
+```
+
+该模式在真实 PIE 中注入正／负 pitch action，检查 camera forward Z 的方向，并核验正 MouseX 右转；30 秒运行上限，自动关闭自己的测试 Editor。NullRHI 不验证画面／物理鼠标，完整流程仍用上面的有渲染模式。
+
+官方依据：[Editor Python](https://dev.epicgames.com/documentation/en-us/unreal-engine/scripting-the-unreal-editor-using-python?application_version=5.8)。实际 API 同时核对本机 5.8.4 headers／反射结果；未引入第三方 MCP 或资产包。
+
+本机工作目录：`D:\Projects\FPS Game`。已安装引擎：`D:\Engines\Unreal\UE_5.8`，实际版本 5.8.4。VS 2026 Community 18.11.3，MSVC 产品版本 14.50.35739（目录 family 为 14.50.35717）。已安装 SDK 包含 10.0.26100.0；Phase 01A 两次 UBT 实际选择 **10.0.22621.0**，以当次日志为准。不要因 family 文件夹名而误判为旧的 banned compiler。
 
 ## 原生创建步骤（本轮已执行；不要重复创建）
 
