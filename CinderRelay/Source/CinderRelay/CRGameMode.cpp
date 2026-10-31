@@ -8,6 +8,25 @@
 #include "EngineUtils.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
+#include "CRChapterSaveGame.h"
+
+void ACRGameMode::CaptureSession(UCRChapterSaveGame& S) const
+{
+	S.CurrentObjective = Objective; S.DefeatedEnemyIds = DefeatedEnemies.Array(); S.CollectedPickupIds = CollectedPickups.Array();
+	S.SurveyOpticCollected = bSurveyOptic; S.SurveyOpticSourceId = SurveyOpticSource; S.SurveyUpgradeApplied = bSurveyUpgrade;
+	S.ClaimedStoryBeatIds = StoryBeats.Array();
+}
+bool ACRGameMode::RestoreSession(const UCRChapterSaveGame& S)
+{
+	FString Reason; if (!S.Validate(Reason)) return false;
+	Objective = S.CurrentObjective; DefeatedEnemies.Reset(); CollectedPickups.Reset(); StoryBeats.Reset();
+	for (FName Id : S.DefeatedEnemyIds) DefeatedEnemies.Add(Id);
+	for (FName Id : S.CollectedPickupIds) CollectedPickups.Add(Id);
+	for (FName Id : S.ClaimedStoryBeatIds) StoryBeats.Add(Id);
+	bSurveyOptic = S.SurveyOpticCollected; SurveyOpticSource = S.SurveyOpticSourceId; bSurveyUpgrade = S.SurveyUpgradeApplied;
+	// Bootstrap runs before streamed BeginPlay. Do not broadcast objective progression or replay story.
+	return true;
+}
 
 bool ACRGameMode::TryCollectSurveyOptic(FName SourceId)
 {

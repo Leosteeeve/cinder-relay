@@ -15,9 +15,12 @@ public:
     UPROPERTY(BlueprintAssignable) FCRHealthChanged OnHealthChanged;
     UPROPERTY(BlueprintAssignable) FCRDied OnDeath;
     UFUNCTION(BlueprintPure) bool IsDead() const { return Health <= 0; }
+    bool RestoreCheckpointHealth(float Value);
+    double GetLastDamageTime() const { return LastDamageTime; }
 protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 private:
+    double LastDamageTime = -1000;
     UFUNCTION() void ReceiveDamage(AActor* Damaged, float Damage, const UDamageType* Type, AController* Instigator, AActor* Causer);
 };

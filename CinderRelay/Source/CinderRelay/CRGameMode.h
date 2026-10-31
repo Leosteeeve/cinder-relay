@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "CRGameMode.generated.h"
+class UCRChapterSaveGame;
 
 UENUM(BlueprintType)
 enum class ECRObjective : uint8
@@ -30,6 +31,8 @@ public:
 	UFUNCTION(BlueprintPure) ECRObjective GetObjective() const { return Objective; }
 	UFUNCTION(BlueprintPure) FText GetObjectiveText() const;
 	bool TryAdvance(ECRObjective Expected);
+	void CaptureSession(UCRChapterSaveGame& Snapshot) const;
+	bool RestoreSession(const UCRChapterSaveGame& Snapshot);
 	void ReleaseStartingPlayer();
 	UFUNCTION(BlueprintPure) bool IsEnemyDefeated(FName Id) const { return DefeatedEnemies.Contains(Id); }
 	UFUNCTION(BlueprintCallable) void RecordEnemyDefeated(FName Id) { if(!Id.IsNone()) DefeatedEnemies.Add(Id); }
