@@ -121,8 +121,15 @@ void ACRChapterStreamingController::Reconcile()
 {
     if (!bInitialized || bStopping || bReconciling) return;
     TGuardValue<bool> Guard(bReconciling, true);
+    auto* Chapter = GetWorld()->GetAuthGameMode<ACRGameMode>();
+    if (!Chapter || !Chapter->CanBootstrap()) return;
+    if (!bBootstrapConfigured)
+    {
+        CurrentZone = Chapter->GetStartingZone(); bBootstrapConfigured = true;
+        UE_LOG(LogTemp, Display, TEXT("CR04_STREAM BootstrapTarget=%d existing_pawn=%s"), CurrentZone, *GetNameSafe(UGameplayStatics::GetPlayerPawn(this,0)));
+    }
     const double Now = GetWorld()->GetTimeSeconds();
-    if (const APawn* Pawn = UGameplayStatics::GetPlayerPawn(this, 0))
+    if (const APawn* Pawn = bPlayerReleased ? UGameplayStatics::GetPlayerPawn(this, 0) : nullptr)
     {
         const float X = Pawn->GetActorLocation().X;
         if (CurrentZone == 0 && X > 1760) CurrentZone = 1;
@@ -168,10 +175,9 @@ void ACRChapterStreamingController::Reconcile()
     }
     for (const auto& Gate : Gates) if (Gate.IsValid() && Gate->LeftZone >= 0 && Gate->LeftZone < 2)
         Gate->SetOpen(Wanted[Gate->LeftZone] && Wanted[Gate->LeftZone + 1] && IsZoneReady(Gate->LeftZone) && IsZoneReady(Gate->LeftZone + 1));
-    if (!bPlayerReleased && IsZoneReady(0))
+    if (!bPlayerReleased && IsZoneReady(Chapter->GetStartingZone()))
     {
-        bPlayerReleased = true;
-        if (auto* GM = GetWorld()->GetAuthGameMode<ACRGameMode>()) GM->ReleaseStartingPlayer();
+        bPlayerReleased = Chapter->ReleaseStartingPlayer();
     }
     bool bWaiting = false, bFailed = false;
     for (int32 I = 0; I < 3; ++I) { bWaiting |= Wanted[I] && !IsZoneReady(I); bFailed |= Wanted[I] && Zones[I].bFailed; }

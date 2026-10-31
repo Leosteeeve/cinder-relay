@@ -16,6 +16,8 @@ public:
 	UFUNCTION(BlueprintCallable) void ResumePrototype();
 	UFUNCTION(BlueprintCallable) void RestartPrototype();
 	UFUNCTION(BlueprintCallable) void ExitPrototype();
+	UFUNCTION(BlueprintCallable) void ContinueCheckpoint();
+	void ShowCheckpointFeedback(const FString& Text);
 	UFUNCTION(BlueprintCallable) void RefreshHUD();
 	void SetStreamingStatus(const FText& Text);
 	void RetryStreaming();
@@ -36,13 +38,18 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 	virtual void OnPossess(APawn* InPawn) override;
+	virtual ASpectatorPawn* SpawnSpectatorPawn() override;
 private:
 	void BindPawn();
 	void ApplyPause(bool bPause);
+	void SaveAvailabilityChanged();
+	void TravelToChapter();
+	bool bStartupMenu = false, bPendingContinue = false;
 	UFUNCTION() void ObjectiveChanged(ECRObjective Objective);
 	UFUNCTION() void PromptChanged(FText Prompt);
 	UPROPERTY(Transient) TObjectPtr<UCRHUDWidget> HUD;
 	TWeakObjectPtr<ACRCharacter> ObservedPawn;
 	TWeakObjectPtr<ACRWorkbench> ActiveWorkbench;
 	FTimerHandle SubtitleTimer;
+	FTimerHandle CheckpointMessageTimer;
 };

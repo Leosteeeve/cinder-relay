@@ -37,6 +37,8 @@ void UCRHUDWidget::NativeOnInitialized()
 	auto* PromptSlot = Root->AddChildToCanvas(PromptText); PromptSlot->SetAnchors(FAnchors(0.5f, 1.f)); PromptSlot->SetAlignment(FVector2D(0.5f, 1.f)); PromptSlot->SetPosition(FVector2D(0, -82)); PromptSlot->SetAutoSize(true);
 	StreamingText = MakeText(TEXT("StreamingStatus"), TEXT(""), 18, Amber);
 	auto* StreamingSlot = Root->AddChildToCanvas(StreamingText); StreamingSlot->SetPosition(FVector2D(36, 150)); StreamingSlot->SetAutoSize(true);
+	CheckpointText = MakeText(TEXT("CheckpointStatus"), TEXT(""), 18, Amber);
+	auto* CheckpointSlot = Root->AddChildToCanvas(CheckpointText); CheckpointSlot->SetPosition(FVector2D(36, 182)); CheckpointSlot->SetAutoSize(true);
 	CombatText=MakeText(TEXT("Combat"),TEXT("ROOK-5"),22,Amber);
 	auto* CombatSlot=Root->AddChildToCanvas(CombatText); CombatSlot->SetAnchors(FAnchors(1,1)); CombatSlot->SetAlignment(FVector2D(1,1)); CombatSlot->SetPosition(FVector2D(-36,-56)); CombatSlot->SetAutoSize(true);
 	DamageBorder=WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(),TEXT("DamageTint"));
@@ -59,6 +61,7 @@ void UCRHUDWidget::NativeOnInitialized()
 	MenuTitle = MakeText(TEXT("MenuTitle"), TEXT("PAUSED"), 38, Amber); MenuTitle->SetJustification(ETextJustify::Center);
 	Menu->AddChildToVerticalBox(MenuTitle)->SetPadding(FMargin(16));
 	MenuBody = MakeText(TEXT("MenuBody"), TEXT(""), 22, FLinearColor::White); MenuBody->SetJustification(ETextJustify::Center);
+	MenuBody->SetWrapTextAt(650);
 	Menu->AddChildToVerticalBox(MenuBody)->SetPadding(FMargin(12, 12, 12, 30));
 	auto MakeButton = [this, Menu, &MakeText](const TCHAR* Name, const FString& Label)
 	{
@@ -69,8 +72,12 @@ void UCRHUDWidget::NativeOnInitialized()
 		return Button;
 	};
 	ResumeButton = MakeButton(TEXT("Resume"), TEXT("Resume")); ResumeButton->OnClicked.AddDynamic(this, &UCRHUDWidget::ResumeClicked);
-	MakeButton(TEXT("Restart"), TEXT("Restart prototype"))->OnClicked.AddDynamic(this, &UCRHUDWidget::RestartClicked);
-	MakeButton(TEXT("Exit"), TEXT("Exit prototype"))->OnClicked.AddDynamic(this, &UCRHUDWidget::ExitClicked);
+	ContinueButton = MakeButton(TEXT("Continue"), TEXT("Continue from Checkpoint")); ContinueButton->OnClicked.AddDynamic(this, &UCRHUDWidget::ContinueClicked);
+	RestartButton = MakeButton(TEXT("Restart"), TEXT("Restart Chapter")); RestartButton->OnClicked.AddDynamic(this, &UCRHUDWidget::RestartClicked);
+	MakeButton(TEXT("Exit"), TEXT("Exit Game"))->OnClicked.AddDynamic(this, &UCRHUDWidget::ExitClicked);
+	SaveStatusText = MakeText(TEXT("SaveAvailability"), TEXT(""), 16, FLinearColor(.8f,.85f,.88f));
+	SaveStatusText->SetWrapTextAt(650); SaveStatusText->SetJustification(ETextJustify::Center);
+	Menu->AddChildToVerticalBox(SaveStatusText)->SetPadding(FMargin(12));
 	MenuBackdrop->SetVisibility(ESlateVisibility::Collapsed);
 }
 
@@ -90,7 +97,18 @@ void UCRHUDWidget::SetMenu(bool bVisible, bool bEnded, bool bDefeated)
 	MenuBackdrop->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 	ResumeButton->SetVisibility(bEnded || bDefeated ? ESlateVisibility::Collapsed : ESlateVisibility::Visible);
 	MenuTitle->SetText(FText::FromString(bDefeated ? TEXT("ELIAS HAS FALLEN") : bEnded ? TEXT("MERIDIAN NETWORK") : TEXT("PAUSED")));
-	MenuBody->SetText(FText::FromString(bDefeated ? TEXT("Restart to try First Contact again.") : bEnded ? TEXT("CONNECTION RESTORED\n\nEnd of The Dead Station prototype") : TEXT("The Dead Station\nEsc or Resume to continue")));
+	MenuBody->SetText(FText::FromString(bDefeated ? TEXT("Recover from the last saved checkpoint, or restart the chapter.") : bEnded ? TEXT("CONNECTION RESTORED\n\nEnd of The Dead Station prototype") : TEXT("The Dead Station\nEsc or Resume to continue")));
+}
+void UCRHUDWidget::SetCheckpointStatus(const FText& Text) { if (CheckpointText) CheckpointText->SetText(Text); }
+void UCRHUDWidget::SetRecoveryMenu(bool Startup, bool Defeated, bool CanResume, bool CanContinue, const FString& Status)
+{
+	if (!ContinueButton) return;
+	ContinueButton->SetIsEnabled(CanContinue);
+	if (auto* Label = Cast<UTextBlock>(ContinueButton->GetContent())) Label->SetText(FText::FromString(Defeated ? TEXT("Retry from Last Checkpoint") : TEXT("Continue from Checkpoint")));
+	if (auto* Label = Cast<UTextBlock>(RestartButton->GetContent())) Label->SetText(FText::FromString(Startup ? TEXT("New Game") : TEXT("Restart Chapter")));
+	ResumeButton->SetVisibility(CanResume && !Startup ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	SaveStatusText->SetText(FText::FromString(Status));
+	if (Startup) { MenuTitle->SetText(FText::FromString(TEXT("CINDER RELAY"))); MenuBody->SetText(FText::FromString(TEXT("THE DEAD STATION\nNew Game preserves the existing checkpoint until you reach a new one."))); }
 }
 void UCRHUDWidget::SetCombat(float Health,int32 Magazine,int32 Reserve,bool Reloading)
 {
@@ -117,3 +135,4 @@ FReply UCRHUDWidget::NativeOnKeyDown(const FGeometry& Geometry, const FKeyEvent&
 void UCRHUDWidget::ResumeClicked() { if (auto* PC = Cast<ACRPlayerController>(GetOwningPlayer())) PC->ResumePrototype(); }
 void UCRHUDWidget::RestartClicked() { if (auto* PC = Cast<ACRPlayerController>(GetOwningPlayer())) PC->RestartPrototype(); }
 void UCRHUDWidget::ExitClicked() { if (auto* PC = Cast<ACRPlayerController>(GetOwningPlayer())) PC->ExitPrototype(); }
+void UCRHUDWidget::ContinueClicked() { if (auto* PC = Cast<ACRPlayerController>(GetOwningPlayer())) PC->ContinueCheckpoint(); }

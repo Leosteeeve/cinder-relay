@@ -78,3 +78,17 @@ Phase 01B 在已接受的 Phase 01A 基础上实施。手工线性章节使用�
 The four existing maps and boundary policy remain unchanged. Added actors are owned only by L_CH01_RailYard (cache/stand/sign) and L_CH01_Workshop (calibration bench/backup/sign). The bench is at (2300,-350,0)cm, separate from the original power module at (2800,-365,127). Native LevelSequenceActor uses SpawnParameters.OverrideLevel=Workbench.GetLevel(). Its async handle and temporary hard references are released on EndPlay; the persistent controller's active workbench pointer is weak. The player cannot move during calibration, so normal coordinate-based streaming does not unload the occupied Workshop. No persistent streaming-controller changes, level pins or custom streaming framework are introduced.
 
 After Workshop reload, GameMode flags restore hidden salvage and completed workbench state. The pawn retains its own small weapon appearance assets and upgrade lookup. Restart travels to the existing persistent map and starts a fresh GameMode. A PIE asset load is not proof of cooked coverage; see the separate Phase03 Windows package evidence in MILESTONES.
+
+## Phase04 checkpoint bootstrap
+
+Persistent map `/Game/Generated/Phase01B/Maps/L_CH01_Persistent` adds exactly three `ACRCheckpoint` markers; all170 prior actors are inventory-checked unchanged. `generate_checkpoints.py` first copies the persistent map to ignored evidence, then uses EditorActorSubsystem/LevelEditorSubsystem and the native CallInEditor `SnapToSafeFloor` operation. It modifies only CR_Phase04_Checkpoint actors, refuses unowned matching labels, checks old actor snapshots before saving, and reopens the saved map. No old generator is executed. All other original asset hashes remain comparison inputs.
+
+| ID | Initial zone | Safe marker transform (cm) | Prerequisite |
+| --- | --- | --- | --- |
+| CP00_START_YARD | A RailYard | (-1450,0,110), yaw0 | ReachWorkshop / new session |
+| CP01_WORKSHOP_ENTRY | B Workshop | (2050,0,110), yaw0 | FindModule or later active objective |
+| CP02_RELAY_ACCESS | C RelayBunker | (4050,0,-40.18861), yaw0 | RestorePower or InvestigateSignal |
+
+The ramp remains owned by C; CP02 floor is actually traced at Z=-150.18861. Anchors contain no floor geometry. Initial load starts from the selected checkpoint zone, not a hardcoded A. Session state is restored before native sublevel BeginPlay; no gameplay pawn or spectator is allowed during the readiness hold. The native loaded/visible checks, prerequisite witnesses, and a separate trace plus capsule clearance at the unique matching anchor precede player creation. A missing/unsafe anchor retains the player hold and exposes recovery options instead of teleporting into unloaded geometry.
+
+After bootstrap, existing gates, hysteresis, one-neighbor preload/unload policy, native delegates and F5 retry remain unchanged. Restart/Continue may reload the persistent map; normal A/B/C travel never uses OpenLevel. Restore uses checkpoint IDs and values, with no saved strong references to streamable actors. Phase03 bench references remain weak/local and no streaming framework or World Partition is introduced. Editor collision/asset checks do not establish packaged behavior; separate process-restart receipts are recorded in MILESTONES.

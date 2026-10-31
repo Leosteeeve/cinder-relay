@@ -49,6 +49,7 @@ private:
     bool bInitialized = false;
     bool bStopping = false;
     bool bPlayerReleased = false;
+    bool bBootstrapConfigured = false;
     bool ValidatePrerequisites(int32 Zone);
     void SetState(int32 Zone, ECRZoneState State);
     void LogZone(int32 Zone, const TCHAR* Event) const;
