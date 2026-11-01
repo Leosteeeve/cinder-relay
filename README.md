@@ -73,3 +73,5 @@ Phase05 is an original prototype art pass. Segmented hands, coarse cloth/metal s
 
 
 Current Phase05 package: `.environment-local/phase-05/package/Windows/CinderRelay.exe`. One BuildCookRun passed; all three independent checkpoint/combat/restoration routes passed and exited0. Run without test flags for normal play.70 original Unreal assets and107 cosmetic/presentation actors supplement the173 preserved original actors. No claim of final human art acceptance or a measured12–16minute route. Assembly p95=15.891ms, route3 p95=17.694ms at1080p/Epic in the low-overhead sample; controlled recovery travel still takes38.685–99.894ms outside the gameplay frame table. See PERFORMANCE_BUDGET for exact conditions and measurement limits.
+
+Packaged HUD follow-up passed at1920x1080 windowed and2560x1600 fullscreen: bottom controls, health/ammo, objectives and menus fit; actual New Game, Continue, Restart and normal Exit were inspected. Native exit0. Full human art/animation/audio and natural pacing acceptance remain pending.
