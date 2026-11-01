@@ -1,5 +1,34 @@
 # Windows Setup and Reproduction
 
+## Phase053 anatomy review — no gameplay activation
+
+Open `CinderRelay/ArtSource/Blender/Phase053/CR053_EliasArms.blend` for editable anatomy/garments, fingers and disabled IK edit controls. The source contains packed texture images. For native Unreal review, open `/Game/Generated/Phase053/Review/Maps/L_CR053_ArmsReview` and inspect `AN_CR053_AnatomyReview` in the Animation Editor. This separate3s articulation sample is not a new playable build or weapon animation. Default game remains the existing persistent chapter map.
+
+```powershell
+Set-Location 'D:\Projects\FPS Game'
+$cr53Blender = 'D:\Dev\Toolchains\Blender\blender-4.5.11-windows-x64\blender.exe'
+$cr53Editor = 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe'
+$cr53Project = 'D:/Projects/FPS Game/CinderRelay/CinderRelay.uproject'
+# Export the existing source, preserving centimeter FBX and meter GLB conventions.
+& $cr53Blender --background --factory-startup --python-exit-code 1 --python './CinderRelay/ArtSource/Blender/Phase053/export_elias_review.py' -- --export-dir '.environment-local/phase-05-3/exports'
+# First import or complete only this owned review map; existing imported mesh is preserved.
+$cr53Args = '"{0}" -ExecutePythonScript="D:/Projects/FPS Game/CinderRelay/Scripts/import_arms_review.py" -CR053CaptureReview -unattended -nosplash -NoLiveCoding' -f $cr53Project
+Start-Process -FilePath $cr53Editor -ArgumentList $cr53Args -WindowStyle Hidden -Wait
+# Visible human inspection; no game-input automation.
+Start-Process -FilePath $cr53Editor -ArgumentList ('"{0}" /Game/Generated/Phase053/Review/Maps/L_CR053_ArmsReview' -f $cr53Project)
+```
+
+The importer is idempotent and does not reimport existing geometry automatically. After an intentional saved Blender edit, export then use Unreal's **Reimport** on the owned review Skeletal Mesh/AnimSequence; inspect the actual Interchange result before acceptance. Do not expect exporting alone to update an existing `.uasset`. Do not invoke Phase01A/01B generators or overwrite previous hands. `create_elias_review.py` refuses existing source; `finish_elias_review.py` is one-time only.
+
+For pinned authoring inputs, use the bundled engine Python with UTF-8:
+
+```powershell
+$cr53Python = 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\ThirdParty\Python3\Win64\python.exe'
+& $cr53Python -X utf8 './CinderRelay/ArtSource/Blender/Phase053/acquire_reference.py' --output-dir '.environment-local/phase-05-3/evaluation/makehuman'
+```
+
+Actual review captures/logs and baseline receipts live under `.environment-local/phase-05-3/`. Check `CR053_ARMS_IMPORT_PASS`, the import JSON, `CR053_ARMS_REVIEW PASS`, capture JSON and real files; Unreal can exit0 after Python errors. Initial import diagnostics and successful focused fixes are preserved. No new C++ build/package is necessary for this isolated art review. Final weapon/workbench integration and packaged performance remain pending.
+
 ## Phase 01A：打开与游玩
 
 工程默认启动地图已设为 `/Game/Generated/Phase01A/Maps/L_CH01_Greybox`。打开 `CinderRelay.uproject` 后可在 Content Browser 找到 Generated → Phase01A → Maps。Play 下拉选择 **Standalone Game**，以便 Esc 交给游戏暂停菜单；普通 PIE 的 Esc 默认会被 Editor 的 StopPlaySession 快捷键截获。PIE 释放鼠标可用 Shift+F1。这是 Editor 快捷键边界，不修改用户的全局快捷键。
@@ -457,3 +486,40 @@ Final package / bounded regression commands used:
 ```
 
 For a later rerun choose a new TestPrefix and evidence directory. Never overwrite player saves. Archive `Saved/Phase04` alongside process receipts before running any diagnostic video route, because the route-number output paths are reused. Do not record video or render Editor screenshots during performance sampling.
+
+
+## Phase05.3 first-person handling
+
+Active project/map and controls are unchanged. Gameplay arms and all seven handling clips load asynchronously from /Game/Generated/Phase053/Gameplay. The Workshop references the separate Phase05322s assembly sequence. Preserve Phase01A and earlier Blender sources; never rerun old greybox generators.
+
+Editable sources: ArtSource/Blender/Phase053/CR053_FirstPerson.blend and CR053_RookRestoration.blend. author_first_person.py and author_restoration.py write only owned derivatives (explicit --rebuild-owned); rig_contact.py calibrates authoring poles. refine_hand_surfaces.py performs a guarded one-time covered-skin correction. Exports remain ignored under .environment-local/phase-05-3/handling-exports. Do not regenerate all actions for a small mesh correction.
+
+Native import_first_person.py imports missing owned assets; explicit -CR053ReimportHandling reimports clips and -CR053ReimportHandlingMesh reimports the mesh. import_human_restoration.py uses -CR053ReimportAssembly/-CR053ReimportAssemblyMesh for the respective assets; -CR053ActivateAssembly switches only the existing bench's soft references. validate_contact_tracks.py -CR053Human checks actual sequence camera evaluation/Stop restoration without saving maps. review_human_restoration.py captures12 real poses; -CR053ContactOnly limits a targeted check to two contact moments. These captures do not replace continuous playback review.
+
+Current locally packaged candidate and real recording (no test flags for ordinary play):
+
+```powershell
+Set-Location 'D:\Projects\FPS Game'
+Start-Process '.\.environment-local\phase-05-3\package\Windows\CinderRelay.exe' -WindowStyle Normal
+# Actual recorded gameplay, silent; not an animation render or benchmark.
+Start-Process '.\.environment-local\phase-05-3\CR053_Gameplay_Review.mp4'
+```
+
+The new action-only source correction is reproducible without regenerating mesh/atlas/skeleton:
+
+```powershell
+& 'D:\Dev\Toolchains\Blender\blender-4.5.11-windows-x64\blender.exe' -b --python '.\CinderRelay\ArtSource\Blender\Phase053\refine_reload_framing.py' -- --replace-owned-derivative --export-dir 'D:\Projects\FPS Game\.environment-local\phase-05-3\handling-exports'
+& 'D:\Dev\Toolchains\Blender\blender-4.5.11-windows-x64\blender.exe' -b --python '.\CinderRelay\ArtSource\Blender\Phase053\verify_reload_correction.py' -- --evidence-dir 'D:\Projects\FPS Game\.environment-local\phase-05-3\reload-fix' --export-dir 'D:\Projects\FPS Game\.environment-local\phase-05-3\handling-exports'
+& 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\Win64\UnrealEditor-Cmd.exe' 'D:\Projects\FPS Game\CinderRelay\CinderRelay.uproject' '-ExecutePythonScript=D:/Projects/FPS Game/CinderRelay/Scripts/import_first_person.py' -CR053ReimportHandling -unattended -nullrhi
+```
+
+Only run the above when intentionally updating the owned `CR053_FirstPerson_ReloadCorrected.blend` derivative. The correction starts from the preserved original and creates seven rollback actions; it updates the shared right grip in all seven clips plus Reload left-hand contact. It does not regenerate meshes, textures, rest poses, original Blender files or maps. The reimport flag updates animations only, not the skeletal mesh. Verification supports `--skip-renders` for a focused data-only rerun. `restoration_orientation.py` defines smooth contact orientation; `smooth_restoration_release.py` is a guarded one-time correction already applied to the saved workbench derivative. Do not reapply that correction to already-corrected fingers.
+
+Full build/reproduction after a clean clone with LFS assets (not needed for a simple playtest):
+
+```powershell
+& 'D:/Engines/Unreal/UE_5.8/Engine/Build/BatchFiles/RunUAT.bat' BuildCookRun '-project=D:/Projects/FPS Game/CinderRelay/CinderRelay.uproject' -noP4 -platform=Win64 -clientconfig=Development -target=CinderRelay -build -cook -stage -pak -archive '-archivedirectory=D:/Projects/FPS Game/.environment-local/phase-05-3/package' -nocompileeditor -installed -unattended -utf8output
+& './CinderRelay/Scripts/run_checkpoint_acceptance.ps1' -PackageRoot '.environment-local/phase-05-3/package/Windows' -EvidenceRoot '.environment-local/phase-05-3/owner-retest' -TestPrefix Phase053OwnerRetest -LowOverhead -Fullscreen
+```
+
+The runner refuses existing test-prefix slots; choose a new prefix for an intentional later check. Preserve/inspect user save files independently. Do not run automation while the owner is playing. Archive Saved/Phase04 before a diagnostic route overwrites route-number receipts. The delivered low-overhead measurements precede the final single-clip framing edit; the latter has focused recorded package validation, not a repeated whole-route benchmark. Raw video/frames/trace/build files stay ignored locally; `docs/PHASE053_VALIDATION.json` records selected hashes/results.

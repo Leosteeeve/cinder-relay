@@ -4,6 +4,7 @@
 #include "CRPlayerController.h"
 #include "CRWeaponComponent.h"
 #include "CRWeaponData.h"
+#include "CRWeaponViewComponent.h"
 #include "CRHealthComponent.h"
 #include "CRGameMode.h"
 #include "Camera/CameraComponent.h"
@@ -40,6 +41,7 @@ void ACRCombatAcceptance::Tick(float Delta)
     {
         Player=Cast<ACRCharacter>(UGameplayStatics::GetPlayerPawn(this,0)); if(!Player.IsValid()) return;
         PC=Cast<ACRPlayerController>(Player->GetController());
+        if(!Player->WeaponView->HasAnimatedHands()) return;
         Check(Player->Weapon->Data && Player->Weapon->Magazine==5 && Player->Weapon->Reserve==25 && Player->Health->Health==100,TEXT("Initial ROOK-5 data/ammo/health")); if(bFinished)return;
         if(VerifyWeaponRestart) { Check(!PC->bPrototypeDefeated && GetWorld()->GetAuthGameMode<ACRGameMode>()->GetObjective()==ECRObjective::ReachWorkshop,TEXT("Restart resets defeat/ammo/objective")); if(!bFinished)Finish(true,TEXT("Weapon state, damage, cover, pause/death/restart checks passed")); return; }
         PC->SetControlRotation(FRotator::ZeroRotator);
@@ -60,28 +62,33 @@ void ACRCombatAcceptance::Tick(float Delta)
     }
     else if(Stage==TEXT("miss_fire")&&Age>1)
     {
+        Check(Player->WeaponView->GetEjectedCases()==1,TEXT("Accepted shot has exactly one native notify case; rejected spam has none"));
         Check(W->TryFire()&&W->Magazine==3&&TargetHealth->Health==60,TEXT("Miss consumes ammunition"));
         Wall=TestBlock(Player->Camera->GetComponentLocation()+FVector(90,0,0),FVector(20,150,150),false); PC->SetControlRotation(FRotator::ZeroRotator); Next(TEXT("cover"));
     }
     else if(Stage==TEXT("cover")&&Age>1)
     {
+        Check(Player->WeaponView->GetEjectedCases()==2,TEXT("Second montage instance emits its own case exactly once"));
         Check(W->TryFire()&&W->Magazine==2&&TargetHealth->Health==60,TEXT("Real solid cover blocks damage"));
         Wall->Destroy(); Target->Destroy(); Next(TEXT("partial_reload"));
     }
     else if(Stage==TEXT("partial_reload")&&Age>1)
     {
+        Check(Player->WeaponView->GetEjectedCases()==3,TEXT("Cover shot still has one cosmetic case"));
         Check(W->TryReload()&&!W->TryFire()&&!W->TryReload(),TEXT("Partial reload rejects fire and duplicate reload"));
         W->SetSprinting(true); Check(W->State==ECRWeaponState::Reloading&&!W->bAiming,TEXT("Sprint leaves reload valid, disables ADS"));
-        PC->TogglePrototypePause(); Next(TEXT("paused"));
+        PausedActionPosition=Player->WeaponView->GetHandlingActionPosition();PC->TogglePrototypePause(); Next(TEXT("paused"));
     }
     else if(Stage==TEXT("paused")&&Age>.6)
     {
         Check(W->Magazine==2&&W->Reserve==25&&W->State==ECRWeaponState::Reloading,TEXT("Pause freezes reload transfer"));
+        Check(FMath::Abs(Player->WeaponView->GetHandlingActionPosition()-PausedActionPosition)<.01f,TEXT("Pause freezes the native handling montage"));
         PC->TogglePrototypePause(); Next(TEXT("reload_finish"));
     }
     else if(Stage==TEXT("reload_finish")&&Age>2.6)
     {
         Check(W->Magazine==5&&W->Reserve==22&&W->State==ECRWeaponState::Ready&&!W->TryReload(),TEXT("Partial reload conserves total, full-mag reload rejected"));
+        Check(Player->WeaponView->GetEjectedCases()==3,TEXT("Reload and idle do not eject spent cases"));
         W->SetAiming(true); Next(TEXT("ads"));
     }
     else if(Stage==TEXT("ads")&&Age>.5)
@@ -95,6 +102,7 @@ void ACRCombatAcceptance::Tick(float Delta)
     }
     else if(Stage==TEXT("empty_reload")&&Age>1)
     {
+        Check(Player->WeaponView->GetEjectedCases()==8,TEXT("Five paced shots add five cases, not one per animation tick"));
         Check(W->Magazine==0&&!W->TryFire()&&W->Magazine==0,TEXT("Empty fire never produces negative ammo"));
         Check(FMath::Abs(Player->Camera->FieldOfView-85)<1,TEXT("ADS reverses to original FOV"));
         Check(W->TryReload(),TEXT("Empty-mag reload accepted")); Next(TEXT("reserve_case"));
@@ -102,11 +110,14 @@ void ACRCombatAcceptance::Tick(float Delta)
     else if(Stage==TEXT("reserve_case")&&Age>2.6)
     {
         Check(W->Magazine==5&&W->Reserve==17,TEXT("Empty reload transfers exactly five"));
+        Check(Player->WeaponView->GetEjectedCases()==8,TEXT("Dry fire and empty reload produce no spent case"));
         // Explicit isolated edge-case fixture, not the integrated gameplay route.
+        Player->WeaponView->SuppressNextCaseForTest();
         W->Reserve=0; Check(W->TryFire(),TEXT("Zero reserve does not discard a chambered shot")); Next(TEXT("zero_reload"));
     }
     else if(Stage==TEXT("zero_reload")&&Age>1)
     {
+        Check(W->State==ECRWeaponState::Ready&&Player->WeaponView->GetAcceptedPresentationShots()==9&&Player->WeaponView->GetEjectedCases()==8,TEXT("Deliberately missing cosmetic case cannot block Ready or duplicate ammunition"));
         Check(!W->TryReload()&&W->Magazine==4&&W->Reserve==0,TEXT("Zero-reserve reload rejected"));
         Check(W->AddReserve(2)==2&&W->TryReload(),TEXT("Limited reserve pickup allows reload"));
         UGameplayStatics::ApplyDamage(Player.Get(),100,PC.Get(),this,nullptr); Next(TEXT("dead"));

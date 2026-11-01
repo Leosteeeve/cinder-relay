@@ -1,0 +1,1375 @@
+{
+  "status": "Playable candidate; final human art acceptance and 60FPS stabilization remain open",
+  "baseline": "6f9dd59100222ecab6e2bdeeaed60c937389ea60",
+  "protected_hashes": 224,
+  "source_exceptions": [
+    "CRCharacter.cpp",
+    "CRCheckpointRoute.cpp",
+    "CRCombatAcceptance.cpp",
+    "CRCombatAcceptance.h",
+    "CRWeaponViewComponent.cpp",
+    "CRWeaponViewComponent.h",
+    "CinderRelay.Build.cs"
+  ],
+  "actors": {
+    "historical_baseline": 302,
+    "prior_Phase052_additions": 36,
+    "new_Phase053_actors": 0
+  },
+  "primary_routes": [
+    {
+      "route": 1,
+      "native_exit": 0,
+      "launcher_exit": 0,
+      "acceptance": {
+        "passed": true,
+        "route": 1,
+        "journey": 0,
+        "message": "CP01 saved; exit process before next route"
+      }
+    },
+    {
+      "route": 2,
+      "native_exit": 0,
+      "launcher_exit": 0,
+      "acceptance": {
+        "passed": true,
+        "route": 2,
+        "journey": 0,
+        "message": "CP02 saved; exit process before next route"
+      }
+    },
+    {
+      "route": 3,
+      "native_exit": 0,
+      "launcher_exit": 0,
+      "acceptance": {
+        "passed": true,
+        "route": 3,
+        "journey": 4,
+        "message": "Checkpoint recovery, backtracking, death retry, restart and optional ending passed"
+      }
+    }
+  ],
+  "primary_exe_sha256": "A3348A46175046EC76E5FFB1D91016794E1B76FFEEC7227469D3732534F35111",
+  "final_exe_sha256": "1469f611f6201e13a82022c4fd12271bf133257935d359112149d19c48b7c905",
+  "final_package": {
+    "exit": 0,
+    "scope": "Incremental cook after native reload framing correction; existing compiled Game target, no full engine build"
+  },
+  "video": {
+    "path": "CR053_Gameplay_Review.mp4",
+    "sha256": "46fbd1009bb622703c0ecd7b60fd6b6ce4f732d1f00f636e30f3328efb9e8bd8",
+    "seconds": 46.03,
+    "frames": 1238,
+    "resolution": [
+      1920,
+      1080
+    ],
+    "requested_fps": 30,
+    "actual_average_fps": 26.89,
+    "silent": true,
+    "continuous": true,
+    "only_trim": "trailing shutdown/desktop; original action timestamps retained",
+    "capture_exit": 0,
+    "native_exit": 0,
+    "human_motion_acceptance": false
+  },
+  "diagnostic_native_exit": 777003,
+  "reload_rig_correction": {
+    "date": "2026-11-01",
+    "scope": "Shared authored right wrist frame and Reload left prop contact; no rest/skin/runtime changes",
+    "source": "CinderRelay/ArtSource/Blender/Phase053/CR053_FirstPerson_ReloadCorrected.blend",
+    "source_sha256": "17422540b2eb3643ae388788df8d8141ca21d202f52b76893d2d41d28669dc6e",
+    "original_sources_unchanged": [
+      {
+        "file": "CinderRelay/ArtSource/Blender/Phase053/CR053_EliasArms.blend",
+        "sha256": "44a135c5762462127bd977d8f47b1e9d6514f197b22b36218ffbead687b05863"
+      },
+      {
+        "file": "CinderRelay/ArtSource/Blender/Phase053/CR053_FirstPerson.blend",
+        "sha256": "52123df9222fcf36fdd2c84575821b1f4c35814c4501600a7a325781b2533a94"
+      },
+      {
+        "file": "CinderRelay/ArtSource/Blender/Phase053/CR053_RookRestoration.blend",
+        "sha256": "ce6ccc90c4baef5beee93b60d313e3c5895bd0c3050ae0d7995f79bb6828fe39"
+      }
+    ],
+    "protected_content_assets_unchanged": 221,
+    "rollback_actions": 7,
+    "native_bone_count": 56,
+    "reload_seconds": 2.4,
+    "evaluated_frames": [
+      {
+        "frame": 0,
+        "before": {
+          "L": {
+            "wrist": [
+              17.999992,
+              7.000021,
+              -9.999991
+            ],
+            "quat_wxyz": [
+              0.433664,
+              0.893357,
+              0.117655,
+              -0.002377
+            ],
+            "elbow": [
+              -0.115061,
+              17.599714,
+              -23.461317
+            ],
+            "mcp": [
+              19.884851,
+              -2.424276,
+              -4.816628
+            ],
+            "bend_degrees": 41.533441,
+            "target_error_cm": 2.4e-05
+          },
+          "R": {
+            "wrist": [
+              -19.999857,
+              -4.999968,
+              1.000205
+            ],
+            "quat_wxyz": [
+              0.820857,
+              -0.543351,
+              -0.146849,
+              -0.096947
+            ],
+            "elbow": [
+              -41.073196,
+              -0.67004,
+              -11.604649
+            ],
+            "mcp": [
+              -16.862139,
+              -4.999968,
+              -9.458858
+            ],
+            "bend_degrees": 103.966237,
+            "target_error_cm": 0.000252
+          }
+        },
+        "after": {
+          "L": {
+            "wrist": [
+              17.999992,
+              7.000021,
+              -9.999991
+            ],
+            "quat_wxyz": [
+              0.433664,
+              0.893357,
+              0.117655,
+              -0.002377
+            ],
+            "elbow": [
+              -0.115061,
+              17.599714,
+              -23.461317
+            ],
+            "mcp": [
+              19.884851,
+              -2.424276,
+              -4.816628
+            ],
+            "bend_degrees": 41.533441,
+            "target_error_cm": 2.4e-05
+          },
+          "R": {
+            "wrist": [
+              -26.999779,
+              -4.999731,
+              -6.999584
+            ],
+            "quat_wxyz": [
+              0.508238,
+              -0.336593,
+              -0.661109,
+              -0.437418
+            ],
+            "elbow": [
+              -44.046806,
+              -6.546863,
+              -25.13026
+            ],
+            "mcp": [
+              -16.292248,
+              -4.999732,
+              -4.858079
+            ],
+            "bend_degrees": 35.609256,
+            "target_error_cm": 0.000543
+          }
+        }
+      },
+      {
+        "frame": 18,
+        "before": {
+          "L": {
+            "wrist": [
+              7.999993,
+              4.250549,
+              -2.059777
+            ],
+            "quat_wxyz": [
+              0.636905,
+              0.761908,
+              0.113585,
+              -0.030769
+            ],
+            "elbow": [
+              0.125191,
+              16.381824,
+              -22.37075
+            ],
+            "mcp": [
+              9.884851,
+              -1.637172,
+              6.941301
+            ],
+            "bend_degrees": 8.76876,
+            "target_error_cm": 7e-06
+          },
+          "R": {
+            "wrist": [
+              -17.000011,
+              1.054706,
+              13.230307
+            ],
+            "quat_wxyz": [
+              0.665025,
+              -0.725795,
+              -0.165941,
+              -0.058541
+            ],
+            "elbow": [
+              -37.259853,
+              -4.06701,
+              -0.371994
+            ],
+            "mcp": [
+              -13.862291,
+              -3.855526,
+              3.995503
+            ],
+            "bend_degrees": 108.677776,
+            "target_error_cm": 3e-05
+          }
+        },
+        "after": {
+          "L": {
+            "wrist": [
+              3.7e-05,
+              7.17207,
+              -10.075827
+            ],
+            "quat_wxyz": [
+              0.202832,
+              -0.555098,
+              -0.471415,
+              -0.654594
+            ],
+            "elbow": [
+              -4.569738,
+              18.543501,
+              -31.790422
+            ],
+            "mcp": [
+              10.399644,
+              5.835927,
+              -7.026192
+            ],
+            "bend_degrees": 61.733791,
+            "target_error_cm": 6.4e-05
+          },
+          "R": {
+            "wrist": [
+              -23.999908,
+              -1.641278,
+              -0.467222
+            ],
+            "quat_wxyz": [
+              0.459956,
+              -0.400051,
+              -0.712547,
+              -0.347384
+            ],
+            "elbow": [
+              -42.287117,
+              -1.405474,
+              -17.415331
+            ],
+            "mcp": [
+              -13.292377,
+              -1.087015,
+              1.601313
+            ],
+            "bend_degrees": 32.064009,
+            "target_error_cm": 0.000204
+          }
+        }
+      },
+      {
+        "frame": 30,
+        "before": {
+          "L": {
+            "wrist": [
+              7.999991,
+              3.781077,
+              -2.942727
+            ],
+            "quat_wxyz": [
+              0.636905,
+              0.761908,
+              0.113585,
+              -0.030769
+            ],
+            "elbow": [
+              -0.145735,
+              15.886683,
+              -23.161961
+            ],
+            "mcp": [
+              9.884851,
+              -2.106643,
+              6.058351
+            ],
+            "bend_degrees": 9.390466,
+            "target_error_cm": 1e-05
+          },
+          "R": {
+            "wrist": [
+              -17.000011,
+              1.054706,
+              13.230307
+            ],
+            "quat_wxyz": [
+              0.665025,
+              -0.725795,
+              -0.165941,
+              -0.058541
+            ],
+            "elbow": [
+              -37.259853,
+              -4.06701,
+              -0.371994
+            ],
+            "mcp": [
+              -13.862291,
+              -3.855526,
+              3.995503
+            ],
+            "bend_degrees": 108.677776,
+            "target_error_cm": 3e-05
+          }
+        },
+        "after": {
+          "L": {
+            "wrist": [
+              4.1e-05,
+              6.913244,
+              -11.041751
+            ],
+            "quat_wxyz": [
+              0.202832,
+              -0.555098,
+              -0.471415,
+              -0.654594
+            ],
+            "elbow": [
+              -5.248793,
+              18.306482,
+              -32.590767
+            ],
+            "mcp": [
+              10.399648,
+              5.577101,
+              -7.992115
+            ],
+            "bend_degrees": 60.148196,
+            "target_error_cm": 7e-05
+          },
+          "R": {
+            "wrist": [
+              -23.999908,
+              -1.641278,
+              -0.467222
+            ],
+            "quat_wxyz": [
+              0.459956,
+              -0.400051,
+              -0.712547,
+              -0.347384
+            ],
+            "elbow": [
+              -42.287117,
+              -1.405474,
+              -17.415331
+            ],
+            "mcp": [
+              -13.292377,
+              -1.087015,
+              1.601313
+            ],
+            "bend_degrees": 32.064009,
+            "target_error_cm": 0.000204
+          }
+        }
+      },
+      {
+        "frame": 46,
+        "before": {
+          "L": {
+            "wrist": [
+              9.963638,
+              8.698522,
+              -11.22021
+            ],
+            "quat_wxyz": [
+              0.615293,
+              0.761146,
+              -0.183878,
+              -0.090887
+            ],
+            "elbow": [
+              -2.752157,
+              20.59016,
+              -29.06995
+            ],
+            "mcp": [
+              6.102068,
+              3.361101,
+              -2.511733
+            ],
+            "bend_degrees": 51.414222,
+            "target_error_cm": 2.1e-05
+          },
+          "R": {
+            "wrist": [
+              -17.000011,
+              1.054706,
+              13.230307
+            ],
+            "quat_wxyz": [
+              0.665025,
+              -0.725795,
+              -0.165941,
+              -0.058541
+            ],
+            "elbow": [
+              -37.259853,
+              -4.06701,
+              -0.371994
+            ],
+            "mcp": [
+              -13.862291,
+              -3.855526,
+              3.995503
+            ],
+            "bend_degrees": 108.677776,
+            "target_error_cm": 3e-05
+          }
+        },
+        "after": {
+          "L": {
+            "wrist": [
+              3.98405,
+              17.824293,
+              -19.141748
+            ],
+            "quat_wxyz": [
+              0.033378,
+              0.615387,
+              0.304149,
+              0.726414
+            ],
+            "elbow": [
+              -11.684764,
+              28.439526,
+              -35.375069
+            ],
+            "mcp": [
+              11.309914,
+              11.089762,
+              -14.64562
+            ],
+            "bend_degrees": 17.782312,
+            "target_error_cm": 6e-05
+          },
+          "R": {
+            "wrist": [
+              -23.999908,
+              -1.641278,
+              -0.467222
+            ],
+            "quat_wxyz": [
+              0.459956,
+              -0.400051,
+              -0.712547,
+              -0.347384
+            ],
+            "elbow": [
+              -42.287117,
+              -1.405474,
+              -17.415331
+            ],
+            "mcp": [
+              -13.292377,
+              -1.087015,
+              1.601313
+            ],
+            "bend_degrees": 32.064009,
+            "target_error_cm": 0.000204
+          }
+        }
+      },
+      {
+        "frame": 57,
+        "before": {
+          "L": {
+            "wrist": [
+              9.963559,
+              -7.084555,
+              -35.672798
+            ],
+            "quat_wxyz": [
+              0.57702,
+              0.728799,
+              -0.347946,
+              -0.121794
+            ],
+            "elbow": [
+              -8.957021,
+              9.029948,
+              -33.660229
+            ],
+            "mcp": [
+              3.324736,
+              -10.787192,
+              -27.833546
+            ],
+            "bend_degrees": 107.466388,
+            "target_error_cm": 0.000114
+          },
+          "R": {
+            "wrist": [
+              -17.000011,
+              1.054706,
+              13.230307
+            ],
+            "quat_wxyz": [
+              0.665025,
+              -0.725795,
+              -0.165941,
+              -0.058541
+            ],
+            "elbow": [
+              -37.259853,
+              -4.06701,
+              -0.371994
+            ],
+            "mcp": [
+              -13.862291,
+              -3.855526,
+              3.995503
+            ],
+            "bend_degrees": 108.677776,
+            "target_error_cm": 3e-05
+          }
+        },
+        "after": {
+          "L": {
+            "wrist": [
+              6.194128,
+              9.606823,
+              -46.962955
+            ],
+            "quat_wxyz": [
+              0.168383,
+              0.624406,
+              0.194808,
+              0.737438
+            ],
+            "elbow": [
+              -14.953556,
+              20.344393,
+              -39.269043
+            ],
+            "mcp": [
+              10.45533,
+              0.8988,
+              -41.93803
+            ],
+            "bend_degrees": 57.83253,
+            "target_error_cm": 9.2e-05
+          },
+          "R": {
+            "wrist": [
+              -23.999908,
+              -1.641278,
+              -0.467222
+            ],
+            "quat_wxyz": [
+              0.459956,
+              -0.400051,
+              -0.712547,
+              -0.347384
+            ],
+            "elbow": [
+              -42.287117,
+              -1.405474,
+              -17.415331
+            ],
+            "mcp": [
+              -13.292377,
+              -1.087015,
+              1.601313
+            ],
+            "bend_degrees": 32.064009,
+            "target_error_cm": 0.000204
+          }
+        }
+      },
+      {
+        "frame": 66,
+        "before": {
+          "L": {
+            "wrist": [
+              9.963559,
+              -7.084555,
+              -35.672798
+            ],
+            "quat_wxyz": [
+              0.57702,
+              0.728799,
+              -0.347946,
+              -0.121794
+            ],
+            "elbow": [
+              -8.957021,
+              9.029948,
+              -33.660229
+            ],
+            "mcp": [
+              3.324736,
+              -10.787192,
+              -27.833546
+            ],
+            "bend_degrees": 107.466388,
+            "target_error_cm": 0.000114
+          },
+          "R": {
+            "wrist": [
+              -17.000011,
+              1.054706,
+              13.230307
+            ],
+            "quat_wxyz": [
+              0.665025,
+              -0.725795,
+              -0.165941,
+              -0.058541
+            ],
+            "elbow": [
+              -37.259853,
+              -4.06701,
+              -0.371994
+            ],
+            "mcp": [
+              -13.862291,
+              -3.855526,
+              3.995503
+            ],
+            "bend_degrees": 108.677776,
+            "target_error_cm": 3e-05
+          }
+        },
+        "after": {
+          "L": {
+            "wrist": [
+              6.194128,
+              9.606823,
+              -46.962955
+            ],
+            "quat_wxyz": [
+              0.168383,
+              0.624406,
+              0.194808,
+              0.737438
+            ],
+            "elbow": [
+              -14.953556,
+              20.344393,
+              -39.269043
+            ],
+            "mcp": [
+              10.45533,
+              0.8988,
+              -41.93803
+            ],
+            "bend_degrees": 57.83253,
+            "target_error_cm": 9.2e-05
+          },
+          "R": {
+            "wrist": [
+              -23.999908,
+              -1.641278,
+              -0.467222
+            ],
+            "quat_wxyz": [
+              0.459956,
+              -0.400051,
+              -0.712547,
+              -0.347384
+            ],
+            "elbow": [
+              -42.287117,
+              -1.405474,
+              -17.415331
+            ],
+            "mcp": [
+              -13.292377,
+              -1.087015,
+              1.601313
+            ],
+            "bend_degrees": 32.064009,
+            "target_error_cm": 0.000204
+          }
+        }
+      },
+      {
+        "frame": 82,
+        "before": {
+          "L": {
+            "wrist": [
+              9.644628,
+              13.649504,
+              -4.792149
+            ],
+            "quat_wxyz": [
+              0.551215,
+              0.704233,
+              -0.426316,
+              -0.135914
+            ],
+            "elbow": [
+              -1.261786,
+              25.225653,
+              -23.995245
+            ],
+            "mcp": [
+              1.899889,
+              11.057961,
+              2.456319
+            ],
+            "bend_degrees": 71.869566,
+            "target_error_cm": 5e-06
+          },
+          "R": {
+            "wrist": [
+              -17.000011,
+              1.054706,
+              13.230307
+            ],
+            "quat_wxyz": [
+              0.665025,
+              -0.725795,
+              -0.165941,
+              -0.058541
+            ],
+            "elbow": [
+              -37.259853,
+              -4.06701,
+              -0.371994
+            ],
+            "mcp": [
+              -13.862291,
+              -3.855526,
+              3.995503
+            ],
+            "bend_degrees": 108.677776,
+            "target_error_cm": 3e-05
+          }
+        },
+        "after": {
+          "L": {
+            "wrist": [
+              7.16999,
+              23.390514,
+              -12.35101
+            ],
+            "quat_wxyz": [
+              0.234218,
+              0.621795,
+              0.137703,
+              0.734541
+            ],
+            "elbow": [
+              -8.291089,
+              32.206841,
+              -29.813637
+            ],
+            "mcp": [
+              9.680009,
+              14.110271,
+              -7.172762
+            ],
+            "bend_degrees": 39.181425,
+            "target_error_cm": 2.9e-05
+          },
+          "R": {
+            "wrist": [
+              -23.999908,
+              -1.641278,
+              -0.467222
+            ],
+            "quat_wxyz": [
+              0.459956,
+              -0.400051,
+              -0.712547,
+              -0.347384
+            ],
+            "elbow": [
+              -42.287117,
+              -1.405474,
+              -17.415331
+            ],
+            "mcp": [
+              -13.292377,
+              -1.087015,
+              1.601313
+            ],
+            "bend_degrees": 32.064009,
+            "target_error_cm": 0.000204
+          }
+        }
+      },
+      {
+        "frame": 94,
+        "before": {
+          "L": {
+            "wrist": [
+              9.644628,
+              13.649504,
+              -4.792149
+            ],
+            "quat_wxyz": [
+              0.551215,
+              0.704233,
+              -0.426316,
+              -0.135914
+            ],
+            "elbow": [
+              -1.261786,
+              25.225653,
+              -23.995245
+            ],
+            "mcp": [
+              1.899889,
+              11.057961,
+              2.456319
+            ],
+            "bend_degrees": 71.869566,
+            "target_error_cm": 5e-06
+          },
+          "R": {
+            "wrist": [
+              -17.000011,
+              1.054706,
+              13.230307
+            ],
+            "quat_wxyz": [
+              0.665025,
+              -0.725795,
+              -0.165941,
+              -0.058541
+            ],
+            "elbow": [
+              -37.259853,
+              -4.06701,
+              -0.371994
+            ],
+            "mcp": [
+              -13.862291,
+              -3.855526,
+              3.995503
+            ],
+            "bend_degrees": 108.677776,
+            "target_error_cm": 3e-05
+          }
+        },
+        "after": {
+          "L": {
+            "wrist": [
+              7.16999,
+              23.390514,
+              -12.35101
+            ],
+            "quat_wxyz": [
+              0.234218,
+              0.621795,
+              0.137703,
+              0.734541
+            ],
+            "elbow": [
+              -8.291089,
+              32.206841,
+              -29.813637
+            ],
+            "mcp": [
+              9.680009,
+              14.110271,
+              -7.172762
+            ],
+            "bend_degrees": 39.181425,
+            "target_error_cm": 2.9e-05
+          },
+          "R": {
+            "wrist": [
+              -23.999908,
+              -1.641278,
+              -0.467222
+            ],
+            "quat_wxyz": [
+              0.459956,
+              -0.400051,
+              -0.712547,
+              -0.347384
+            ],
+            "elbow": [
+              -42.287117,
+              -1.405474,
+              -17.415331
+            ],
+            "mcp": [
+              -13.292377,
+              -1.087015,
+              1.601313
+            ],
+            "bend_degrees": 32.064009,
+            "target_error_cm": 0.000204
+          }
+        }
+      },
+      {
+        "frame": 111,
+        "before": {
+          "L": {
+            "wrist": [
+              7.999993,
+              4.250549,
+              -2.059777
+            ],
+            "quat_wxyz": [
+              0.636905,
+              0.761908,
+              0.113585,
+              -0.030769
+            ],
+            "elbow": [
+              0.125191,
+              16.381824,
+              -22.37075
+            ],
+            "mcp": [
+              9.884851,
+              -1.637172,
+              6.941301
+            ],
+            "bend_degrees": 8.76876,
+            "target_error_cm": 7e-06
+          },
+          "R": {
+            "wrist": [
+              -17.000011,
+              1.054706,
+              13.230307
+            ],
+            "quat_wxyz": [
+              0.665025,
+              -0.725795,
+              -0.165941,
+              -0.058541
+            ],
+            "elbow": [
+              -37.259853,
+              -4.06701,
+              -0.371994
+            ],
+            "mcp": [
+              -13.862291,
+              -3.855526,
+              3.995503
+            ],
+            "bend_degrees": 108.677776,
+            "target_error_cm": 3e-05
+          }
+        },
+        "after": {
+          "L": {
+            "wrist": [
+              3.7e-05,
+              7.17207,
+              -10.075827
+            ],
+            "quat_wxyz": [
+              0.202832,
+              -0.555098,
+              -0.471415,
+              -0.654594
+            ],
+            "elbow": [
+              -4.569738,
+              18.543501,
+              -31.790422
+            ],
+            "mcp": [
+              10.399644,
+              5.835927,
+              -7.026192
+            ],
+            "bend_degrees": 61.733791,
+            "target_error_cm": 6.4e-05
+          },
+          "R": {
+            "wrist": [
+              -23.999908,
+              -1.641278,
+              -0.467222
+            ],
+            "quat_wxyz": [
+              0.459956,
+              -0.400051,
+              -0.712547,
+              -0.347384
+            ],
+            "elbow": [
+              -42.287117,
+              -1.405474,
+              -17.415331
+            ],
+            "mcp": [
+              -13.292377,
+              -1.087015,
+              1.601313
+            ],
+            "bend_degrees": 32.064009,
+            "target_error_cm": 0.000204
+          }
+        }
+      },
+      {
+        "frame": 127,
+        "before": {
+          "L": {
+            "wrist": [
+              19.199997,
+              6.924365,
+              -7.169192
+            ],
+            "quat_wxyz": [
+              0.518771,
+              0.846775,
+              0.116861,
+              -0.013846
+            ],
+            "elbow": [
+              0.604549,
+              16.973427,
+              -20.395744
+            ],
+            "mcp": [
+              21.084856,
+              -1.313663,
+              -0.254023
+            ],
+            "bend_degrees": 39.761724,
+            "target_error_cm": 2.2e-05
+          },
+          "R": {
+            "wrist": [
+              -18.799986,
+              -2.71056,
+              5.952183
+            ],
+            "quat_wxyz": [
+              0.763917,
+              -0.62086,
+              -0.155609,
+              -0.082154
+            ],
+            "elbow": [
+              -40.656319,
+              -2.623991,
+              -6.048211
+            ],
+            "mcp": [
+              -15.662268,
+              -4.742069,
+              -4.307689
+            ],
+            "bend_degrees": 101.518345,
+            "target_error_cm": 6.2e-05
+          }
+        },
+        "after": {
+          "L": {
+            "wrist": [
+              19.199997,
+              7.916379,
+              -8.676916
+            ],
+            "quat_wxyz": [
+              0.479825,
+              0.869437,
+              0.117369,
+              -0.008531
+            ],
+            "elbow": [
+              0.375721,
+              17.823921,
+              -21.684734
+            ],
+            "mcp": [
+              21.084858,
+              -0.914482,
+              -2.53684
+            ],
+            "bend_degrees": 41.840906,
+            "target_error_cm": 1.3e-05
+          },
+          "R": {
+            "wrist": [
+              -25.799795,
+              -3.704123,
+              -4.438686
+            ],
+            "quat_wxyz": [
+              0.489925,
+              -0.362731,
+              -0.683095,
+              -0.402219
+            ],
+            "elbow": [
+              -43.587227,
+              -4.015718,
+              -21.909412
+            ],
+            "mcp": [
+              -15.092264,
+              -3.480276,
+              -2.308912
+            ],
+            "bend_degrees": 33.234215,
+            "target_error_cm": 0.000425
+          }
+        }
+      },
+      {
+        "frame": 144,
+        "before": {
+          "L": {
+            "wrist": [
+              17.999992,
+              7.000021,
+              -9.999991
+            ],
+            "quat_wxyz": [
+              0.433664,
+              0.893357,
+              0.117655,
+              -0.002377
+            ],
+            "elbow": [
+              -0.115061,
+              17.599714,
+              -23.461317
+            ],
+            "mcp": [
+              19.884851,
+              -2.424276,
+              -4.816628
+            ],
+            "bend_degrees": 41.533441,
+            "target_error_cm": 2.4e-05
+          },
+          "R": {
+            "wrist": [
+              -19.999857,
+              -4.999968,
+              1.000205
+            ],
+            "quat_wxyz": [
+              0.820857,
+              -0.543351,
+              -0.146849,
+              -0.096947
+            ],
+            "elbow": [
+              -41.073196,
+              -0.67004,
+              -11.604649
+            ],
+            "mcp": [
+              -16.862139,
+              -4.999968,
+              -9.458858
+            ],
+            "bend_degrees": 103.966237,
+            "target_error_cm": 0.000252
+          }
+        },
+        "after": {
+          "L": {
+            "wrist": [
+              17.999992,
+              7.000021,
+              -9.999991
+            ],
+            "quat_wxyz": [
+              0.433664,
+              0.893357,
+              0.117655,
+              -0.002377
+            ],
+            "elbow": [
+              -0.115061,
+              17.599714,
+              -23.461317
+            ],
+            "mcp": [
+              19.884851,
+              -2.424276,
+              -4.816628
+            ],
+            "bend_degrees": 41.533441,
+            "target_error_cm": 2.4e-05
+          },
+          "R": {
+            "wrist": [
+              -26.999779,
+              -4.999731,
+              -6.999584
+            ],
+            "quat_wxyz": [
+              0.508238,
+              -0.336593,
+              -0.661109,
+              -0.437418
+            ],
+            "elbow": [
+              -44.046806,
+              -6.546863,
+              -25.13026
+            ],
+            "mcp": [
+              -16.292248,
+              -4.999732,
+              -4.858079
+            ],
+            "bend_degrees": 35.609256,
+            "target_error_cm": 0.000543
+          }
+        }
+      }
+    ],
+    "mapping": {
+      "before": {
+        "max_source_to_unreal_position_error_cm": 3.150344144270321e-05,
+        "minimum_scale": 0.9999993138613578,
+        "maximum_scale": 1.000000082436022,
+        "bone_count": 56
+      },
+      "after": {
+        "max_source_to_unreal_position_error_cm": 2.9338718071862767e-05,
+        "minimum_scale": 0.9999993138613684,
+        "maximum_scale": 1.0000000824360007,
+        "bone_count": 56
+      },
+      "fbx": 6.30338775044197e-05
+    },
+    "animation_assets": [
+      {
+        "file": "CinderRelay/Content/Generated/Phase053/Gameplay/Animation/AN_CR053_Idle.uasset",
+        "before_bytes": 373818,
+        "after_bytes": 385544,
+        "sha256": "8c0e8ed3a51613ccd0b47995b7a894596f3fbc35d2987cd33c0d2a979dfeabf7"
+      },
+      {
+        "file": "CinderRelay/Content/Generated/Phase053/Gameplay/Animation/AN_CR053_Walk.uasset",
+        "before_bytes": 241720,
+        "after_bytes": 243858,
+        "sha256": "c4b4e164edfbb3c0f09050f24bff83a24580e3cdb2011af6cd246e7dd034d4d0"
+      },
+      {
+        "file": "CinderRelay/Content/Generated/Phase053/Gameplay/Animation/AN_CR053_Sprint.uasset",
+        "before_bytes": 231259,
+        "after_bytes": 227640,
+        "sha256": "363ee415bc0e7d83c14a880206654e6dfa14195ce51c4c81cd302a2f1780452c"
+      },
+      {
+        "file": "CinderRelay/Content/Generated/Phase053/Gameplay/Animation/AN_CR053_ADS.uasset",
+        "before_bytes": 196804,
+        "after_bytes": 193101,
+        "sha256": "107ec5d5afbfe25b93a343ed92ebbb636f8406cfe7a40aebca3c333ba8e00e2b"
+      },
+      {
+        "file": "CinderRelay/Content/Generated/Phase053/Gameplay/Animation/AN_CR053_FireCycle.uasset",
+        "before_bytes": 314182,
+        "after_bytes": 313887,
+        "sha256": "6450b35add547ae023c0a4ebb15300508698756ce04e35e6e5a65cca0253b974"
+      },
+      {
+        "file": "CinderRelay/Content/Generated/Phase053/Gameplay/Animation/AN_CR053_Reload.uasset",
+        "before_bytes": 327398,
+        "after_bytes": 345968,
+        "sha256": "e4c310c6af1111cc5c974034993b233d86cef6901771c5095807867dc108dcd3"
+      },
+      {
+        "file": "CinderRelay/Content/Generated/Phase053/Gameplay/Animation/AN_CR053_Dry.uasset",
+        "before_bytes": 206523,
+        "after_bytes": 203341,
+        "sha256": "5db62fb131c10b889f94152932be41503e7629fd7bb5552fe86657e486917cef"
+      }
+    ],
+    "cook_seconds": 25.67,
+    "cook_exit": 0,
+    "recorded_route": {
+      "capture_exit": 0,
+      "started_utc": "2026-11-01T18:50:07.4695702Z",
+      "game_exit": 0,
+      "seconds": 55.6886185,
+      "forced_game_stop": false,
+      "capture": "Real foreground desktop viewport,1920x1080,30fps,silent. Enhanced Input recording mode,not performance benchmark.",
+      "game_pid": 61372,
+      "game_ended_utc": "2026-11-01T18:51:03.1581887Z"
+    },
+    "weapon_fixture": {
+      "passed": true,
+      "mode": "weapon",
+      "message": "Weapon state, damage, cover, pause/death/restart checks passed"
+    },
+    "weapon_exit": {
+      "pid": 49792,
+      "exit": 0
+    },
+    "review_clip": {
+      "file": ".environment-local/phase-05-3/reload-fix/CR053_Reload_Corrected_Review.mp4",
+      "sha256": "17f9671d05a555072e1dc1161017ad05550dce98a3e88e73074810636f9337a1",
+      "decoded_frames": 301,
+      "decoded_end_seconds": 10.13,
+      "provenance": "Stream-copy extract from genuine foreground packaged game recording, no synthesized/interpolated frames, silent"
+    },
+    "limits": [
+      "Sampled real frames; human continuous-motion quality acceptance pending",
+      "Local fingertip penetration and near-camera stock/cuff clipping remain",
+      "No new frame-time benchmark; recording is not performance evidence",
+      "Dry midpoint excluded from source/native mapping comparison: Blender frame7 versus UE probe frame8; endpoints included"
+    ]
+  }
+}

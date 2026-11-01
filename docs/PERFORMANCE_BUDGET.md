@@ -1,5 +1,47 @@
 # CINDER RELAY — Performance Budget
 
+## Phase053 integrated packaged comparison, 2026-11-01
+
+One unchanged Phase052 baseline and one integrated Phase053 three-process suite used the same1080p/Epic/native input routes, ScreenPercentage100, DynamicRes0, VSync0 and MaxFPS0. No frame generation, allocation trace, continuous screenshot capture, Editor or Blender ran in the primary samples. Input automation, lifecycle fault checks, one final receipt screenshot and1Hz process-memory sampling remain overhead. OS/driver caches were not cleared; thermal/desktop conditions were not controlled. Frame percentiles are median/nearest-rank, counters are not additive, and held startup/menu/controlled map travel are excluded from CSV. This is a bounded engineering sample, not a guaranteed60FPS benchmark.
+
+| Sample | Before frames | Before frame p50/p95/p99 ms | After frames | After frame p50/p95/p99 ms |
+|---|---:|---|---:|---|
+| Route1 / CP01 acquisition |915|12.991 /16.733 /19.368|865|13.649 /17.080 /19.879|
+| Route2 / CP01 restore, lifecycle, assembly, CP02 |4405|15.248 /17.660 /19.879|4238|15.838 /18.133 /21.811|
+| Assembly subset |1452|15.844 /17.057 /17.639|1387|16.592 /17.678 /18.138|
+| Route3 / recovery, backtracking, endings |5303|14.337 /16.445 /21.343|4799|15.556 /18.979 /24.402|
+
+Assembly GT/RT/GPU p95 changed from2.689/17.041/15.591ms to1.854/17.647/16.218ms. Frame p95 increased0.620ms (3.64%); it remains1.011ms above16.667ms. This is not an optimization or a clean60FPS result. The assembly source uses92,165 triangles including existing weapon/optic; gameplay arms33,121 triangles,3 slots,2×2K maps,56 imported bones. Seventeen Gameplay assets occupy11,891,373 source uasset bytes and four Assembly assets16,809,475 bytes before the final single-clip framing correction. These file sizes are not runtime texture/VRAM residency.
+
+Primary >50ms frames increased from2 to9: route1 one121.997ms startup-ready frame; route2 three rows400.000/96.671/53.686ms during first Workshop traversal/module approach; route3 five88.793/54.398/55.043/67.896/50.077ms recovery/walk/ending frames. **The route delta caps at400ms; the next route2 row records previous Game Thread2214.954ms. Do not report400ms as the true worst wall-clock stall.** No exact cause is established. A separate warm CPU/GPU/frame/loadtime Insights route failed to reproduce the primary >50ms gameplay interval; no cache was cleared or speculative optimization applied.
+
+Native Insights timer export over3–40s observed `CR_WeaponPresentation`2192 events: average0.006ms/max0.097ms; `CRWeaponAnimInstance`4382: average0.019ms/max0.250ms; all `USkeletalMeshComponent_CompleteParallelAnimationEvaluation`3574: average0.014ms/max0.171ms. These named scopes are not total animation CPU/GPU cost. Trace-wide maxima include ConsoleVariableSinks319.725ms and EngineLoop326.378ms during startup/configuration, not proof of the same primary stall. Inference: the sampled animation scopes alone do not explain the large first-use stall. The one bounded diagnostic game reached its successful CP02 receipt but Windows returned777003 despite native requested exit0; primary three processes all returned0. Keep the unresolved diagnostic exit issue separate.
+
+| After process | Peak working set bytes | Peak private commit bytes | Safe-control reconstruction range/sample |
+|---|---:|---:|---|
+| Route1 |1,893,761,024|4,377,309,184|58.915ms,1 event|
+| Route2 |1,885,470,720|4,382,224,384|p50 34.321ms / max42.323ms,7 events|
+| Route3 |1,857,077,248|4,435,148,800|p50 67.802ms / max219.018ms,6 events|
+
+Native successful save callback samples were13.427ms median/15.495ms max(route1),14.134ms(route2),14.279ms median/14.816ms max(route3). Small samples are not population estimates. No increasing-leak conclusion or dedicated-VRAM reading is inferred from process memory. Texture residency was not separately captured. First-shot/cycle/reload/ADS correctness has focused evidence; isolated low-overhead per-action timing attribution remains unmeasured.
+
+Evidence: ignored `.environment-local/phase-05-3/{baseline,packaged-acceptance}/polish-summary.json` and archived SavedPhase04, process receipts, `first-use-diagnostic.utrace`, native `first-use-timers.csv`, `primary-acceptance-exe.json`. The principal accepted executable SHA256 is A3348A46175046EC76E5FFB1D91016794E1B76FFEEC7227469D3732534F35111. A subsequent opt-in Development recording route and one Reload-only framing edit received focused validation; they were not used to silently replace the primary performance sample. Continuous video has recording overhead and is not a benchmark.
+
+### Historical pre-integration baseline
+
+One baseline suite used the unchanged Phase05.2 Development package,1080p/Epic/native, ScreenPercentage100, DynamicRes0, VSync0, MaxFPS0 and dedicated `CR04_TEST_Phase053Baseline` saves. No Editor/Blender/capture ran concurrently; existing input-route and frame-counter instrumentation remain overhead. No requested allocation/Insights trace; one final receipt screenshot per process. Three route acceptances and all launcher/native exits passed0. This is **not** a Phase05.3 arm-runtime benchmark.
+
+| Recorded sample | Frames | Frame p50/p95/p99 ms | GT p95 ms | RT p95 ms | GPU p95 ms |
+|---|---:|---|---:|---:|---:|
+| Route1 |915|12.991 /16.733 /19.368|5.878|16.681|15.415|
+| Route2 |4405|15.248 /17.660 /19.879|2.730|17.544|16.343|
+| Route2 assembly subset |1452|15.844 /17.057 /17.639|2.689|17.041|15.591|
+| Route3 |5303|14.337 /16.445 /21.343|3.148|16.406|14.890|
+
+Assembly p95 remains0.391ms above16.667ms. Historical Phase05.2 p95 was19.538ms, but identical assets in a later uncontrolled thermal/desktop session cannot prove an optimization. Route1 maximum71.052ms and route3 maximum55.141ms show remaining spikes; route2 maximum39.192ms. CSV excludes menu/held bootstrap/controlled map travel; counters are not additive. Peak process working set/private commit bytes respectively: route1 1,830,137,856/4,332,101,632; route2 1,897,676,800/4,525,187,072; route3 1,861,795,840/4,422,926,336. These are not dedicated VRAM or proof of leak freedom.
+
+At this historical checkpoint the review-only arms had33,999 source triangles,3 slots,49 deform bones and2×2048 atlases; runtime was not integrated yet. The integrated comparison above supersedes that limitation. Preserve the original baseline; do not substitute Editor capture timing. Evidence: `.environment-local/phase-05-3/baseline/{process-results.json,polish-summary.json,SavedPhase04/}`. Full conditions/known failures are recorded in [the active report](FIRST_PERSON_05_3.md).
+
 **预算表是项目目标，不是 Epic 或 GPU 厂商的性能保证。** 文末记录 Phase 01B 的真实 packaged 诊断测量；功能已通过，但本次数据没有达到 60 FPS 帧耗时目标。灰盒结果不代表最终美术性能。
 
 ## 测试档与预算提案

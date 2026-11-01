@@ -38,6 +38,7 @@
 #include "DynamicRHI.h"
 #include "UnrealClient.h"
 namespace { int32 Journey = 0; int32 RecoveryCycles = 0, LifeStep = 0; double RunStart = 0, MemoryAt = 0; FString Events, Frames, Memory; int64 PreservedGeneration = 0; }
+namespace { bool bHandlingVideo = false, bHandlingVideoDone = false; int32 HandlingVideoShots = 0; }
 #endif
 ACRCheckpointRoute::ACRCheckpointRoute()
 {
@@ -51,6 +52,7 @@ void ACRCheckpointRoute::BeginPlay()
 #if !UE_BUILD_SHIPPING
     FParse::Value(FCommandLine::Get(), TEXT("CRCheckpointRoute="), Route);
     bLifecycle = FParse::Param(FCommandLine::Get(), TEXT("CRCheckpointLifecycle"));
+    bHandlingVideo = FParse::Param(FCommandLine::Get(), TEXT("CRHandlingVideo"));
     Started = StageStarted = FPlatformTime::Seconds();
     if (!RunStart) { RunStart = Started; Frames = TEXT("elapsed,stage,frame_ms,game_ms,render_ms,gpu_ms,x,y,z\n"); Memory = TEXT("elapsed,stage,working_set,private_commit\n"); }
     for (TActorIterator<ACRChapterStreamingController> It(GetWorld()); It; ++It) { Streaming = *It; break; }
@@ -82,6 +84,9 @@ void ACRCheckpointRoute::Tick(float Delta)
     auto* G = GetWorld()->GetAuthGameMode<ACRGameMode>(); auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>();
     if (Stage == TEXT("menu"))
     {
+        // Capture-only handshake: no scene progression before the recorder owns
+        // an observed foreground window. Normal acceptance/play never waits here.
+        if(bHandlingVideo && !IFileManager::Get().FileExists(*(FPaths::ProjectSavedDir()/TEXT("Phase053/Record.ready")))) return;
         if (Store->IsBusy()) return;
         Check(!PC->GetPawn(), TEXT("Cold launch menu holds player before selecting New Game or Continue"));
         if (Route == 1) { Check(!Store->HasCheckpoint(), TEXT("Dedicated route begins with missing slots")); Travel(false,0); }
@@ -160,11 +165,24 @@ void ACRCheckpointRoute::Tick(float Delta)
     {
         const auto* S = Store->GetLatest();
         Check(S && W->Magazine==S->MagazineAmmo && W->Reserve==S->ReserveAmmo && Player->Health->Health==S->PlayerHealth && W->State==ECRWeaponState::Ready,TEXT("Restored actual health and ammo match disk; weapon Ready without reload timer"));
-        if (Route==2) Walk({{2800,-170}},TEXT("module"));
+        if (Route==2 && bHandlingVideo && !bHandlingVideoDone) { Next(TEXT("video_resident")); }
+        else if (Route==2) Walk({{2800,-170}},TEXT("module"));
         else if (Journey==3 && ++RecoveryCycles<3) Travel(true,3);
         else if (Journey==2 || Journey==3) Walk({{5450,0},{6000,-320}},TEXT("relay"));
         else Walk({{3500,0},{2300,0}},TEXT("workshop_reconcile"));
     }
+    else if(Stage==TEXT("video_resident") && Player->WeaponView->IsPresentationResident())
+    { Inject(Player->ReloadAction);Next(TEXT("video_prepare")); }
+    else if(Stage==TEXT("video_prepare") && Age>2.6 && W->State==ECRWeaponState::Ready)
+    { Check(W->Magazine==5,TEXT("Recording begins with a completed native five-round reload"));Inject(Player->FireAction);HandlingVideoShots=1;Next(TEXT("video_cycle")); }
+    else if(Stage==TEXT("video_cycle") && Age>1.05 && W->State==ECRWeaponState::Ready)
+    {
+        Check(W->Magazine==5-HandlingVideoShots,TEXT("Recorded input consumed exactly one accepted shot"));
+        if(HandlingVideoShots<3) { Inject(Player->FireAction);++HandlingVideoShots;Next(TEXT("video_cycle")); }
+        else { Inject(Player->ReloadAction);Next(TEXT("video_reload")); }
+    }
+    else if(Stage==TEXT("video_reload") && Age>2.6 && W->State==ECRWeaponState::Ready)
+    { bHandlingVideoDone=true;Walk({{2800,-170}},TEXT("module")); }
     else if (Stage == TEXT("module"))
     {
         if (G->GetObjective()==ECRObjective::RestorePower)

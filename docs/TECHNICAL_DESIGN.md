@@ -1,5 +1,15 @@
 # CINDER RELAY — Technical Design
 
+## Phase053 isolated anatomical candidate
+
+`/Game/Generated/Phase053/Review/` contains only an inspection mesh, skeleton,3s/60fps articulation animation, two textures, three character materials and a neutral review-stage material/map. `import_arms_review.py` writes only assets tagged `CinderRelay.Phase053.Review.v1`; existing-name collisions without ownership are rejected. `review_arms.py` captures real Editor poses without saving camera/pose changes. The map has no chapter bootstrap, gameplay collision or checkpoint authority and is **not a playable replacement** for `L_CH01_Persistent`.
+
+The Review subtree is historical and excluded from the explicit runtime cook directories. Active Gameplay/Assembly derivatives now use56 imported bones, baked authoring IK and the small native presentation adapter described in the Phase05.3 section below. There is no Manny-by-name retargeting assumption. Existing UCRWeaponComponent retains accepted-shot/ammo/damage authority,0.9s cycle and2.4s reload. The imported sight contract,65/60FOV and existing workbench transaction remain intact.
+
+Appearance and handling loads have separate settled flags. Character fire/reload/aim requests wait for residency resolution; failed/missing imports deliberately resolve to the existing fallback rather than locking inputs. Handling activates only after valid imported weapon/optic assets. Dynamic montages and the eight-case pool are created once after async loading. Gameplay Ready/Disabled/presentation-hide events reconcile visual state independently of missing cosmetic markers.
+
+The optional Development-only `-CRHandlingVideo` addition belongs to the existing checkpoint test route, which requires `CR04_TEST_` slots. It waits at the menu for `Saved/Phase053/Record.ready`, then waits for presentation residency and drives a native reload plus three Enhanced Input shots with actual ammo assertions. This recording handshake is never used in normal gameplay or Shipping. The following optional workbench route still uses existing interaction/transaction rules. Do not leave the flag enabled for owner playtests.
+
 ## 确认基线与实施边界
 
 用户确定 UE 5.8、Windows／Visual Studio、C++ 核心和 Blueprint 支持层。本机安装 UE **5.8.4 / CL 58902052**。Phase 00 初始审计没有任何 `.uproject` 或旧 `ThresholdFPS` C++ 模块；工程采用 `CinderRelay`，通过 Unreal Editor 原生 Blank C++ 流程创建，具体结果见 [Phase 00 验证记录](PHASE00_VALIDATION.md)。Phase 01A 审计确认该工程、clean main 和既有 origin，并在其上增量实施，没有进行模块重命名。
@@ -177,3 +187,12 @@ The active workbench now soft-references `Animation/SK_CR052_Restoration` and `S
 The native sequence binds the bench through existing `CR03_Hands` and its `AssemblyCamera` child component. One transform track supplies a small head settle/final reveal and explicitly restores state. Two native audio sections supply original seat/secure cues at frames347/400; the existing15s confirmation cue and GameMode upgrade authority remain unchanged. UE5.8 audio sections cache completion intent: `set_completion_mode` alone was not serialized as intended. The importer updates the `eval_options` editor property, invoking native PostEditChangeProperty; a fresh asset load verified all sections RestoreState. No arbitrary timer grants the upgrade.
 
 `validate_contact_tracks.py` evaluated the actual sequence at6s and19.2s: the camera moved, then Stop restored location(-62,0,166) and pitch-48 each time. This proves native component binding/restoration in Editor, not player-input acceptance. Packaged lifecycle evidence is recorded separately in MILESTONES. `validate_presentation_polish.py` compared302 original actors and231 protected hashes, plus native sphere overlaps for valid review cameras. Preview scripts never save camera/pose state.
+
+
+## Phase05.3 human weapon presentation
+
+UCRWeaponAnimInstance composes native sequence players, TwoWayBlend and one WeaponAction slot. UCRWeaponCueNotify forwards cosmetic marker and native montage-instance identity; CRWeaponHandling.cpp extends UCRWeaponViewComponent with asynchronously loaded arms/seven clips/three exterior props/two existing sounds. Three dynamic Montage wrappers and eight collisionless cases are allocated once per player. A consumed shot token cannot emit twice or carry into another montage. Ready/death/hide/EndPlay reconcile visual state; UCRWeaponComponent alone owns ammo, damage,0.9s cycle and2.4s reload. Missing presentation assets retain the old view fallback.
+
+Hands and weapon share native first-person rendering and imported-reference-space attachment transforms. Sight anchors and65/60FOV remain authoritative for visual aiming; camera-oriented hitscan is unchanged. Source Blender IK and finger posing are baked into native animation; there is no runtime Control Rig or new animation framework. Game-thread PreUpdate copies references/weights before native parallel animation evaluation. AnimGraphRuntime is the only added module dependency.
+
+Active Workshop assets: /Game/Generated/Phase053/Assembly/Animation/SK_CR053_Restoration and Assembly/Sequences/LS_CR053_RookRestoration,22s. The unchanged workbench transaction still distinguishes Finished/Skip from Stop/Abort and defers unsafe MovieScene cleanup. No SaveGame/schema/checkpoint/streaming authority change. See FIRST_PERSON_05_3.md for actual tests and visual limits.

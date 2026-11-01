@@ -2,7 +2,7 @@
 
 - Communicate with the owner in Chinese; write implementation prompts in English.
 - Read `README.md`, `docs/MILESTONES.md`, and `docs/TECHNICAL_DESIGN.md` first.
-- Current authorization: Phase05.2 presentation/contact polish: readable lighting, curated Rail Yard detail, railcar/entrance/midground quality and assembly contact. Preserve gameplay, schema1 IDs, checkpoint transforms, collision/navigation and native streaming. Retain Phase03/05/051 sources and Phase01A rollback. Stop before Phase06.
+- Current authorization: Phase05.3 human first-person arms, weapon handling and performance stabilization. The owner approved the anatomical proportions/skin/fingerless-glove direction on 2026-11-01 and authorized refinement plus action integration. Follow research -> anatomy/rig review -> firearm animation -> workbench -> packaged validation; retain known cuff/material/contact corrections. See `docs/FIRST_PERSON_05_3.md`. Preserve schema1 IDs, checkpoints, combat authority and native streaming. Stop before Phase06.
 - Canon lives in `docs/GAME_DESIGN.md` and `docs/STORY.md`; mark new creative proposals, never silently invent canon.
 - Priorities: reliability, gameplay quality, maintainability, performance, then visual fidelity.
 - Preserve existing work. Audit before edits; never upgrade the engine or rewrite working architecture without authorization.
@@ -18,6 +18,6 @@
 - Profile before optimizing. Never equate C++, a successful build, or screenshots with performance or gameplay acceptance.
 - Report commands, exit codes, evidence paths, and unverified work. Keep raw local logs under ignored `.environment-local/`; summarize durable findings in the milestone.
 - Inspect explicit staging paths and staged diff for secrets, generated files, and unlicensed raw packs before commits. Never overwrite or force-push remote history.
-- Work on `phase-05-2-presentation-contact`; target `main` with a PR, never auto-merge or force-push. Never rerun old map generators/migration destructively. Keep R reload/F5 streaming retry. Session salvage/upgrades are separate from ECRObjective; DA_Rook5 is immutable at runtime. Preserve editable .blend sources and verify real imported bones/animation.
+- Work on `phase-05-3-first-person-animation`; target `main` with a PR, never auto-merge or force-push. Never rerun old generators destructively. Keep R reload/F5 streaming retry. DA_Rook5 is immutable; retain 0.9s cycle, 2.4s reload, five-round magazine and ADS65/60. Cosmetic notifies never award ammo/damage. Preserve Phase03/05/051/052 sources and Phase01A rollback; verify imported bones and real playback.
 
 - Checkpoints use stable IDs and narrow GameMode snapshots. Never serialize Actor references or cinematic/timer state. Restore session flags before streamed actors BeginPlay; release the player only after native readiness and a validated checkpoint floor. Report success only from the native save callback. Tests must use CR04_TEST_ slots; never corrupt or delete player saves.

@@ -134,9 +134,9 @@ void ACRCharacter::StopSprint() { GetCharacterMovement()->MaxWalkSpeed = WalkSpe
 void ACRCharacter::StartCrouch() { if(!Weapon->IsPresentationLocked()) Crouch(); }
 void ACRCharacter::StopCrouch() { UnCrouch(); }
 void ACRCharacter::ClearHeldActions() { StopSprint(); StopJumping(); UnCrouch(); AimStop(); }
-void ACRCharacter::Fire() { Weapon->TryFire(); }
-void ACRCharacter::Reload() { Weapon->TryReload(); }
-void ACRCharacter::AimStart() { Weapon->SetAiming(true); }
+void ACRCharacter::Fire() { if(WeaponView->IsPresentationResident()) Weapon->TryFire(); }
+void ACRCharacter::Reload() { if(WeaponView->IsPresentationResident()) Weapon->TryReload(); }
+void ACRCharacter::AimStart() { if(WeaponView->IsPresentationResident()) Weapon->SetAiming(true); }
 void ACRCharacter::AimStop() { Weapon->SetAiming(false); }
 void ACRCharacter::Died()
 {

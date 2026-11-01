@@ -24,6 +24,7 @@ private:
     double Started=0, StageStarted=0;
     bool bFinished=false;
     int32 TestShots=0;
+    float PausedActionPosition=0;
     void Next(const FString& Name);
     void Check(bool Condition,const TCHAR* Message);
     void Finish(bool Passed,const FString& Message);
