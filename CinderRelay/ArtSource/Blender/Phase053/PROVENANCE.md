@@ -19,3 +19,10 @@ The mesh has 49 deform bones, including root, original MakeHuman split upper/low
 The only current animation is a 3-second, 60-fps **anatomical articulation sample**: relax, curl, wrist twist, countertwist, grasp shape, release. It is not Idle/Reload/FireCycle, and does not demonstrate real prop contact. No clip is activated in gameplay. Normal atlas uses OpenGL tangents; the Unreal import flips green and uses normal-map compression.
 
 `create_elias_review.py` refuses to overwrite an existing source. `finish_elias_review.py` is a one-time targeted atlas/budget pass, not a script to rerun for animation edits. Use `export_elias_review.py` for subsequent exports of the existing editable source. Do not rerun earlier chapter generators.
+
+
+## Integrated derivatives (supersedes anatomy-only scope for these files)
+
+CR053_EliasArms.blend remains the immutable review source described above. CR053_FirstPerson.blend and CR053_RookRestoration.blend are separate owned derivatives, with active Blender two-bone IK editing controls, calibrated elbow poles, authored finger/thumb keys and56 native imported bones including wrapper/prop aliases. Seven gameplay actions plus a22s workbench action are real baked exports/imports. No mannequin skeleton compatibility is claimed. No external animation data was acquired.
+
+The33,121-triangle gameplay arm mesh uses3materials and2K BaseColor/Normal atlases in FirstPersonTextures. Both derivatives pack their seven available image dependencies. The joined workbench kit is92,165triangles including original registered Phase051 weapon/optic geometry and the new fictional exterior feed/handle. Raw FBX and inspection captures remain ignored. Current source-to-Unreal conversion/markers and actual validation are documented in docs/FIRST_PERSON_05_3.md. These are inspectable prototype assets; human continuous-motion and final material acceptance remain pending.

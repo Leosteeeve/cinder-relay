@@ -7,12 +7,13 @@ import json
 from pathlib import Path
 import unreal
 
-out=Path(unreal.Paths.project_dir()).resolve().parent/'.environment-local/phase-05-2'
+human='-cr053human' in unreal.SystemLibrary.get_command_line().lower()
+out=Path(unreal.Paths.project_dir()).resolve().parent/('.environment-local/phase-05-3' if human else '.environment-local/phase-05-2')
 levels=unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
 actors=unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
 assert levels.load_level('/Game/Generated/Phase01B/Maps/L_CH01_Persistent')
 bench=next(a for a in actors.get_all_level_actors() if isinstance(a,unreal.CRWorkbench))
-sequence=unreal.EditorAssetLibrary.load_asset('/Game/Generated/Phase052/Sequences/LS_CR052_RookRestoration')
+sequence=unreal.EditorAssetLibrary.load_asset('/Game/Generated/Phase053/Assembly/Sequences/LS_CR053_RookRestoration' if human else '/Game/Generated/Phase052/Sequences/LS_CR052_RookRestoration')
 world=unreal.get_editor_subsystem(unreal.UnrealEditorSubsystem).get_editor_world()
 player,actor=unreal.LevelSequencePlayer.create_level_sequence_player(world,sequence,unreal.MovieSceneSequencePlaybackSettings())
 assert player and actor

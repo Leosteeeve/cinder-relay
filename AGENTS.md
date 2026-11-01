@@ -2,7 +2,7 @@
 
 - Communicate with the owner in Chinese; write implementation prompts in English.
 - Read `README.md`, `docs/MILESTONES.md`, and `docs/TECHNICAL_DESIGN.md` first.
-- Current authorization: Phase05.3 human first-person arms, weapon handling and performance stabilization. Follow research -> anatomy/rig visual review -> firearm animation -> workbench -> packaged validation. See `docs/FIRST_PERSON_05_3.md`; the isolated arm candidate is not yet approved or active in gameplay. Preserve schema1 IDs, checkpoints, combat authority and native streaming. Stop before Phase06.
+- Current authorization: Phase05.3 human first-person arms, weapon handling and performance stabilization. The owner approved the anatomical proportions/skin/fingerless-glove direction on 2026-11-01 and authorized refinement plus action integration. Follow research -> anatomy/rig review -> firearm animation -> workbench -> packaged validation; retain known cuff/material/contact corrections. See `docs/FIRST_PERSON_05_3.md`. Preserve schema1 IDs, checkpoints, combat authority and native streaming. Stop before Phase06.
 - Canon lives in `docs/GAME_DESIGN.md` and `docs/STORY.md`; mark new creative proposals, never silently invent canon.
 - Priorities: reliability, gameplay quality, maintainability, performance, then visual fidelity.
 - Preserve existing work. Audit before edits; never upgrade the engine or rewrite working architecture without authorization.

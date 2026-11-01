@@ -8,6 +8,10 @@
 #include "Engine/StreamableManager.h"
 #include "Camera/CameraComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Animation/AnimSequence.h"
+#include "Engine/SkeletalMesh.h"
+#include "Sound/SoundBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/StaticMesh.h"
 #include "Engine/StaticMeshSocket.h"
@@ -20,6 +24,13 @@ UCRWeaponViewComponent::UCRWeaponViewComponent()
     PrimaryComponentTick.bCanEverTick = true;
     RookAppearance=TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Generated/Phase051/Meshes/SM_CR051_Rook5.SM_CR051_Rook5")));
     SurveyAppearance=TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Generated/Phase051/Meshes/SM_CR051_SurveyOptic.SM_CR051_SurveyOptic")));
+    ArmsAppearance=TSoftObjectPtr<USkeletalMesh>(FSoftObjectPath(TEXT("/Game/Generated/Phase053/Gameplay/Animation/SK_CR053_FirstPersonArms.SK_CR053_FirstPersonArms")));
+    for(const TCHAR* Name:{TEXT("Idle"),TEXT("Walk"),TEXT("Sprint"),TEXT("ADS"),TEXT("FireCycle"),TEXT("Reload"),TEXT("Dry")})
+        HandlingClips.Add(TSoftObjectPtr<UAnimSequence>(FSoftObjectPath(FString::Printf(TEXT("/Game/Generated/Phase053/Gameplay/Animation/AN_CR053_%s.AN_CR053_%s"),Name,Name))));
+    for(const TCHAR* Name:{TEXT("Feed"),TEXT("CycleHandle"),TEXT("Case")})
+        HandlingProps.Add(TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(FString::Printf(TEXT("/Game/Generated/Phase053/Gameplay/Meshes/SM_CR053_%s.SM_CR053_%s"),Name,Name))));
+    for(const TCHAR* Name:{TEXT("Secure"),TEXT("Seat")})
+        HandlingSounds.Add(TSoftObjectPtr<USoundBase>(FSoftObjectPath(FString::Printf(TEXT("/Game/Generated/Phase052/Audio/S_CR052_%s.S_CR052_%s"),Name,Name))));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Mesh(TEXT("/Engine/BasicShapes/Cube.Cube")); Cube = Mesh.Object;
 }
 FTransform UCRWeaponViewComponent::SolveSightRoot(const FTransform& SightLocal,float EyeRelief)
@@ -30,7 +41,7 @@ void UCRWeaponViewComponent::BeginPlay()
 {
     Super::BeginPlay(); auto* Player = Cast<ACRCharacter>(GetOwner());
     Weapon = GetOwner()->FindComponentByClass<UCRWeaponComponent>();
-    if (!Player || !Weapon.IsValid() || !Weapon->Data) { SetComponentTickEnabled(false); return; }
+    if (!Player || !Weapon.IsValid() || !Weapon->Data) { bAppearanceSettled=bHandlingSettled=true;SetComponentTickEnabled(false); return; }
     BaseFOV = Player->Camera->FieldOfView;
     ViewRoot = NewObject<USceneComponent>(Player,TEXT("RookViewRoot")); Player->AddInstanceComponent(ViewRoot);
     ViewRoot->SetupAttachment(Player->Camera); ViewRoot->RegisterComponent(); ViewRoot->SetRelativeLocation(Weapon->Data->HipLocation);
@@ -63,8 +74,11 @@ void UCRWeaponViewComponent::BeginPlay()
     };
     ImportedRook=Imported(TEXT("RookImported")); ImportedOptic=Imported(TEXT("SurveyOpticImported"));
     if(auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>()) G->OnRestorationChanged.AddDynamic(this,&UCRWeaponViewComponent::RefreshAppearance);
-    AppearanceLoad=UAssetManager::GetStreamableManager().RequestAsyncLoad({RookAppearance.ToSoftObjectPath(),SurveyAppearance.ToSoftObjectPath()},FStreamableDelegate::CreateUObject(this,&UCRWeaponViewComponent::RefreshAppearance));
+    AppearanceLoad=UAssetManager::GetStreamableManager().RequestAsyncLoad({RookAppearance.ToSoftObjectPath(),SurveyAppearance.ToSoftObjectPath()},FStreamableDelegate::CreateUObject(this,&UCRWeaponViewComponent::AppearanceLoaded));
+    if(!AppearanceLoad) AppearanceLoaded();
     Weapon->OnShot.AddDynamic(this,&UCRWeaponViewComponent::Shot); Weapon->OnCue.AddDynamic(this,&UCRWeaponViewComponent::Cue);
+    Weapon->OnChanged.AddDynamic(this,&UCRWeaponViewComponent::WeaponStateChanged);
+    LoadHandling();
     if (auto* Health=Player->FindComponentByClass<UCRHealthComponent>()) Health->OnHealthChanged.AddDynamic(this,&UCRWeaponViewComponent::Hurt);
 }
 void UCRWeaponViewComponent::TickComponent(float Delta,ELevelTick TickType,FActorComponentTickFunction* ThisTick)
@@ -82,20 +96,21 @@ void UCRWeaponViewComponent::TickComponent(float Delta,ELevelTick TickType,FActo
     const bool Aim=Weapon->bAiming && Weapon->CanUse();
     P->Camera->SetFieldOfView(FMath::FInterpTo(P->Camera->FieldOfView,Aim?Weapon->GetAimFOV():BaseFOV,Delta,3.f/FMath::Max(.01f,D->AimSeconds)));
     Recoil=FMath::FInterpTo(Recoil,0,Delta,FMath::Max(1.f,D->RecoverySpeed));
-    const bool Lower=Weapon->State==ECRWeaponState::Reloading || Weapon->bSprinting || Weapon->State==ECRWeaponState::Disabled;
+    TickCases(Delta);
+    const bool Lower=(!bHandlingReady && (Weapon->State==ECRWeaponState::Reloading || Weapon->bSprinting)) || Weapon->State==ECRWeaponState::Disabled;
     SmoothCover=FMath::FInterpTo(SmoothCover,CoverFraction,Delta,9);
-    ReloadPose=FMath::FInterpTo(ReloadPose,Weapon->State==ECRWeaponState::Reloading?1.f:0.f,Delta,6);
+    ReloadPose=FMath::FInterpTo(ReloadPose,!bHandlingReady && Weapon->State==ECRWeaponState::Reloading?1.f:0.f,Delta,6);
     const float Speed=FMath::Clamp(P->GetVelocity().Size2D()/300.f,0.f,1.5f);
     GaitPhase+=Delta*(Speed>0.05f?Speed*8.f:1.5f);
-    const float Bob=(Aim?0.f:.38f)*Speed;
+    const float Bob=(Aim || bHandlingReady?0.f:.38f)*Speed;
     const auto* Chapter=GetWorld()->GetAuthGameMode<ACRGameMode>();
     const FTransform& SightRoot=Chapter && Chapter->HasSurveyUpgrade()?OpticAimRoot:IronAimRoot;
     FVector Target=Aim?(bSightAnchorsValid?SightRoot.GetLocation():D->AimLocation):(bSightAnchorsValid?ImportedHipLocation:D->HipLocation);
-    Target.Z-=Lower?9.f:SmoothCover*14.f; Target.X-=Recoil;
+    Target.Z-=Lower?9.f:SmoothCover*14.f; Target.X-=bHandlingReady?0.f:Recoil;
     Target.Y+=FMath::Sin(GaitPhase)*Bob; Target.Z+=FMath::Cos(GaitPhase*2)*Bob*.65f;
     if(Aim && !bSightAnchorsValid && Chapter && Chapter->HasSurveyUpgrade()) Target.Z-=2.f; // Legacy rollback appearance only.
     ViewRoot->SetRelativeLocation(FMath::VInterpTo(ViewRoot->GetRelativeLocation(),Target,Delta,18));
-    FRotator Pose(Aim && bSightAnchorsValid?0.f:Recoil,0,0);
+    FRotator Pose((Aim && bSightAnchorsValid) || bHandlingReady?0.f:Recoil,0,0);
     if(Aim && bSightAnchorsValid) Pose+=SightRoot.Rotator();
     Pose+=FRotator(-(Lower?25:SmoothCover*35),ReloadPose*12,ReloadPose*-28+(Lower?-10:0));
     ViewRoot->SetRelativeRotation(FMath::RInterpTo(ViewRoot->GetRelativeRotation(),Pose,Delta,18));
@@ -105,6 +120,7 @@ void UCRWeaponViewComponent::TickComponent(float Delta,ELevelTick TickType,FActo
 void UCRWeaponViewComponent::Shot(FVector Impact,bool Hit,bool BlockingHit)
 {
     if (!Weapon.IsValid() || !Weapon->Data) return;
+    PlayHandling(0);
     Recoil=Weapon->Data->RecoilDegrees; Flash->SetVisibility(true);
     GetWorld()->GetTimerManager().SetTimer(FlashTimer,this,&UCRWeaponViewComponent::HideFlash,.055f,false);
     ImpactMarker->SetWorldLocation(Impact); ImpactMarker->SetVisibility(BlockingHit);
@@ -114,6 +130,8 @@ void UCRWeaponViewComponent::Shot(FVector Impact,bool Hit,bool BlockingHit)
 }
 void UCRWeaponViewComponent::Cue(FName Name)
 {
+    if(Name==TEXT("Reload")) PlayHandling(1);
+    else if(Name==TEXT("Dry")) PlayHandling(2);
     if (Weapon.IsValid() && Weapon->Data) UGameplayStatics::PlaySound2D(this,Name==TEXT("Reload")?Weapon->Data->ReloadSound:Weapon->Data->DrySound,.35f);
 }
 void UCRWeaponViewComponent::Hurt(float,float Damage)
@@ -124,10 +142,12 @@ void UCRWeaponViewComponent::HideFlash() { if (Flash) Flash->SetVisibility(false
 void UCRWeaponViewComponent::HideImpact() { if (ImpactMarker) ImpactMarker->SetVisibility(false); }
 void UCRWeaponViewComponent::EndPlay(const EEndPlayReason::Type Reason)
 {
+    CancelHandling(true);
+    if(HandlingLoad) { HandlingLoad->CancelHandle();HandlingLoad.Reset(); }
     if(AppearanceLoad) { AppearanceLoad->CancelHandle(); AppearanceLoad.Reset(); }
     if(auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>()) G->OnRestorationChanged.RemoveDynamic(this,&UCRWeaponViewComponent::RefreshAppearance);
     if (GetWorld()) { GetWorld()->GetTimerManager().ClearTimer(FlashTimer); GetWorld()->GetTimerManager().ClearTimer(ImpactTimer); }
-    if (Weapon.IsValid()) { Weapon->OnShot.RemoveDynamic(this,&UCRWeaponViewComponent::Shot); Weapon->OnCue.RemoveDynamic(this,&UCRWeaponViewComponent::Cue); }
+    if (Weapon.IsValid()) { Weapon->OnShot.RemoveDynamic(this,&UCRWeaponViewComponent::Shot); Weapon->OnCue.RemoveDynamic(this,&UCRWeaponViewComponent::Cue); Weapon->OnChanged.RemoveDynamic(this,&UCRWeaponViewComponent::WeaponStateChanged); }
     if (auto* Health=GetOwner()->FindComponentByClass<UCRHealthComponent>()) Health->OnHealthChanged.RemoveDynamic(this,&UCRWeaponViewComponent::Hurt);
     Super::EndPlay(Reason);
 }
@@ -136,6 +156,11 @@ bool UCRWeaponViewComponent::CanUseAuthoredSights(const UStaticMesh* Rook,const 
     return Rook && Optic && Rook->FindSocket(TEXT("SightAnchor_Iron")) && Optic->FindSocket(TEXT("SightAnchor_Optic"));
 }
 bool UCRWeaponViewComponent::HasImportedAppearance() const { return bSightAnchorsValid; }
+void UCRWeaponViewComponent::AppearanceLoaded()
+{
+    bAppearanceSettled=true;RefreshAppearance();
+    if(bHandlingSettled) HandlingLoaded();
+}
 void UCRWeaponViewComponent::RefreshAppearance()
 {
     if(!ImportedRook || !ImportedOptic) return;
@@ -163,7 +188,11 @@ void UCRWeaponViewComponent::RefreshAppearance()
     const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();
     ImportedRook->SetVisibility(!bPresentationHidden && HasImportedAppearance());
     ImportedOptic->SetVisibility(!bPresentationHidden && HasImportedAppearance() && G && G->HasSurveyUpgrade());
+    const bool ShowHands=!bPresentationHidden && HasImportedAppearance() && bHandlingReady;
+    if(Arms) Arms->SetVisibility(ShowHands);
+    if(Feed) Feed->SetVisibility(ShowHands);
+    if(CycleHandle) CycleHandle->SetVisibility(ShowHands);
     for(const auto& P:FallbackParts) P->SetVisibility(!bPresentationHidden && !HasImportedAppearance());
 }
 void UCRWeaponViewComponent::SetPresentationHidden(bool Hidden)
-{ bPresentationHidden=Hidden; HideFlash(); HideImpact(); RefreshAppearance(); }
+{ bPresentationHidden=Hidden; if(Hidden) CancelHandling(true); HideFlash(); HideImpact(); RefreshAppearance(); }
