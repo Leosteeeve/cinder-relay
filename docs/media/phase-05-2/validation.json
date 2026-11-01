@@ -447,5 +447,47 @@
     "2": [],
     "3": []
   },
-  "human_aesthetic_acceptance": false
+  "human_aesthetic_acceptance": false,
+  "video_followup": {
+    "date": "2026-11-01",
+    "test_prefix": "CR04_TEST_Phase052VideoRetry",
+    "game_exit": 0,
+    "capture_exit": 0,
+    "full_decode_exit": 0,
+    "acceptance": {
+      "passed": true,
+      "route": 2,
+      "journey": 0,
+      "message": "CP02 saved; exit process before next route"
+    },
+    "media": {
+      "file": "assembly-gameplay.mp4",
+      "sha256": "42c7bbb0c585c51ef9121c6e6dbd8e1afe6b11593ad6185c6ff77a537fd6b839",
+      "bytes": 3893087,
+      "width": 1280,
+      "height": 720,
+      "duration_seconds": 28,
+      "frame_rate": 30,
+      "decoded_frames": 840,
+      "codec": "H.264",
+      "audio": false,
+      "source": "Actual packaged Windows Development game; sequential desktop capture cropped to verified game client",
+      "unchanged_copy": true,
+      "scope": "Diagnostic recording separate from performance; includes deliberate Stop recovery, complete assembly, pause and upgraded gameplay return",
+      "sampled_review_seconds": [
+        0,
+        3,
+        6,
+        9,
+        12,
+        15,
+        18,
+        21,
+        24,
+        27
+      ],
+      "human_continuous_motion_acceptance": false
+    },
+    "performance_run_unchanged": true
+  }
 }

@@ -1,6 +1,6 @@
 # Phase05.2 visual comparison
 
-Actual Unreal renders, published for owner review. These are unchanged capture bytes, tracked by Git LFS; [manifest.json](manifest.json) records SHA256 and provenance. No AI-generated replacement frames or composited fake gameplay. See the [visual report](../../PRESENTATION_05_2.md) and [performance conditions](../../PERFORMANCE_BUDGET.md#phase052-packaged-observations).
+Actual Unreal renders and packaged gameplay recording, published for owner review. These are unchanged capture bytes, tracked by Git LFS; [manifest.json](manifest.json) records SHA256 and provenance. No AI-generated replacement frames or composited fake gameplay. See the [visual report](../../PRESENTATION_05_2.md) and [performance conditions](../../PERFORMANCE_BUDGET.md#phase052-packaged-observations).
 
 ## Matched environment views
 
@@ -27,8 +27,10 @@ Five selected frames from nine actual UE skeletal-animation samples. A fixed set
 |---|---|
 | ![Secure](contact-6.png) | ![Retrieve](contact-8.png) |
 
-## Gameplay recording status
+## Actual gameplay recording
 
-The actual packaged22-second sequence completed during the accepted runtime route, including pause and return to gameplay. A separate attempted desktop recording was obstructed by Windows firewall UI and is excluded from publication. Replacement recording awaits manual dismissal of that prompt; no Phase052 video is claimed or linked here yet. The previous [Phase051 gameplay recording](../phase-05-1/README.md#actual-assembly-playback) remains available only as historical evidence.
+[Watch/download the28-second gameplay recording](assembly-gameplay.mp4?raw=true). Actual Windows Development game client,1280x720,30fps,H.264, silent. It includes the retry after the deliberate Stop test, the full22-second presentation with its short pause check, successful upgrade, and return to gameplay. This is sequential desktop capture cropped to the verified game client, not assembled pose screenshots. Use **View raw** or **Download** if GitHub does not preview the LFS video.
+
+After the owner manually dismissed the firewall prompt, the replacement captured only the intended game in ten sampled frames spanning0–27s. All840frames decoded successfully; native game and capture exits0, dedicated test route passed. Recording ran separately from performance sampling and is not an audio-mix or continuous human motion-quality acceptance. The first obstructed capture remains ignored and excluded. The [Phase051 recording](../phase-05-1/README.md#actual-assembly-playback) is retained for historical comparison.
 
 Limitations: the gun, glove/cuff proportions and some straight sleeve segments remain prototype art. Ground/wall material repetition and sparse central-floor detail are still visible. Human motion, sound mix and final aesthetic acceptance remain open; these captures do not establish AAA quality or a measured12–16minute playthrough.
