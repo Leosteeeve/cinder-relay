@@ -10,6 +10,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/StaticMesh.h"
+#include "Engine/StaticMeshSocket.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
@@ -17,9 +18,13 @@
 UCRWeaponViewComponent::UCRWeaponViewComponent()
 {
     PrimaryComponentTick.bCanEverTick = true;
-    RookAppearance=TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Generated/Phase05/Meshes/SM_CR05_Rook5.SM_CR05_Rook5")));
-    SurveyAppearance=TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Generated/Phase05/Meshes/SM_CR05_SurveyOptic.SM_CR05_SurveyOptic")));
+    RookAppearance=TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Generated/Phase051/Meshes/SM_CR051_Rook5.SM_CR051_Rook5")));
+    SurveyAppearance=TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Generated/Phase051/Meshes/SM_CR051_SurveyOptic.SM_CR051_SurveyOptic")));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Mesh(TEXT("/Engine/BasicShapes/Cube.Cube")); Cube = Mesh.Object;
+}
+FTransform UCRWeaponViewComponent::SolveSightRoot(const FTransform& SightLocal,float EyeRelief)
+{
+    return SightLocal.Inverse()*FTransform(FVector(EyeRelief,0,0));
 }
 void UCRWeaponViewComponent::BeginPlay()
 {
@@ -82,12 +87,20 @@ void UCRWeaponViewComponent::TickComponent(float Delta,ELevelTick TickType,FActo
     ReloadPose=FMath::FInterpTo(ReloadPose,Weapon->State==ECRWeaponState::Reloading?1.f:0.f,Delta,6);
     const float Speed=FMath::Clamp(P->GetVelocity().Size2D()/300.f,0.f,1.5f);
     GaitPhase+=Delta*(Speed>0.05f?Speed*8.f:1.5f);
-    const float Bob=(Aim?.08f:.38f)*Speed;
-    FVector Target=Aim?D->AimLocation:D->HipLocation; Target.Z-=Lower?9.f:SmoothCover*14.f; Target.X-=Recoil;
+    const float Bob=(Aim?0.f:.38f)*Speed;
+    const auto* Chapter=GetWorld()->GetAuthGameMode<ACRGameMode>();
+    const FTransform& SightRoot=Chapter && Chapter->HasSurveyUpgrade()?OpticAimRoot:IronAimRoot;
+    FVector Target=Aim?(bSightAnchorsValid?SightRoot.GetLocation():D->AimLocation):(bSightAnchorsValid?ImportedHipLocation:D->HipLocation);
+    Target.Z-=Lower?9.f:SmoothCover*14.f; Target.X-=Recoil;
     Target.Y+=FMath::Sin(GaitPhase)*Bob; Target.Z+=FMath::Cos(GaitPhase*2)*Bob*.65f;
-    if(Aim) if(const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();G && G->HasSurveyUpgrade()) Target.Z-=2.f; // Imported optic aperture is 2cm above the original iron sight.
+    if(Aim && !bSightAnchorsValid && Chapter && Chapter->HasSurveyUpgrade()) Target.Z-=2.f; // Legacy rollback appearance only.
     ViewRoot->SetRelativeLocation(FMath::VInterpTo(ViewRoot->GetRelativeLocation(),Target,Delta,18));
-    ViewRoot->SetRelativeRotation(FMath::RInterpTo(ViewRoot->GetRelativeRotation(),FRotator(Recoil-(Lower?25:SmoothCover*35),ReloadPose*12,ReloadPose*-28+(Lower?-10:0)),Delta,18));
+    FRotator Pose(Aim && bSightAnchorsValid?0.f:Recoil,0,0);
+    if(Aim && bSightAnchorsValid) Pose+=SightRoot.Rotator();
+    Pose+=FRotator(-(Lower?25:SmoothCover*35),ReloadPose*12,ReloadPose*-28+(Lower?-10:0));
+    ViewRoot->SetRelativeRotation(FMath::RInterpTo(ViewRoot->GetRelativeRotation(),Pose,Delta,18));
+    // Native single-camera first-person depth scaling; no second scope render or renderer change.
+    P->Camera->SetFirstPersonFieldOfView(P->Camera->FieldOfView);
 }
 void UCRWeaponViewComponent::Shot(FVector Impact,bool Hit,bool BlockingHit)
 {
@@ -118,11 +131,35 @@ void UCRWeaponViewComponent::EndPlay(const EEndPlayReason::Type Reason)
     if (auto* Health=GetOwner()->FindComponentByClass<UCRHealthComponent>()) Health->OnHealthChanged.RemoveDynamic(this,&UCRWeaponViewComponent::Hurt);
     Super::EndPlay(Reason);
 }
-bool UCRWeaponViewComponent::HasImportedAppearance() const { return ImportedRook && ImportedRook->GetStaticMesh(); }
+bool UCRWeaponViewComponent::CanUseAuthoredSights(const UStaticMesh* Rook,const UStaticMesh* Optic)
+{
+    return Rook && Optic && Rook->FindSocket(TEXT("SightAnchor_Iron")) && Optic->FindSocket(TEXT("SightAnchor_Optic"));
+}
+bool UCRWeaponViewComponent::HasImportedAppearance() const { return bSightAnchorsValid; }
 void UCRWeaponViewComponent::RefreshAppearance()
 {
     if(!ImportedRook || !ImportedOptic) return;
     ImportedRook->SetStaticMesh(RookAppearance.Get()); ImportedOptic->SetStaticMesh(SurveyAppearance.Get());
+    bSightAnchorsValid=false;
+    if(CanUseAuthoredSights(ImportedRook->GetStaticMesh(),ImportedOptic->GetStaticMesh()))
+    {
+        const auto* Iron=ImportedRook->GetStaticMesh()->FindSocket(TEXT("SightAnchor_Iron"));
+        const auto* Optic=ImportedOptic->GetStaticMesh()->FindSocket(TEXT("SightAnchor_Optic"));
+        if(Iron && Optic)
+        {
+            IronAimRoot=SolveSightRoot(FTransform(Iron->RelativeRotation,Iron->RelativeLocation),SightEyeRelief);
+            OpticAimRoot=SolveSightRoot(FTransform(Optic->RelativeRotation,Optic->RelativeLocation),SightEyeRelief);
+            bSightAnchorsValid=true;
+        }
+    }
+    for(auto* Mesh:{ImportedRook.Get(),ImportedOptic.Get(),Flash.Get()})
+        Mesh->SetFirstPersonPrimitiveType(bSightAnchorsValid?EFirstPersonPrimitiveType::FirstPerson:EFirstPersonPrimitiveType::None);
+    if(auto* P=Cast<ACRCharacter>(GetOwner()))
+    {
+        P->Camera->SetEnableFirstPersonScale(bSightAnchorsValid);P->Camera->SetFirstPersonScale(.65f);
+        P->Camera->SetEnableFirstPersonFieldOfView(bSightAnchorsValid);
+    }
+    if(Flash) Flash->SetRelativeLocation(bSightAnchorsValid?FVector(67,0,2.3):FVector(44,0,2));
     const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();
     ImportedRook->SetVisibility(!bPresentationHidden && HasImportedAppearance());
     ImportedOptic->SetVisibility(!bPresentationHidden && HasImportedAppearance() && G && G->HasSurveyUpgrade());

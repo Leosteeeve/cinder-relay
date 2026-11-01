@@ -28,10 +28,15 @@ private:
     double Started=0,StageStarted=0,LastShot=0,LastMemory=0;
     bool bFinished=false,bMoved=false,bReceivedDamage=false,bReloaded=false;
     bool bRestoration=false,bAssemblyPaused=false;
+    bool bSightReview=false,bSightAction=false,bSightCaptured=false;
+    int32 SightStep=0;
+    void ReviewSights(double Age);
     int32 AssemblyCapture=0,AssemblyAmmo=0,AssemblyReserve=0;
     float AssemblyHealth=0,PausePosition=0;
     double PauseStarted=0;
     FVector FirstHand;
+    FVector SightOrigin;
+    FRotator SightRotation;
     bool RestorationStage(double Age);
     float HiddenHealth=0;
     FVector ScoutStart;

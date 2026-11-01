@@ -36,7 +36,7 @@
 #include "Misc/Parse.h"
 #include "LevelSequenceActor.h"
 #include "LevelSequencePlayer.h"
-namespace { int32 CombatScenario=0; FString Events,Frames,Memory; double RunStarted=0; }
+namespace { int32 CombatScenario=0; FString CombatEvents,CombatFrames,CombatMemory; double RunStarted=0; }
 #endif
 ACRCombatRoute::ACRCombatRoute()
 {
@@ -50,7 +50,9 @@ void ACRCombatRoute::BeginPlay()
 #if !UE_BUILD_SHIPPING
     Started=StageStarted=FPlatformTime::Seconds();
     bRestoration=FParse::Param(FCommandLine::Get(),TEXT("CRRestorationCheck"));
-    if(!RunStarted) { RunStarted=Started; if(bRestoration) FParse::Value(FCommandLine::Get(),TEXT("CRRestorationStart="),CombatScenario); Frames=TEXT("elapsed,stage,scenario,frame_ms,game_thread_ms,render_thread_ms,gpu_ms,health,ammo,enemies,x,y,z\n"); Memory=TEXT("elapsed,stage,working_set_bytes,private_commit_bytes\n"); }
+    bSightReview=FParse::Param(FCommandLine::Get(),TEXT("CRSightReview"));
+    if(bSightReview) IFileManager::Get().MakeDirectory(*(FPaths::ProjectSavedDir()/TEXT("Phase051")),true);
+    if(!RunStarted) { RunStarted=Started; if(bRestoration) FParse::Value(FCommandLine::Get(),TEXT("CRRestorationStart="),CombatScenario); CombatFrames=TEXT("elapsed,stage,scenario,frame_ms,game_thread_ms,render_thread_ms,gpu_ms,health,ammo,enemies,x,y,z\n"); CombatMemory=TEXT("elapsed,stage,working_set_bytes,private_commit_bytes\n"); }
     for(TActorIterator<ACRChapterStreamingController> It(GetWorld());It;++It){Streaming=*It;break;}
     IFileManager::Get().MakeDirectory(*(FPaths::ProjectSavedDir()/TEXT("Phase02")),true);
     if(bRestoration) IFileManager::Get().MakeDirectory(*(FPaths::ProjectSavedDir()/TEXT("Phase03")),true);
@@ -67,6 +69,12 @@ void ACRCombatRoute::Tick(float Delta)
     {
         Player=Cast<ACRCharacter>(UGameplayStatics::GetPlayerPawn(this,0)); if(!Player.IsValid())return;
         PC=Cast<ACRPlayerController>(Player->GetController());
+        if(bSightReview)
+        {
+            if(!PC.IsValid() || !Streaming.IsValid() || !Streaming->IsZoneReady(0) || !Player->WeaponView->HasImportedAppearance())return;
+            // Isolated visual fixture only: no checkpoint writes, no claims of earning the upgrade.
+            PC->SetControlRotation(FRotator(0,0,0));Next(TEXT("sight-review"));return;
+        }
         const auto List=Enemies(); if(List.Num()!=2)return;
         for(auto* E:List) { auto* AI=Cast<ACRAshWardenController>(E->GetController()); if(!AI||!AI->bNavigationReady)return; }
         Check(Streaming.IsValid()&&Streaming->IsZoneReady(0),TEXT("Safe streamed initial floor and native navigation ready"));
@@ -87,6 +95,7 @@ void ACRCombatRoute::Tick(float Delta)
     }
     if(!Player.IsValid()||!PC.IsValid()||!Streaming.IsValid()||UGameplayStatics::GetPlayerPawn(this,0)!=Player.Get()) { Finish(false,TEXT("Lost player or persistent streaming authority")); return; }
     RecordFrame(Delta);
+    if(bSightReview) { if(Stage==TEXT("sight-finish")){if(Age>2)Finish(true,TEXT("Visual sight fixture completed; not chapter gameplay acceptance"));}else ReviewSights(Age);return; }
     if(Scout.IsValid()&&FVector::Dist2D(ScoutStart,Scout->GetActorLocation())>75)bMoved=true;
     if(Player->Health->Health<100)bReceivedDamage=true;
     if(Player->Health->IsDead()&&Stage!=TEXT("death")&&Stage!=TEXT("restart_death")) { Finish(false,TEXT("Unexpected defeat in ")+Stage); return; }
@@ -197,6 +206,52 @@ void ACRCombatRoute::Tick(float Delta)
 #endif
 }
 #if !UE_BUILD_SHIPPING
+void ACRCombatRoute::ReviewSights(double Age)
+{
+    static const TCHAR* Labels[]={TEXT("base-hip"),TEXT("base-iron-ads"),TEXT("upgraded-hip"),TEXT("upgraded-optic-ads"),TEXT("crouched-optic-ads"),TEXT("after-shot-ads"),TEXT("after-reload-ads"),TEXT("cover-lowered"),TEXT("after-cover-ads")};
+    auto* W=Player->Weapon.Get();
+    W->SetAiming(SightStep!=0 && SightStep!=2);
+    if(bSightCaptured)
+    {
+        // FScreenshotRequest completes on a later render frame: hold the pose until capture drains.
+        if(Age>6.5) { ++SightStep;bSightAction=false;bSightCaptured=false;Next(SightStep==UE_ARRAY_COUNT(Labels)?TEXT("sight-finish"):TEXT("sight-review")); }
+        return;
+    }
+    if(!bSightAction)
+    {
+        bSightAction=true;W->SetAiming(SightStep!=0 && SightStep!=2);
+        if(SightStep==0){SightOrigin=Player->GetActorLocation();SightRotation=PC->GetControlRotation();}
+        if(SightStep==2)
+        {
+            auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();
+            Check(G->TryCollectSurveyOptic(TEXT("CR03_YardCache"))&&G->TryApplySurveyUpgrade(),TEXT("Visual fixture applies existing upgrade API; not gameplay acceptance"));
+        }
+        if(SightStep==4)Player->Crouch();
+        if(SightStep==5){Player->UnCrouch();Check(W->TryFire(),TEXT("Sight fixture original shot accepted"));}
+        if(SightStep==6)Check(W->TryReload(),TEXT("Sight fixture original reload accepted"));
+        // Isolated visual fixture only: sample an existing collision wall, then the same original target.
+        if(SightStep==7){Player->SetActorLocation(FVector(-1500,1300,SightOrigin.Z));PC->SetControlRotation(FRotator(0,90,0));}
+        if(SightStep==8){Player->SetActorLocation(SightOrigin);PC->SetControlRotation(SightRotation);}
+    }
+    if(Age<5 || W->State!=ECRWeaponState::Ready)return; // Render settling, never streaming readiness proof.
+    if(W->bAiming)
+    {
+        TArray<UStaticMeshComponent*> Meshes;Player->GetComponents(Meshes);
+        const FName Socket=SightStep>1?TEXT("SightAnchor_Optic"):TEXT("SightAnchor_Iron");bool Found=false;
+        for(auto* M:Meshes)if(M->DoesSocketExist(Socket))
+        {
+            Found=true;const FVector Local=Player->Camera->GetComponentTransform().InverseTransformPosition(M->GetSocketLocation(Socket));
+            const float Error=FVector2D(Local.Y,Local.Z).Size();
+            UE_LOG(LogTemp,Display,TEXT("CR051_SIGHT step=%s cameraRelative=%s lateral_cm=%.5f fov=%.3f"),Labels[SightStep],*Local.ToString(),Error,Player->Camera->FieldOfView);
+            if(SightStep==7) Check(Local.Z<-1.f,TEXT("Native close-cover probe lowers the weapon instead of clipping through the wall"));
+            else Check(Error<.1f,TEXT("Actual runtime selected socket is centered after settling"));
+        }
+        Check(Found,TEXT("Imported native sight socket exists"));
+    }
+    FString Label=TEXT("1080");FParse::Value(FCommandLine::Get(),TEXT("CRSightLabel="),Label);
+    if(!FParse::Param(FCommandLine::Get(),TEXT("CRSightNoCapture")))FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Phase051")/(Label+TEXT("-")+Labels[SightStep]+TEXT(".png")),true,false);
+    bSightCaptured=true;
+}
 bool ACRCombatRoute::RestorationStage(double Age)
 {
     if(!Stage.StartsWith(TEXT("03_"))) return false;
@@ -342,20 +397,21 @@ bool ACRCombatRoute::Interact(ACRInteractionActor* Item)
     if(FPlatformTime::Seconds()-StageStarted<.6)return false;
     Check(Player->CanInteractWith(Item)&&Item->CanInteract_Implementation(Player.Get()),TEXT("Original interaction valid through camera trace"));if(bFinished)return false;Inject(Player->InteractAction);return true;
 }
-void ACRCombatRoute::Check(bool Condition,const TCHAR* Message){if(bFinished)return;if(!Condition){Finish(false,Message);return;}Events+=FString::Printf(TEXT("%.3f PASS %s\n"),FPlatformTime::Seconds()-RunStarted,Message);UE_LOG(LogTemp,Display,TEXT("CR02_ROUTE PASS %s"),Message);}
+void ACRCombatRoute::Check(bool Condition,const TCHAR* Message){if(bFinished)return;if(!Condition){Finish(false,Message);return;}CombatEvents+=FString::Printf(TEXT("%.3f PASS %s\n"),FPlatformTime::Seconds()-RunStarted,Message);UE_LOG(LogTemp,Display,TEXT("CR02_ROUTE PASS %s"),Message);}
 void ACRCombatRoute::Restart(){if(bFinished)return;bFinished=true;PC->RestartPrototype();}
 void ACRCombatRoute::RecordFrame(float Delta)
 {
     const double Time=FPlatformTime::Seconds()-RunStarted;const FVector P=Player->GetActorLocation();
-    Frames+=FString::Printf(TEXT("%.3f,%s,%d,%.4f,%.4f,%.4f,%.4f,%.1f,%d,%d,%.1f,%.1f,%.1f\n"),Time,*Stage,CombatScenario,Delta*1000.,FPlatformTime::ToMilliseconds(GGameThreadTime),FPlatformTime::ToMilliseconds(GRenderThreadTime),FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles()),Player->Health->Health,Player->Weapon->Magazine,Enemies().Num(),P.X,P.Y,P.Z);
-    if(Time-LastMemory>1){LastMemory=Time;const auto Stats=FPlatformMemory::GetStats();Memory+=FString::Printf(TEXT("%.3f,%s,%llu,%llu\n"),Time,*Stage,Stats.UsedPhysical,Stats.UsedVirtual);}
+    CombatFrames+=FString::Printf(TEXT("%.3f,%s,%d,%.4f,%.4f,%.4f,%.4f,%.1f,%d,%d,%.1f,%.1f,%.1f\n"),Time,*Stage,CombatScenario,Delta*1000.,FPlatformTime::ToMilliseconds(GGameThreadTime),FPlatformTime::ToMilliseconds(GRenderThreadTime),FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles()),Player->Health->Health,Player->Weapon->Magazine,Enemies().Num(),P.X,P.Y,P.Z);
+    if(Time-LastMemory>1){LastMemory=Time;const auto Stats=FPlatformMemory::GetStats();CombatMemory+=FString::Printf(TEXT("%.3f,%s,%llu,%llu\n"),Time,*Stage,Stats.UsedPhysical,Stats.UsedVirtual);}
 }
 void ACRCombatRoute::Finish(bool Passed,const FString& Message)
 {
-    if(bFinished)return;bFinished=true;const FString Dir=FPaths::ProjectSavedDir()/(bRestoration?TEXT("Phase03"):TEXT("Phase02"));
+    if(bFinished)return;bFinished=true;const FString Dir=FPaths::ProjectSavedDir()/(bSightReview?TEXT("Phase051"):bRestoration?TEXT("Phase03"):TEXT("Phase02"));
     const FString Receipt=FString::Printf(TEXT("{\"passed\":%s,\"mode\":\"combat\",\"scenario\":%d,\"message\":\"%s\"}"),Passed?TEXT("true"):TEXT("false"),CombatScenario,*Message);
-    FFileHelper::SaveStringToFile(Receipt,*(Dir/TEXT("acceptance.json")));FFileHelper::SaveStringToFile(Events,*(Dir/TEXT("route.txt")));FFileHelper::SaveStringToFile(Frames,*(Dir/TEXT("frames.csv")));FFileHelper::SaveStringToFile(Memory,*(Dir/TEXT("memory.csv")));
-    FString Settings;for(const TCHAR* Name:{TEXT("r.ScreenPercentage"),TEXT("r.DynamicRes.OperationMode"),TEXT("r.VSync"),TEXT("t.MaxFPS"),TEXT("sg.ViewDistanceQuality"),TEXT("sg.AntiAliasingQuality"),TEXT("sg.ShadowQuality"),TEXT("sg.GlobalIlluminationQuality"),TEXT("sg.ReflectionQuality"),TEXT("sg.PostProcessQuality"),TEXT("sg.TextureQuality"),TEXT("sg.EffectsQuality"),TEXT("sg.FoliageQuality"),TEXT("sg.ShadingQuality"),TEXT("r.AntiAliasingMethod"),TEXT("r.RayTracing"),TEXT("r.Lumen.HardwareRayTracing")})if(const auto* C=IConsoleManager::Get().FindConsoleVariable(Name))Settings+=FString::Printf(TEXT("%s=%s\n"),Name,*C->GetString());FFileHelper::SaveStringToFile(Settings,*(Dir/TEXT("settings.txt")));
+    FFileHelper::SaveStringToFile(Receipt,*(Dir/TEXT("acceptance.json")));FFileHelper::SaveStringToFile(CombatEvents,*(Dir/TEXT("route.txt")));FFileHelper::SaveStringToFile(CombatFrames,*(Dir/TEXT("frames.csv")));FFileHelper::SaveStringToFile(CombatMemory,*(Dir/TEXT("memory.csv")));
+    int32 ViewWidth=0,ViewHeight=0;if(PC.IsValid())PC->GetViewportSize(ViewWidth,ViewHeight);
+    FString Settings=FString::Printf(TEXT("viewport=%dx%d\n"),ViewWidth,ViewHeight);for(const TCHAR* Name:{TEXT("r.ScreenPercentage"),TEXT("r.DynamicRes.OperationMode"),TEXT("r.VSync"),TEXT("t.MaxFPS"),TEXT("sg.ViewDistanceQuality"),TEXT("sg.AntiAliasingQuality"),TEXT("sg.ShadowQuality"),TEXT("sg.GlobalIlluminationQuality"),TEXT("sg.ReflectionQuality"),TEXT("sg.PostProcessQuality"),TEXT("sg.TextureQuality"),TEXT("sg.EffectsQuality"),TEXT("sg.FoliageQuality"),TEXT("sg.ShadingQuality"),TEXT("r.AntiAliasingMethod"),TEXT("r.RayTracing"),TEXT("r.Lumen.HardwareRayTracing")})if(const auto* C=IConsoleManager::Get().FindConsoleVariable(Name))Settings+=FString::Printf(TEXT("%s=%s\n"),Name,*C->GetString());FFileHelper::SaveStringToFile(Settings,*(Dir/TEXT("settings.txt")));
     UE_LOG(LogTemp,Display,TEXT("CR02_FINISH %s"),*Receipt);
 #if WITH_EDITOR
     if(GetWorld()->WorldType==EWorldType::PIE)return;
