@@ -169,3 +169,40 @@ These scopes show actual skeletal/Sequencer execution without a large measured G
 Peak working set1,863,364,608B(1.735GiB), private commit4,530,450,432B(4.219GiB). Samples: bench entry17.128s=1,818,439,680/4,520,050,688B; assembly22.174s=1,824,280,576/4,530,450,432B; post-reload51.390s=1,832,972,288/4,271,542,272B; return to Yard76.572s=1,745,321,984/4,181,856,256B; reloaded Workshop86.644s=1,736,302,592/4,172,029,952B (working set/commit). Final pre-restart182.782s=1,772,470,272/4,228,411,392B. No monotonic memory-growth pattern appears in this bounded sample, but different resident zones/restarts and allocator caching prevent a leak-free claim. These are process measurements, not dedicated VRAM or per-asset residency. Normal scripted unloads: A5/B6/C2, independently of3Restart travels; no forced GC per transition.
 
 Analyzer limits:30,667MemAlloc TagTracker errors with partial trace channels,4LoadTime warnings, GPU interleaved/reversed/negative-duration warnings(max0.252ms). Do not use this capture for allocation or reconstructed GPU-event claims; GPU table uses the native RHI frame counter. Runtime had no Error/Fatal/Ensure; expected deliberate cancellation and existing Recast teardown warnings remain. First-run startup commands also warn about execution time. Full settings, both receipts, CSVs, command lines, first-failed.utrace, restoration.utrace and Insights exports stay under ignored `.environment-local/phase-03/`. No further run was used to chase numbers.
+
+## Phase04 measurement policy
+
+Keep the Phase03 reference unchanged:1920x1080, Epic scalability3, ScreenPercentage100, dynamic resolution0, VSync0 and MaxFPS0 for instrumented comparison. Phase03 assembly p95=22.108ms is a previous traced sample, not a proven60FPS baseline. Phase04 logs native serialize/dispatch duration, actual async save callback latency, two-slot read latency, target-zone readiness, and GameMode safe-control reconstruction time. The Development route records frame/GT/RT/native GPU counters and process working set/private commit; repeated checkpoint reloads are bounded to three cycles. Allocation/asset/VRAM leak freedom is not inferred from process residency. No cache clearing, forced GC per transition, quality reduction or unrelated rendering changes are authorized.
+
+Final Windows results are appended after the real packaged routes. Editor-game data verifies state/control only; it is not the packaged hardware performance result. CPU/GPU/frame/bookmark/loadtime tracing and injected lifecycle faults introduce overhead, and whole-map recovery differs from ordinary gate streaming.
+
+## Phase04 packaged checkpoint observations — 2026-10-31
+
+One final Windows Development BuildCookRun; three fresh processes, dedicated test saves and cpu,gpu,frame,bookmark,loadtime traces. Same RTX5070 Laptop/32GB, NVIDIA616.92, requested1920x1080 window with ForceRes, ScreenPercentage100, DynamicRes0, VSync0, t.MaxFPS0, all ten scalability groups3/Epic. Native settings receipts confirm those console values. No quality reduction, DDC clearing or forced per-transition GC. Desktop background/power/thermal/cache conditions were not controlled as an A/B benchmark. Lifecycle fault injection, pause and automation are part of this acceptance run.
+
+| Recorded gameplay segment | Rows | Frame p95 ms | GT p95 ms | RT p95 ms | GPU p95 ms |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Process1: new game/combat/CP01 |1109|14.3535|1.6968|14.3894|13.4004|
+| Process2: CP01/lifecycle/assembly/CP02 |4708|16.7568|2.2888|16.6826|15.5326|
+| Process3: CP02/recovery/backtracking/endings |4871|15.1928|2.8108|15.1668|13.7416|
+| Process2 assembly stage |1497|16.5544|2.1032|16.5328|15.2882|
+
+These CSV counters are previous-frame native measurements; do not sum GT/RT/GPU. CSV recording excludes the cold menu, held bootstrap and portions of map travel. Percentile uses sorted[floor((n-1)*0.95)]; sparse save events are reported as a range rather than a meaningful p95. The smaller assembly p95 compared with Phase03's22.108ms is not an isolated performance improvement: route, lifecycle, cache and capture conditions differ. This is not a clean60FPS or future final-art claim.
+
+Five successful writes: native serialization/dispatch log time0.127–0.176ms; request-to-success callback9.160–13.461ms. Route3's CR04_SerializeCheckpoint CPU scope is2calls,total0.148ms,max0.076ms; that scope covers a narrower interval than the surrounding dispatch log. Menu/save-window samples are sparse; no causal per-write hitch estimate is claimed. Route3 native scan latency median10.643ms across5reads, max426.095ms at initial process startup; async callback timing includes scheduling/startup, not pure device I/O.
+
+InitGame-to-first-safe-control reconstruction is24.629–133.707ms across all releases; it includes required native streaming/readiness and anchor/spawn checks, but excludes earlier persistent-map loading. Process start to first safe player-control log is3959.902ms /3726.958ms /5458.246ms for routes1/2/3, including startup/menu handler selection. Three CP02 recovery cycles measured32.900/25.456/24.629ms, each restored health76/magazine5/reserve30/upgrade1. These short reconstructions must not hide the surrounding travel hitches below.
+
+One offline Unreal Insights analysis of route3 completed, exit0. Game Frames export covers4897frames, p95=15.2415ms, max646.4917ms,8frames>50ms. Largest frame is startup646.492ms; first Continue/persistent-map travel218.041ms; final exit135.959ms. Frames coinciding with Restart/recovery include68.444/60.662/56.163/53.763/52.191ms. Timestamp coincidence is not exclusive causal attribution. These hitches are absent from parts of the gameplay CSV and remain visible in the trace. GT FlushAsyncLoading has96calls,max329.393ms across startup and controlled travel; this does not mean normal zone transitions switched to blocking loads. ConditionalCollectGarbage max23.177ms; engine full-GC scopes12calls,total8.005ms,max3.853ms. No unrelated performance rewrite was attempted.
+
+| Process | Peak working set bytes | Peak private commit bytes |
+| --- | ---: | ---: |
+| 1 |1808613376|4453691392|
+| 2 |1782394880|4454256640|
+| 3 |1794392064|4363665408|
+
+Route3 working/private at the earlier death stage=1769803776/4261679104B; first1Hz sample after the three quick recoveries=1765851136/4358971392B; final walk=1781391360/4192153600B. Sampling cannot resolve each sub-second cycle; different active zones and caches affect residency. No unbounded trend was established by this bounded sample, and no leak-free claim follows. Native logs record A/B/C unloading1/5/1 times in route3; these events and restored stable IDs are stronger evidence than unchanged GPU allocation. Working set/commit are not dedicated VRAM or an asset-residency sum. No allocation-level retained-reference analysis is claimed.
+
+Analyzer limits:30675 MemAllocTagTracker errors from the partial-channel trace,4LoadTime warnings, GPU ordering warnings (up to0.099ms) and one pending RHI command list at close. Memory-allocation reconstruction and affected GPU event timing are not used. GPU values above are native RHI frame counters; maximum route3 GPU counter68.0282ms. Runtime packaged logs have no Error/Fatal/Ensure matches; expected abort/teardown warnings remain. Automated OS process exit777003 is unresolved even for direct native launch, independently of successful gameplay receipts and AutomationTool exit0. A separate interactive UI run without route/unattended/trace flags exited0; it is outside these measurements and does not identify which condition caused the discrepancy.
+
+Evidence: .environment-local/phase-04/{packaged-summary.json,process-results.json,packaged-route1.log,packaged-route2.log,packaged-route3.log,route3.utrace,insights-game-thread.csv,insights-frames.csv}; native Saved/Phase04/{1,2,3}/{frames.csv,memory.csv,settings.txt,acceptance.json}. Keep raw traces/packages ignored. Reanalyze existing traces before considering another run; a future same-quality performance experiment requires a concrete question.

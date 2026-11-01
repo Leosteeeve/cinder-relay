@@ -67,7 +67,13 @@ void UCRChapterSaveSubsystem::SlotLoaded(const FString& Slot, int32, USaveGame* 
     UE_LOG(LogTemp, Display, TEXT("CR04_SAVE ScanComplete valid=%d generation=%lld checkpoint=%s latency_ms=%.3f"), Latest != nullptr, Latest ? Latest->SaveGeneration : 0, Latest ? *Latest->CheckpointId.ToString() : TEXT("none"), LastScanMs);
     OnAvailabilityChanged.Broadcast();
 }
-uint64 UCRChapterSaveSubsystem::BeginRun() { Queued = nullptr; return ++RunEpoch; }
+uint64 UCRChapterSaveSubsystem::BeginRun()
+{
+    Queued = nullptr; ++RunEpoch;
+    Status = bScanning ? TEXT("Checking checkpoints...") : bWriting ? TEXT("Completing an earlier checkpoint write...")
+        : Latest ? TEXT("Checkpoint available.") : bSlotExists[0] || bSlotExists[1] ? TEXT("Checkpoint unavailable. Files retained.") : TEXT("No checkpoint yet.");
+    return RunEpoch;
+}
 bool UCRChapterSaveSubsystem::RequestWrite(const UCRChapterSaveGame& Snapshot, uint64 Epoch)
 {
     FString Reason;
@@ -114,7 +120,9 @@ void UCRChapterSaveSubsystem::WriteFinished(const FString& Slot, int32, bool Suc
 #endif
     LastCallbackMs = (FPlatformTime::Seconds() - WriteStarted) * 1000;
     if (Success) { Latest = Writing; LatestSlot = WritingIndex; bSlotExists[LatestSlot] = true; }
-    Status = Success ? TEXT("CHECKPOINT SAVED") : TEXT("CHECKPOINT UNAVAILABLE. Previous checkpoint retained.");
+    Status = WritingEpoch == RunEpoch
+        ? (Success ? TEXT("CHECKPOINT SAVED") : TEXT("CHECKPOINT UNAVAILABLE. Previous checkpoint retained."))
+        : (Success ? TEXT("An earlier checkpoint is available.") : TEXT("An earlier checkpoint write failed. Existing files retained."));
     UE_LOG(LogTemp, Display, TEXT("CR04_SAVE WriteCompleted success=%d generation=%lld checkpoint=%s epoch=%llu latency_ms=%.3f"), Success, Writing->SaveGeneration, *Writing->CheckpointId.ToString(), WritingEpoch, LastCallbackMs);
     // Keep the writer occupied during callbacks; a callback can only queue another snapshot.
     OnWritten.Broadcast(Writing, Success, WritingEpoch);

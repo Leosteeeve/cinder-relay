@@ -79,6 +79,7 @@ public:
             Test->TestTrue(TEXT("First async write accepted"), Store->RequestWrite(*S, Store->GetRunEpoch())); break;
         case 1:
             Test->TestTrue(TEXT("First native callback succeeds"), Successes == 1 && Store->GetLatest()->SaveGeneration == 1);
+            Store->BeginRun(); Test->TestFalse(TEXT("New run clears previous success feedback"), Store->GetStatus().Contains(TEXT("CHECKPOINT SAVED")));
             Store->FailNextWriteForTest(); Store->RequestWrite(*S, Store->GetRunEpoch()); break;
         case 2:
             Test->TestTrue(TEXT("Failed async write never announces success or replaces valid save"), Failures == 1 && Successes == 1 && Store->GetLatest()->SaveGeneration == 1);
@@ -102,6 +103,7 @@ public:
             Store->RequestWrite(*S, Store->GetRunEpoch()); S->MagazineAmmo = 1; S->Seal(); Store->RequestWrite(*S, Store->GetRunEpoch()); Store->BeginRun(); break;
         case 7:
             Test->TestTrue(TEXT("New run discards queued old-run snapshot"), Store->GetLatest()->SaveGeneration == 4 && Store->GetLatest()->MagazineAmmo == 5);
+            Test->TestFalse(TEXT("Old-run async completion does not announce success to new run UI"), Store->GetStatus().Contains(TEXT("CHECKPOINT SAVED")));
             return Finish();
         }
         return false;

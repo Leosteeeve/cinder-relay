@@ -17,6 +17,7 @@ public:
     UPROPERTY(VisibleAnywhere, Category="Checkpoint") TObjectPtr<UBoxComponent> Trigger;
     UPROPERTY(VisibleAnywhere, Category="Checkpoint") TObjectPtr<UArrowComponent> Facing;
     bool ValidateSpawn(FString& Reason) const;
+    void BeginCheckpointAttempt(ACRCharacter& Player);
     UFUNCTION(CallInEditor, BlueprintCallable, Category="Checkpoint") bool SnapToSafeFloor();
 protected:
     virtual void BeginPlay() override;

@@ -45,7 +45,11 @@ void ACRCheckpoint::EndPlay(const EEndPlayReason::Type Reason)
 void ACRCheckpoint::Enter(UPrimitiveComponent*, AActor* Actor, UPrimitiveComponent*, int32, bool, const FHitResult&)
 {
     auto* Player = Cast<ACRCharacter>(Actor); if (!Player || !Player->IsPlayerControlled()) return;
-    Candidate = Player; AttemptStarted = GetWorld()->GetTimeSeconds();
+    BeginCheckpointAttempt(*Player);
+}
+void ACRCheckpoint::BeginCheckpointAttempt(ACRCharacter& Player)
+{
+    Candidate = &Player; AttemptStarted = GetWorld()->GetTimeSeconds();
     GetWorldTimerManager().SetTimer(RetryTimer, this, &ACRCheckpoint::TryCheckpoint, .25f, true);
 }
 void ACRCheckpoint::TryCheckpoint()

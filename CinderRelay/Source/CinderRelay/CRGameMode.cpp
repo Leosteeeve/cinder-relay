@@ -149,6 +149,9 @@ bool ACRGameMode::ReleaseStartingPlayer()
 	if (RestoreSnapshot && (!Player->Health->RestoreCheckpointHealth(RestoreSnapshot->PlayerHealth) || !Player->Weapon->RestoreCheckpointAmmo(RestoreSnapshot->MagazineAmmo, RestoreSnapshot->ReserveAmmo)))
 	{ Player->Destroy(); UE_LOG(LogTemp, Error, TEXT("CR04_RESTORE Player component values rejected")); return false; }
 	bBootstrapReady = true; WaitingPlayer.Reset();
+	// Spawn overlap precedes Possess in native RestartPlayerAtTransform. Explicitly arm
+	// the same bounded stable-state check after possession, so a fresh CP00 is not missed.
+	if (GetStartingZone() == 0) Anchor->BeginCheckpointAttempt(*Player);
 	if (auto* PC = Cast<ACRPlayerController>(Controller)) { PC->RefreshHUD(); if (RestoreSnapshot) PC->ShowCheckpointFeedback(TEXT("CHECKPOINT RESTORED")); }
 	UE_LOG(LogTemp, Display, TEXT("CR04_RESTORE SafeControl checkpoint=%s zone=%d objective=%d health=%.1f magazine=%d reserve=%d upgrade=%d reconstruction_ms=%.3f position=%s"),
 		*StartingCheckpoint.ToString(), GetStartingZone(), int32(Objective), Player->Health->Health, Player->Weapon->Magazine, Player->Weapon->Reserve, HasSurveyUpgrade(), (FPlatformTime::Seconds()-BootstrapStarted)*1000, *Player->GetActorLocation().ToString());

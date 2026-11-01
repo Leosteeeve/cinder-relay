@@ -102,7 +102,7 @@ void ACRCheckpointRoute::Tick(float Delta)
         }
         Player = Cast<ACRCharacter>(PC->GetPawn()); if (!Player.IsValid() || !G->IsCheckpointReady()) return;
         Check(Streaming->IsZoneReady(G->GetStartingZone()) && Player->GetActorLocation().Z > -750, TEXT("Safe pawn released only into ready target checkpoint collision"));
-        if (Route == 1) { Check(G->GetObjective()==ECRObjective::ReachWorkshop && Player->Weapon->Magazine==5, TEXT("New Game retains original starting state")); Walk({{-300,0}},TEXT("fight")); }
+        if (Route == 1) { Check(G->GetObjective()==ECRObjective::ReachWorkshop && Player->Weapon->Magazine==5, TEXT("New Game retains original starting state")); Next(TEXT("wait_cp00")); }
         else if (Route == 2 && Journey == 40)
         { Check(!G->HasSurveyOptic()&&!G->HasSurveyUpgrade()&&!PC->IsAssembling()&&Player->Weapon->CanUse(),TEXT("Restart during assembly and world EndPlay restore fresh playable state")); Travel(true,0); }
         else if (Route == 2) { Check(G->GetObjective()==ECRObjective::FindModule && G->DefeatedEnemies.Num()==2 && G->IsPickupCollected(TEXT("CR02_YardAmmo")), TEXT("CP01 restores objective, enemy deaths and consumed ammo")); Next(TEXT("restore_values")); }
@@ -114,7 +114,7 @@ void ACRCheckpointRoute::Tick(float Delta)
             Check(Store->GetLatest() && Store->GetLatest()->SaveGeneration==PreservedGeneration, TEXT("Restart did not erase or overwrite stored checkpoint"));
             Walk({{-500,0}},TEXT("die"));
         }
-        else if (Journey == 4) Walk({{-1500,-1150},{1500,-1150},{1500,0},{2050,0},{2800,-170}},TEXT("module"));
+        else if (Journey == 4) Walk({{-300,0}},TEXT("fight"));
         return;
     }
     if (!Player.IsValid() || !Streaming.IsValid()) { Finish(false,TEXT("Lost persistent player or streaming controller")); return; }
@@ -128,11 +128,20 @@ void ACRCheckpointRoute::Tick(float Delta)
         if (D.Size()<45) { Waypoints.RemoveAt(0); return; }
         PC->SetControlRotation(FRotator(0,FMath::RadiansToDegrees(FMath::Atan2(D.Y,D.X)),0)); Inject(Player->ForwardAction); Inject(Player->SprintAction); return;
     }
-    if (Stage == TEXT("fight"))
+    if (Stage == TEXT("wait_cp00"))
+    {
+        if(!Store->IsBusy()&&Store->GetLatest()&&Store->GetLatest()->CheckpointId==TEXT("CP00_START_YARD"))
+        { Check(Store->GetLatest()->SaveGeneration==1,TEXT("Fresh New Game confirms native CP00 write before entering combat"));Walk({{-300,0}},TEXT("fight")); }
+    }
+    else if (Stage == TEXT("fight"))
     {
         ACRAshWarden* Enemy = nullptr;
         for (TActorIterator<ACRAshWarden> It(GetWorld()); It; ++It) if (!It->Health->IsDead()) { Enemy=*It; break; }
-        if (!Enemy) { Check(G->DefeatedEnemies.Num()==2,TEXT("Normal accepted shots defeated both original enemies")); Walk({{1000,0},{1250,300}},TEXT("ammo")); return; }
+        if (!Enemy)
+        {
+            Check(G->DefeatedEnemies.Num()==2,TEXT("Normal accepted shots defeated both original enemies"));
+            if(Route==3&&Journey==4)Walk({{1000,0},{1850,0},{2800,-170}},TEXT("module"));else Walk({{1000,0},{1250,300}},TEXT("ammo")); return;
+        }
         PC->SetControlRotation((Enemy->Head->GetComponentLocation()-Player->Camera->GetComponentLocation()).Rotation()); Inject(Player->AimAction);
         if (W->State==ECRWeaponState::Ready && Now-LastShot>1.05)
         { Inject(W->Magazine==0?Player->ReloadAction:Player->FireAction); LastShot=Now; }
