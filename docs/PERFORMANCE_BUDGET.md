@@ -236,3 +236,37 @@ Native save dispatch0.126–0.316ms; successful callbacks8.247–16.242ms (five 
 One-Hz memory sampling is too coarse to separate the three rapid CP02 recovery cycles; bounded peak residency is reported without a no-leak claim. Native unload status, saved actor reconciliation and absence of persistent strong streamed-actor references support residency behavior; unchanged process/GPU allocation would not disprove unload. Dedicated VRAM residency, detailed texture use and long-run growth were not measured. Logs show native texture pool1000MB after initialization; no pool-over-budget warning was found. The8GB hardware target remains a budget, not proof of all future final-art fit.
 
 Evidence (ignored locally): `.environment-local/phase-05/package.log`, `packaged-acceptance/{process-results.json,polish-summary.json,load-latencies.json,packaged-route1.log,packaged-route2.log,packaged-route3.log}`, and `package/Windows/CinderRelay/Saved/Phase04/{1,2,3}/{frames.csv,memory.csv,settings.txt,route.txt,acceptance.json}`. All three native processes exited0; route1 bootstrap also0, no forced stops. Prior777003 was not reproduced without requested traces in this run, but that is correlation, not a proven root-cause fix.
+
+## Phase05.1 packaged observations
+
+UE5.8.4, Windows Development, RTX5070Laptop/32GB, actual viewport1920x1080, Epic3, ScreenPercentage100, DynamicRes0, VSync0, MaxFPS0. Existing TSR/Lumen/hardware-ray-tracing settings retained; no frame generation. One bounded three-process lower-overhead route; no Editor/Blender/recording concurrently. No requested Insights/allocation trace; previous-frame native counters, input/lifecycle automation and1Hz process sampling remain overhead. Power/temperature/background desktop applications were not controlled. Median p50 and nearest-rank p95/p99.
+
+| Sample | Frames | Frame p50 ms | p95 ms | p99 ms | GT p95 ms | RT p95 ms | GPU p95 ms | Phase05 p95 ms |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Yard combat/skyline approach | 853 | 12.691 | 16.987 | 18.983 | 2.067 | 16.970 | 15.854 | 15.625 |
+| Workshop full assembly | 1386 | 16.445 | 18.737 | 20.383 | 3.331 | 18.645 | 16.228 | 15.896 |
+| Relay Bunker | 2414 | 15.570 | 17.477 | 20.948 | 3.107 | 17.447 | 15.832 | 17.988 |
+| Streaming/backtracking | 2808 | 15.051 | 17.768 | 22.640 | 3.332 | 17.737 | 15.804 | 18.242 |
+| Route3 all recorded | 5196 | 14.851 | 17.214 | 20.044 | 3.107 | 17.176 | 15.539 | 17.701 |
+
+Assembly p95=18.737ms exceeds16.667ms by2.070ms and the corresponding Phase05 sample by2.841ms. Yard p95 increased1.362ms; normal traversal decreased0.474ms. These are observed separate runs, not isolated causal measurements of individual materials/meshes. RT/GPU dominate the assembly sample; do not claim native60FPS or start a renderer rewrite. The denser106,828-triangle skeletal presentation and shared2K materials are plausible contributors, not proven exclusive causes.
+
+One recorded gameplay delta exceeded50ms:150.795ms at route1 `wait_cp00` elapsed0.802s; the other two routes had none. Startup/menu/held bootstrap and controlled map reload are not fully present in gameplay CSV. Native LoadMap timings below describe synchronous travel work, not end-to-end player-visible latency. No diagnostic trace was added to manufacture an attribution.
+
+LoadMap samples: 26.845–186.413ms, 14/17 above50ms. Cross-process safe-control reconstruction: CP01=34.160ms and CP02=40.292ms; repeated warm CP02 recoveries34.770/24.950/24.022ms. These start at native bootstrap, not OS process launch, and are not added to LoadMap durations. Correct saved state was CP01 health68, ammo1/35, upgrade0; CP02 health68, ammo5/30, upgrade1.
+
+| Process | Peak working set MiB | Peak private commit MiB | Native unload counts A/B/C |
+|---|---:|---:|---|
+| 1 | 1721.2 | 4177.5 | 0/0/0 |
+| 2 | 1723.7 | 4252.0 | 11/0/6 |
+| 3 | 1782.9 | 4291.5 | 1/5/1 |
+
+New source textures: six2048x2048 images, 6,083,958 compressed JPEG bytes; actual native Texture2D dimensions/compression/sRGB verified. New Phase051 uassets total25,524,302 source bytes. These are disk sizes, not resident VRAM. Hero plus optic58,060triangles; eight-piece environment source32,056triangles including19,140-triangle combined eight-tower skyline; new assembly106,828triangles/40importedbones. All22decorations are noncolliding/non-nav; only the combined skyline stays persistent.
+
+Process peak private commit reached4,291.5MiB in route3 (Phase05 corresponding peak4,124.8MiB); process allocation includes pools/cache and does not isolate added art residency. Texture pool stabilized at1000MB, no pool-over-budget warning found in the three logs. Per-texture current residency, dedicated VRAM delta and long-term leak freedom remain unmeasured; six2K source maps are not a measured VRAM figure. No forced GC per transition or cache clearing.
+
+Evidence: `.environment-local/phase-05-1/packaged-acceptance/{process-results.json,polish-summary.json,packaged-route1.log,packaged-route2.log,packaged-route3.log,SavedPhase04/}`. The archived SavedPhase04 copy preserves this performance run when later diagnostic recording reuses receipt paths. All three native exits0, route1 bootstrap0, no forced stops. The older777003 did not recur; no causal fix is claimed. This full route preceded the narrowly reviewed missing-sight fallback correction; final corrected package uses the same assets/normal appearance path, followed by focused native tests and packaged visual checks. No full route rerun was needed for that error-path-only change.
+
+Final corrected package ADS sample: `sight-performance/summary.json`, 961 frames from six2s settled windows, no capture/recording/trace. Frame p50/p95/p99=12.540/13.542/14.028ms; GT/RT/GPU p95=2.184/13.530/11.970ms. Full nine-pose fixture has2 deltas>50ms. No comparable Phase05 ADS fixture was recorded, so no isolated old-versus-new sight cost is claimed.
+
+Those two sight-fixture spikes were55.992ms and56.841ms at elapsed4.537/4.767s, during initial hip-view settling before the measured ADS windows. Their GT/RT/GPU counters were lower than the frame delta; wall scheduling/initial presentation is a hypothesis, not a proven GPU or streaming cause. The28s animation video and Editor comparison captures ran separately and are not benchmark data.

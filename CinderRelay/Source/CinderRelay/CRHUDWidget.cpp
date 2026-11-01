@@ -1,5 +1,8 @@
 #include "CRHUDWidget.h"
 #include "CRPlayerController.h"
+#include "CRCharacter.h"
+#include "CRWeaponComponent.h"
+#include "CRWeaponViewComponent.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
 #include "Components/Button.h"
@@ -123,6 +126,8 @@ void UCRHUDWidget::NativeTick(const FGeometry& Geometry,float Delta)
 	Super::NativeTick(Geometry,Delta);
 	ShotPulse=FMath::Max(0.f,ShotPulse-Delta); HitPulse=FMath::Max(0.f,HitPulse-Delta); HurtPulse=FMath::Max(0.f,HurtPulse-Delta);
 	if (ReticleText) { ReticleText->SetText(FText::FromString(HitPulse>0?TEXT("X"):TEXT("+"))); ReticleText->SetRenderScale(FVector2D(1+ShotPulse*2)); ReticleText->SetColorAndOpacity(FSlateColor(HitPulse>0?FLinearColor(1,.55f,.2f):FLinearColor::White)); }
+	if(ReticleText) if(const auto* Pawn=Cast<ACRCharacter>(GetOwningPlayerPawn()))
+		ReticleText->SetRenderOpacity(Pawn->Weapon && Pawn->Weapon->bAiming && Pawn->WeaponView && Pawn->WeaponView->HasImportedAppearance()?0.f:1.f);
 	if (DamageBorder) DamageBorder->SetRenderOpacity(HurtPulse/.4f);
 }
 FReply UCRHUDWidget::NativeOnKeyDown(const FGeometry& Geometry, const FKeyEvent& KeyEvent)

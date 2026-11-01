@@ -15,6 +15,12 @@ public:
     UCRWeaponViewComponent();
     UPROPERTY(EditDefaultsOnly, Category="Appearance") TSoftObjectPtr<UStaticMesh> RookAppearance;
     UPROPERTY(EditDefaultsOnly, Category="Appearance") TSoftObjectPtr<UStaticMesh> SurveyAppearance;
+    UPROPERTY(EditDefaultsOnly, Category="Appearance|Sights", meta=(ClampMin="16",ClampMax="40")) float SightEyeRelief = 20.f;
+    UPROPERTY(EditDefaultsOnly, Category="Appearance|Sights") FVector ImportedHipLocation = FVector(38,14,-15);
+    /** Socket in mesh space -> camera-relative root, +X sight axis at the authored eye relief. */
+    static FTransform SolveSightRoot(const FTransform& SightLocal, float EyeRelief);
+    /** The appearance pair is atomic: incomplete imports use the original primitive view. */
+    static bool CanUseAuthoredSights(const UStaticMesh* Rook, const UStaticMesh* Optic);
     void SetPresentationHidden(bool Hidden);
     bool HasImportedAppearance() const;
     virtual void TickComponent(float Delta, ELevelTick TickType, FActorComponentTickFunction* ThisTick) override;
@@ -27,6 +33,8 @@ private:
     UPROPERTY() TObjectPtr<UStaticMeshComponent> ImportedOptic;
     TSharedPtr<FStreamableHandle> AppearanceLoad;
     bool bPresentationHidden=false;
+    FTransform IronAimRoot=FTransform::Identity, OpticAimRoot=FTransform::Identity;
+    bool bSightAnchorsValid=false;
     UFUNCTION() void RefreshAppearance();
     UPROPERTY() TObjectPtr<UStaticMesh> Cube;
     UPROPERTY() TObjectPtr<USceneComponent> ViewRoot;
