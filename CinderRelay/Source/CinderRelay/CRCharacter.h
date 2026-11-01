@@ -22,7 +22,12 @@ class CINDERRELAY_API ACRCharacter : public ACharacter
 {
 	GENERATED_BODY()
 public:
-	ACRCharacter();
+	ACRCharacter(const FObjectInitializer& ObjectInitializer);
+	virtual void Tick(float DeltaSeconds) override;
+	bool IsSliding() const;
+	bool IsSprintHeld() const { return bSprintHeld; }
+	void SlideEnded();
+	void CancelSlide(FName Reason);
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") TObjectPtr<UCRHealthComponent> Health;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") TObjectPtr<UCRWeaponComponent> Weapon;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Combat") TObjectPtr<UCRWeaponViewComponent> WeaponView;
@@ -63,6 +68,10 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 private:
+	bool bSprintHeld=false, bCrouchHeld=false;
+	float SlideLean=0;
+	void RefreshSprint();
+	UFUNCTION() void MovementWeaponChanged();
 	void Fire();
 	void Reload();
 	void AimStart();

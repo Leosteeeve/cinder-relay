@@ -43,7 +43,7 @@ protected:
 private:
     UPROPERTY() TObjectPtr<UStaticMeshComponent> Flash;
     FTimerHandle FlinchTimer,FlashTimer;
-    double PresentationUntil=0;
+    double PresentationUntil=0, HitReactionUntil=0;
     TWeakObjectPtr<UAnimSequence> CurrentAnimation;
     void PlayPresentation(UAnimSequence* Animation, bool Loop=false);
     UFUNCTION() void Damaged(float Current,float Damage);

@@ -1,6 +1,7 @@
 #include "CRCheckpointRoute.h"
 #if !UE_BUILD_SHIPPING
 #include "CRCharacter.h"
+#include "CRCharacterMovementComponent.h"
 #include "CRPlayerController.h"
 #include "CRGameMode.h"
 #include "CRChapterSaveGame.h"
@@ -23,6 +24,7 @@
 #include "Engine/GameInstance.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/LevelStreaming.h"
+#include "Engine/StaticMesh.h"
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "LevelSequenceActor.h"
@@ -38,6 +40,7 @@
 #include "DynamicRHI.h"
 #include "UnrealClient.h"
 namespace { int32 Journey = 0; int32 RecoveryCycles = 0, LifeStep = 0; double RunStart = 0, MemoryAt = 0; FString Events, Frames, Memory; int64 PreservedGeneration = 0; }
+namespace { bool bSlideCheck=false, bSlideVideo=false; int32 SlideMagazine=0,SlideTotalAmmo=0; double SlideBegin=0; }
 namespace { bool bHandlingVideo = false, bHandlingVideoDone = false; int32 HandlingVideoShots = 0; }
 #endif
 ACRCheckpointRoute::ACRCheckpointRoute()
@@ -51,6 +54,9 @@ void ACRCheckpointRoute::BeginPlay()
     Super::BeginPlay();
 #if !UE_BUILD_SHIPPING
     FParse::Value(FCommandLine::Get(), TEXT("CRCheckpointRoute="), Route);
+    bSlideEdges=FParse::Param(FCommandLine::Get(),TEXT("CRSlideEdges"));
+    bSlideCheck=FParse::Param(FCommandLine::Get(),TEXT("CRSlideCheck"));
+    bSlideVideo=FParse::Param(FCommandLine::Get(),TEXT("CR054Video"));
     bLifecycle = FParse::Param(FCommandLine::Get(), TEXT("CRCheckpointLifecycle"));
     bHandlingVideo = FParse::Param(FCommandLine::Get(), TEXT("CRHandlingVideo"));
     Started = StageStarted = FPlatformTime::Seconds();
@@ -86,6 +92,7 @@ void ACRCheckpointRoute::Tick(float Delta)
     {
         // Capture-only handshake: no scene progression before the recorder owns
         // an observed foreground window. Normal acceptance/play never waits here.
+        if(bSlideVideo && !IFileManager::Get().FileExists(*(FPaths::ProjectSavedDir()/TEXT("Phase054/Record.ready")))) return;
         if(bHandlingVideo && !IFileManager::Get().FileExists(*(FPaths::ProjectSavedDir()/TEXT("Phase053/Record.ready")))) return;
         if (Store->IsBusy()) return;
         Check(!PC->GetPawn(), TEXT("Cold launch menu holds player before selecting New Game or Continue"));
@@ -106,7 +113,7 @@ void ACRCheckpointRoute::Tick(float Delta)
             return;
         }
         Player = Cast<ACRCharacter>(PC->GetPawn()); if (!Player.IsValid() || !G->IsCheckpointReady()) return;
-        Check(Streaming->IsZoneReady(G->GetStartingZone()) && Player->GetActorLocation().Z > -750, TEXT("Safe pawn released only into ready target checkpoint collision"));
+        Check(!Player->IsSliding() && Streaming->IsZoneReady(G->GetStartingZone()) && Player->GetActorLocation().Z > -750, TEXT("Safe pawn released only into ready target checkpoint collision"));
         if (Route == 1) { Check(G->GetObjective()==ECRObjective::ReachWorkshop && Player->Weapon->Magazine==5, TEXT("New Game retains original starting state")); Next(TEXT("wait_cp00")); }
         else if (Route == 2 && Journey == 40)
         { Check(!G->HasSurveyOptic()&&!G->HasSurveyUpgrade()&&!PC->IsAssembling()&&Player->Weapon->CanUse(),TEXT("Restart during assembly and world EndPlay restore fresh playable state")); Travel(true,0); }
@@ -136,7 +143,90 @@ void ACRCheckpointRoute::Tick(float Delta)
     if (Stage == TEXT("wait_cp00"))
     {
         if(!Store->IsBusy()&&Store->GetLatest()&&Store->GetLatest()->CheckpointId==TEXT("CP00_START_YARD"))
-        { Check(Store->GetLatest()->SaveGeneration==1,TEXT("Fresh New Game confirms native CP00 write before entering combat"));Walk({{-300,0}},TEXT("fight")); }
+        { Check(Store->GetLatest()->SaveGeneration==1,TEXT("Fresh New Game confirms native CP00 write before entering combat")); if(bSlideCheck) Next(TEXT("slide_low_speed")); else Walk({{-300,0}},TEXT("fight")); }
+    }
+    else if(Stage==TEXT("slide_low_speed"))
+    {
+        if(Age<.15) Inject(Player->CrouchAction);
+        else { Check(!Player->IsSliding(),TEXT("Slide rejects low speed and missing sprint")); Next(TEXT("slide_accelerate")); }
+    }
+    else if(Stage==TEXT("slide_accelerate"))
+    {
+        PC->SetControlRotation(FRotator::ZeroRotator); Inject(Player->ForwardAction); Inject(Player->SprintAction);
+        if(Age>.4 && Player->GetVelocity().Size2D()>435 && Player->WeaponView->IsPresentationResident())
+        { SlideMagazine=W->Magazine; SlideTotalAmmo=W->Magazine+W->Reserve;Inject(Player->CrouchAction); Next(TEXT("slide_active")); SlideBegin=Now; }
+    }
+    else if(Stage==TEXT("slide_active"))
+    {
+        Inject(Player->ForwardAction); Inject(Player->SprintAction);
+        if(Age<.35) Inject(Player->CrouchAction);
+        if(Age>.08 && Age<.3) { Check(Player->IsSliding() && Player->bIsCrouched,TEXT("Sprint Ctrl enters grounded crouched slide")); Check(Player->GetVelocity().Size2D()<=621,TEXT("Slide speed stays bounded")); }
+        if(Age>.14 && Age<.25) Inject(Player->AimAction);
+        if(Age>.27 && Age<.31) { Check(!W->bAiming,TEXT("ADS cannot activate during slide")); if(W->Magazine==SlideMagazine) Inject(Player->FireAction); }
+        if(Age>.82)
+        { Check(!Player->IsSliding()&&!Player->bIsCrouched,TEXT("Timed slide ends standing after Ctrl release")); Check(W->Magazine==SlideMagazine-1,TEXT("Slide hip fire spends exactly one round")); Inject(Player->CrouchAction);Next(TEXT("slide_cooldown")); }
+    }
+    else if(Stage==TEXT("slide_cooldown"))
+    {
+        Check(!Player->IsSliding(),TEXT("Cooldown prevents immediate retrigger"));
+        if(Age>.15 && W->State==ECRWeaponState::Ready) { Inject(Player->ReloadAction); Next(TEXT("slide_reload")); }
+    }
+    else if(Stage==TEXT("slide_reload"))
+    {
+        if(Age>.1 && Age<.3) { Check(W->State==ECRWeaponState::Reloading,TEXT("Reload begins after slide with native weapon lock")); Inject(Player->SprintAction);Inject(Player->CrouchAction);Check(!Player->IsSliding(),TEXT("Reload cannot enter slide")); }
+        if(Age>2.6) { Check(W->State==ECRWeaponState::Ready && W->Magazine==5 && W->Magazine+W->Reserve==SlideTotalAmmo-1,TEXT("Native reload transfers ammo once after slide")); Inject(Player->AimAction);Next(TEXT("slide_return")); }
+    }
+    else if(Stage==TEXT("slide_return"))
+    {
+        if(Age<.3) Inject(Player->AimAction);
+        if(Age>.15) { Check(W->bAiming && !Player->IsSliding(),TEXT("ADS returns after movement and reload")); Walk({{-300,0}},TEXT("fight")); }
+    }
+    else if(Stage==TEXT("slide_edge_prepare"))
+    {
+        PC->SetControlRotation(FRotator::ZeroRotator);Inject(Player->ForwardAction);Inject(Player->SprintAction);
+        if(Age>.35 && Player->GetVelocity().Size2D()>435)
+        {
+            SlideEdgeOrigin=Player->GetActorLocation();SlideTotalAmmo=W->Magazine+W->Reserve;
+            if(SlideEdgeCase==3) { Inject(Player->JumpAction);Next(TEXT("slide_edge_air"));return; }
+            if(SlideEdgeCase==1) SlideObstacle=SlideBlock(SlideEdgeOrigin+FVector(300,0,50),FVector(400,220,20));
+            if(SlideEdgeCase==2) SlideObstacle=SlideBlock(SlideEdgeOrigin+FVector(175,0,0),FVector(20,220,250));
+            Inject(Player->CrouchAction);Next(TEXT("slide_edge_active"));
+        }
+    }
+    else if(Stage==TEXT("slide_edge_air"))
+    {
+        if(Age>.08 && Age<.2) Inject(Player->CrouchAction);
+        if(Age>.2 && Age<.25) Check(Player->GetCharacterMovement()->IsFalling()&&!Player->IsSliding(),TEXT("Airborne Sprint Ctrl cannot enter slide"));
+        if(Age>1.5 && Player->GetCharacterMovement()->IsMovingOnGround()) FinishSlideEdge();
+    }
+    else if(Stage==TEXT("slide_edge_active"))
+    {
+        Inject(Player->ForwardAction);
+        if(Age<.15 || SlideEdgeCase==0) Inject(Player->CrouchAction);
+        if(SlideEdgeCase==4 && Age>.12 && Age<.2) Inject(Player->ReloadAction);
+        if(SlideEdgeCase==5 && Age>.12) { Check(Player->IsSliding(),TEXT("Pause fixture interrupts an active slide"));PC->TogglePrototypePause();Next(TEXT("slide_edge_pause"));return; }
+        if(SlideEdgeCase==4)
+        {
+            if(Age>.22 && Age<.3) Check(!Player->IsSliding()&&W->State==ECRWeaponState::Reloading,TEXT("Valid reload cancels an active slide"));
+            if(Age>2.8) { Check(W->State==ECRWeaponState::Ready&&W->Magazine+W->Reserve==SlideTotalAmmo,TEXT("Mid-slide reload conserves ammunition exactly once"));FinishSlideEdge(); }
+        }
+        else if(Age>.95)
+        {
+            Check(!Player->IsSliding(),TEXT("Bounded edge-case slide terminates"));
+            if(SlideEdgeCase==0) Check(Player->bIsCrouched,TEXT("Holding Ctrl ends slide crouched without retrigger"));
+            if(SlideEdgeCase==1) Check(Player->bIsCrouched,TEXT("Released Ctrl cannot expand capsule through a low ceiling"));
+            if(SlideEdgeCase==2) Check(Player->GetActorLocation().X<SlideEdgeOrigin.X+135,TEXT("Native wall sweep shortens slide without penetration"));
+            if(SlideObstacle.IsValid())SlideObstacle->Destroy();Next(TEXT("slide_edge_clear"));
+        }
+    }
+    else if(Stage==TEXT("slide_edge_clear") && Age>.4)
+    { Check(!Player->bIsCrouched,TEXT("Native stand resumes after Ctrl release and ceiling clearance"));FinishSlideEdge(); }
+    else if(Stage==TEXT("slide_edge_pause") && Age>.4)
+    { Check(GetWorld()->IsPaused()&&!Player->IsSliding(),TEXT("Pause clears slide and held actions safely"));PC->TogglePrototypePause();FinishSlideEdge(); }
+    else if(Stage==TEXT("slide_workshop_review"))
+    {
+        PC->SetControlRotation(FRotator(-8,-65+float(Age)*16,0));
+        if(Age>8) Finish(true,TEXT("Input-driven sprint slide fire reload combat and Workshop tour complete"));
     }
     else if (Stage == TEXT("fight"))
     {
@@ -145,6 +235,7 @@ void ACRCheckpointRoute::Tick(float Delta)
         if (!Enemy)
         {
             Check(G->DefeatedEnemies.Num()==2,TEXT("Normal accepted shots defeated both original enemies"));
+            if(bSlideEdges && SlideEdgeCase<6) { Walk({{-1250,0}},TEXT("slide_edge_prepare"));return; }
             if(Route==3&&Journey==4)Walk({{1000,0},{1850,0},{2800,-170}},TEXT("module"));else Walk({{1000,0},{1250,300}},TEXT("ammo")); return;
         }
         PC->SetControlRotation((Enemy->Head->GetComponentLocation()-Player->Camera->GetComponentLocation()).Rotation()); Inject(Player->AimAction);
@@ -159,7 +250,7 @@ void ACRCheckpointRoute::Tick(float Delta)
     else if (Stage == TEXT("wait_cp01"))
     {
         if (!Store->IsBusy() && Store->GetLatest() && Store->GetLatest()->CheckpointId==TEXT("CP01_WORKSHOP_ENTRY"))
-        { Check(Store->GetLatest()->MagazineAmmo==W->Magazine && Store->GetLatest()->PlayerHealth==Player->Health->Health,TEXT("CP01 native success captures actual stable health/ammo")); Finish(true,TEXT("CP01 saved; exit process before next route")); }
+        { Check(Store->GetLatest()->MagazineAmmo==W->Magazine && Store->GetLatest()->PlayerHealth==Player->Health->Health,TEXT("CP01 native success captures actual stable health/ammo")); if(bSlideVideo) Next(TEXT("slide_workshop_review")); else Finish(true,TEXT("CP01 saved; exit process before next route")); }
     }
     else if (Stage == TEXT("restore_values"))
     {
@@ -282,6 +373,19 @@ void ACRCheckpointRoute::Tick(float Delta)
 #endif
 }
 #if !UE_BUILD_SHIPPING
+AActor* ACRCheckpointRoute::SlideBlock(FVector Position,FVector Size)
+{
+    // Isolated Development fixture only; never saved to a map or a player save slot.
+    FActorSpawnParameters Params;Params.ObjectFlags|=RF_Transient;
+    auto* A=GetWorld()->SpawnActor<AActor>(Params);auto* C=NewObject<UStaticMeshComponent>(A);
+    A->AddInstanceComponent(C);A->SetRootComponent(C);C->SetStaticMesh(LoadObject<UStaticMesh>(nullptr,TEXT("/Engine/BasicShapes/Cube.Cube")));
+    C->SetCollisionProfileName(TEXT("BlockAll"));C->SetCanEverAffectNavigation(false);C->RegisterComponent();A->SetActorLocation(Position);A->SetActorScale3D(Size/100.f);return A;
+}
+void ACRCheckpointRoute::FinishSlideEdge()
+{
+    if(SlideObstacle.IsValid())SlideObstacle->Destroy();SlideObstacle.Reset();++SlideEdgeCase;
+    if(SlideEdgeCase<6) Walk({{-1250,0}},TEXT("slide_edge_prepare"));else Walk({{1000,0},{1250,300}},TEXT("ammo"));
+}
 void ACRCheckpointRoute::Next(const FString& Name) { if(bFinished)return;Stage=Name;StageStarted=FPlatformTime::Seconds();UE_LOG(LogTemp,Display,TEXT("CR04_ROUTE stage=%s route=%d journey=%d"),*Stage,Route,Journey); }
 void ACRCheckpointRoute::Walk(TArray<FVector2D> Points,const FString& After) { Waypoints=MoveTemp(Points);AfterWalk=After;Next(TEXT("walk")); }
 void ACRCheckpointRoute::Inject(const UInputAction* Action,float Value) { if(PC.IsValid()&&PC->GetLocalPlayer())if(auto* Input=PC->GetLocalPlayer()->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())Input->InjectInputForAction(Action,FInputActionValue(Value),{},{}); }

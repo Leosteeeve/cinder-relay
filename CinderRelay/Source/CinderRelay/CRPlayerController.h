@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "CRWeaponComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "CRGameMode.h"
 #include "CRPlayerController.generated.h"
@@ -31,6 +32,7 @@ public:
 	void FinishChapterPresentation();
 	UFUNCTION() void RefreshCombat();
 	UFUNCTION() void HealthChanged(float Health, float Damage);
+	UFUNCTION() void ConfirmedImpact(FVector Position,FVector Normal,ECRImpactKind Kind);
 	UFUNCTION() void ShotFeedback(FVector Impact, bool bHitTarget, bool bBlockingHit);
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="UI") bool bPrototypeDefeated = false;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="UI") bool bPrototypePaused = false;

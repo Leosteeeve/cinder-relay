@@ -48,7 +48,7 @@ void UCRHUDWidget::NativeOnInitialized()
 	DamageBorder=WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(),TEXT("DamageTint"));
 	DamageBorder->SetBrushColor(FLinearColor(.8f,.025f,.01f,.22f)); DamageBorder->SetVisibility(ESlateVisibility::HitTestInvisible); DamageBorder->SetRenderOpacity(0);
 	auto* DamageSlot=Root->AddChildToCanvas(DamageBorder); DamageSlot->SetAnchors(FAnchors(0,0,1,1)); DamageSlot->SetOffsets(FMargin(0));
-	UTextBlock* Controls = MakeText(TEXT("Controls"), TEXT("WASD Move   Shift Sprint   Ctrl Crouch   Space Jump   LMB Fire   RMB Aim   R Reload   E Interact   Esc Pause"), 14, FLinearColor(0.8f, 0.85f, 0.88f));
+	UTextBlock* Controls = MakeText(TEXT("Controls"), TEXT("WASD Move   Shift Sprint   Ctrl Crouch/Slide   Space Jump   LMB Fire   RMB Aim   R Reload   E Interact   Esc Pause"), 14, FLinearColor(0.8f, 0.85f, 0.88f));
 	ControlsText=Controls;
 	SubtitleText=MakeText(TEXT("Subtitle"),TEXT(""),22,FLinearColor::White);
 	SubtitleText->SetJustification(ETextJustify::Center); SubtitleText->SetAutoWrapText(true);
@@ -57,6 +57,8 @@ void UCRHUDWidget::NativeOnInitialized()
 	auto* ControlsSlot = Root->AddChildToCanvas(Controls); ControlsSlot->SetAnchors(FAnchors(0,1,1,1)); ControlsSlot->SetOffsets(FMargin(36,-62,36,40));
 	UTextBlock* Reticle = MakeText(TEXT("Reticle"), TEXT("+"), 18, FLinearColor::White);
 	ReticleText=Reticle;
+	HitText=MakeText(TEXT("ConfirmedHit"),TEXT("x"),24,FLinearColor::White);
+	auto* HitSlot=Root->AddChildToCanvas(HitText); HitSlot->SetAnchors(FAnchors(.5f)); HitSlot->SetAlignment(FVector2D(.5f)); HitSlot->SetAutoSize(true); HitText->SetRenderOpacity(0);
 	auto* ReticleSlot = Root->AddChildToCanvas(Reticle); ReticleSlot->SetAnchors(FAnchors(0.5f)); ReticleSlot->SetAlignment(FVector2D(0.5f)); ReticleSlot->SetAutoSize(true);
 	MenuBackdrop = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("MenuBackdrop"));
 	MenuBackdrop->SetBrushColor(FLinearColor(0.015f, 0.025f, 0.035f, 0.96f));
@@ -90,9 +92,9 @@ void UCRHUDWidget::SetObjective(const FText& Text) { if (ObjectiveText) Objectiv
 void UCRHUDWidget::SetSubtitle(const FText& Text) { if(SubtitleText) SubtitleText->SetText(Text); }
 void UCRHUDWidget::SetAssembly(bool Active)
 {
-	for(UTextBlock* T : {ObjectiveText.Get(),PromptText.Get(),CombatText.Get(),ReticleText.Get()})
+	for(UTextBlock* T : {ObjectiveText.Get(),PromptText.Get(),CombatText.Get(),ReticleText.Get(),HitText.Get()})
 		if(T) T->SetVisibility(Active?ESlateVisibility::Collapsed:ESlateVisibility::HitTestInvisible);
-	if(ControlsText) ControlsText->SetText(FText::FromString(Active?TEXT("SURVEY OPTIC CALIBRATION     Tab Skip & apply upgrade     Esc Pause"):TEXT("WASD Move   Shift Sprint   Ctrl Crouch   Space Jump   LMB Fire   RMB Aim   R Reload   E Interact   Esc Pause")));
+	if(ControlsText) ControlsText->SetText(FText::FromString(Active?TEXT("SURVEY OPTIC CALIBRATION     Tab Skip & apply upgrade     Esc Pause"):TEXT("WASD Move   Shift Sprint   Ctrl Crouch/Slide   Space Jump   LMB Fire   RMB Aim   R Reload   E Interact   Esc Pause")));
 }
 void UCRHUDWidget::SetPrompt(const FText& Text) { if (PromptText) PromptText->SetText(Text); }
 void UCRHUDWidget::SetStreamingStatus(const FText& Text) { if (StreamingText && !StreamingText->GetText().EqualTo(Text)) StreamingText->SetText(Text); }
@@ -119,13 +121,15 @@ void UCRHUDWidget::SetCombat(float Health,int32 Magazine,int32 Reserve,bool Relo
 {
 	if (CombatText) CombatText->SetText(FText::FromString(FString::Printf(TEXT("HEALTH %03.0f    ROOK-5  %d / %d%s"),Health,Magazine,Reserve,Reloading?TEXT("   RELOADING"):TEXT(""))));
 }
-void UCRHUDWidget::ShotFeedback(bool Hit) { ShotPulse=.18f; if(Hit) HitPulse=.22f; }
+void UCRHUDWidget::ShotFeedback(bool) { ShotPulse=.12f; }
+void UCRHUDWidget::HitFeedback(bool Killed) { HitPulse=Killed?.36f:.18f; bKillFeedback=Killed; }
 void UCRHUDWidget::DamageFeedback() { HurtPulse=.4f; }
 void UCRHUDWidget::NativeTick(const FGeometry& Geometry,float Delta)
 {
 	Super::NativeTick(Geometry,Delta);
 	ShotPulse=FMath::Max(0.f,ShotPulse-Delta); HitPulse=FMath::Max(0.f,HitPulse-Delta); HurtPulse=FMath::Max(0.f,HurtPulse-Delta);
-	if (ReticleText) { ReticleText->SetText(FText::FromString(HitPulse>0?TEXT("X"):TEXT("+"))); ReticleText->SetRenderScale(FVector2D(1+ShotPulse*2)); ReticleText->SetColorAndOpacity(FSlateColor(HitPulse>0?FLinearColor(1,.55f,.2f):FLinearColor::White)); }
+	if(ReticleText) ReticleText->SetRenderScale(FVector2D(1+ShotPulse*2));
+	if(HitText) { HitText->SetRenderOpacity(FMath::Clamp(HitPulse*10.f,0.f,1.f)); HitText->SetColorAndOpacity(FSlateColor(bKillFeedback?FLinearColor(1,.45f,.18f):FLinearColor(.9f,.92f,.88f))); HitText->SetRenderScale(FVector2D(bKillFeedback?1.2f:1.f)); }
 	if(ReticleText) if(const auto* Pawn=Cast<ACRCharacter>(GetOwningPlayerPawn()))
 		ReticleText->SetRenderOpacity(Pawn->Weapon && Pawn->Weapon->bAiming && Pawn->WeaponView && Pawn->WeaponView->HasImportedAppearance()?0.f:1.f);
 	if (DamageBorder) DamageBorder->SetRenderOpacity(HurtPulse/.4f);

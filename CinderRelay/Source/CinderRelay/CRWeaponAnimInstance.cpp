@@ -1,4 +1,5 @@
 #include "CRWeaponAnimInstance.h"
+#include "CRCharacter.h"
 #include "CRWeaponComponent.h"
 #include "Animation/AnimInstanceProxy.h"
 #include "Animation/AnimNode_SequencePlayer.h"
@@ -46,7 +47,8 @@ void UCRWeaponAnimInstance::NativeUpdateAnimation(float Delta)
 {
     Super::NativeUpdateAnimation(Delta);
     const APawn* Pawn=TryGetPawnOwner();const auto* Weapon=Pawn?Pawn->FindComponentByClass<UCRWeaponComponent>():nullptr;
-    const float Speed=Pawn?Pawn->GetVelocity().Size2D():0;
+    const auto* Character=Cast<ACRCharacter>(Pawn);
+    const float Speed=Pawn && (!Character || !Character->IsSliding())?Pawn->GetVelocity().Size2D():0;
     WalkWeight=FMath::FInterpTo(WalkWeight,FMath::Clamp(Speed/260.f,0.f,1.f),Delta,9.f);
     SprintWeight=FMath::FInterpTo(SprintWeight,Weapon&&Weapon->bSprinting?1.f:0.f,Delta,9.f);
     AimWeight=FMath::FInterpTo(AimWeight,Weapon&&Weapon->bAiming?1.f:0.f,Delta,16.f);

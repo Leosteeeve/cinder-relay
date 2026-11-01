@@ -61,7 +61,7 @@ bool UCRWeaponComponent::TryFire()
     FHitResult Cover;
     if (GetWorld()->LineTraceSingleByChannel(Cover, Start, Muzzle, ECC_Visibility, Params) ||
         GetWorld()->LineTraceSingleByChannel(Cover, Muzzle, bHit ? Hit.ImpactPoint : End, ECC_Visibility, Params)) Hit = Cover;
-    bool bTarget = false;
+    bool bTarget = false; ECRImpactKind ImpactKind=ECRImpactKind::Surface;
     if (IsValid(Hit.GetActor()))
     {
         auto* Health = Hit.GetActor()->FindComponentByClass<UCRHealthComponent>();
@@ -70,12 +70,14 @@ bool UCRWeaponComponent::TryFire()
             const bool bHead = Hit.GetComponent() && Hit.GetComponent()->ComponentHasTag(TEXT("CR_Head"));
             const float Applied = UGameplayStatics::ApplyPointDamage(Hit.GetActor(), Data->BodyDamage * (bHead ? Data->HeadMultiplier : 1.f), Direction, Hit, Player->GetController(), Player, nullptr);
             bTarget = Applied > 0;
+            if(bTarget) ImpactKind=Health->IsDead()?ECRImpactKind::EnemyKill:ECRImpactKind::EnemyHit;
         }
     }
     const FVector Impact = Hit.bBlockingHit ? Hit.ImpactPoint : End;
     UAISense_Hearing::ReportNoiseEvent(this,Start,1.f,Player,2500,TEXT("RookShot"));
     UE_LOG(LogTemp,Display,TEXT("CR_SHOT ammo=%d reserve=%d target=%s hit=%d"),Magazine,Reserve,*GetNameSafe(Hit.GetActor()),bTarget);
     OnChanged.Broadcast(); OnShot.Broadcast(Impact,bTarget,Hit.bBlockingHit);
+    if(Hit.bBlockingHit) OnImpact.Broadcast(Impact,Hit.ImpactNormal,ImpactKind);
 #if !UE_BUILD_SHIPPING
     if (bDebugTraces) DrawDebugLine(GetWorld(),Start,Impact,bTarget?FColor::Red:FColor::Cyan,false,1.f,0,1.f);
 #endif
@@ -86,6 +88,7 @@ bool UCRWeaponComponent::TryReload()
 {
     if (!CanUse() || State != ECRWeaponState::Ready || Magazine >= Data->MagazineCapacity || Reserve <= 0) return false;
     State = ECRWeaponState::Reloading; bAiming = false;
+    if(auto* P=Cast<ACRCharacter>(GetOwner())) P->CancelSlide(TEXT("Reload"));
     GetWorld()->GetTimerManager().SetTimer(ReloadTimer,this,&UCRWeaponComponent::CompleteReload,FMath::Max(.1f,Data->ReloadDuration),false);
     OnChanged.Broadcast(); OnCue.Broadcast(TEXT("Reload")); return true;
 }
@@ -96,7 +99,7 @@ void UCRWeaponComponent::CompleteReload()
     Magazine += Transfer; Reserve -= Transfer; State = ECRWeaponState::Ready;
     OnChanged.Broadcast(); UE_LOG(LogTemp,Display,TEXT("CR_RELOAD ammo=%d reserve=%d"),Magazine,Reserve);
 }
-void UCRWeaponComponent::SetAiming(bool bAim) { bAiming = bAim && CanUse() && !bSprinting && State != ECRWeaponState::Reloading; OnChanged.Broadcast(); }
+void UCRWeaponComponent::SetAiming(bool bAim) { const auto* P=Cast<ACRCharacter>(GetOwner()); bAiming = bAim && CanUse() && !bSprinting && (!P || !P->IsSliding()) && State != ECRWeaponState::Reloading; OnChanged.Broadcast(); }
 void UCRWeaponComponent::SetSprinting(bool bSprint) { bSprinting = bSprint; if (bSprint) bAiming = false; OnChanged.Broadcast(); }
 void UCRWeaponComponent::Disable()
 {

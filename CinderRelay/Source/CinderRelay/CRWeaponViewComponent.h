@@ -1,5 +1,6 @@
 #pragma once
 #include "CoreMinimal.h"
+#include "CRWeaponComponent.h"
 #include "Components/ActorComponent.h"
 #include "CRWeaponViewComponent.generated.h"
 class UCRWeaponComponent;
@@ -85,6 +86,8 @@ private:
     UFUNCTION() void RefreshAppearance();
     void AppearanceLoaded();
     UPROPERTY() TObjectPtr<UStaticMesh> Cube;
+    UPROPERTY() TObjectPtr<UStaticMesh> FlashCone;
+    UPROPERTY() TObjectPtr<UMaterialInterface> FlashMaterial;
     UPROPERTY() TObjectPtr<USceneComponent> ViewRoot;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> Flash;
     UPROPERTY() TObjectPtr<UStaticMeshComponent> ImpactMarker;
@@ -92,6 +95,7 @@ private:
     float Recoil = 0, BaseFOV = 85, CoverFraction = 0, CoverCountdown = 0;
     float GaitPhase=0, ReloadPose=0, SmoothCover=0;
     FTimerHandle FlashTimer, ImpactTimer;
+    UFUNCTION() void ConfirmedImpact(FVector Position,FVector Normal,ECRImpactKind Kind);
     UFUNCTION() void Shot(FVector Impact, bool bHitTarget, bool bBlockingHit);
     UFUNCTION() void Cue(FName Name);
     UFUNCTION() void Hurt(float Health, float Damage);
