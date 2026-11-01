@@ -1,0 +1,60 @@
+[
+  {
+    "file": "rook-base-hip.png",
+    "capture": "Packaged gameplay screenshot",
+    "bytes": 2588283,
+    "sha256": "1cd7f57c4058bf656a37929d1ba4103182f8a09ba6165d79163ac9d54b6b70a6",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "rook-iron-ads.png",
+    "capture": "Packaged gameplay screenshot",
+    "bytes": 2619216,
+    "sha256": "450a8694da0d8f9d931b0686f5f5e8a46a7bb62fc848a792c672e29baa2a0fdb",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "rook-upgraded-hip.png",
+    "capture": "Packaged gameplay screenshot",
+    "bytes": 2610340,
+    "sha256": "7fef7883ee8ea3d26ade15a91577159508d61dc2623ab3263117da33560d2d84",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "rook-optic-ads.png",
+    "capture": "Packaged gameplay screenshot",
+    "bytes": 2683199,
+    "sha256": "09ac5ce5efb17c37ad014d490e07495663c284f328c21ac655bc5031ca524502",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "rail-yard-before.png",
+    "capture": "Rendered Unreal Editor comparison",
+    "bytes": 2502666,
+    "sha256": "5f02f972a99ac75e4da106bebc7ad7cfcaa79d99beea30c96afc53eeed7a1d23",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "rail-yard-after.png",
+    "capture": "Rendered Unreal Editor comparison",
+    "bytes": 2560561,
+    "sha256": "2bb55dcd2248758a9247e7565e4d86d9ee0aeb0921cf6a271d63833dc269af88",
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "file": "assembly-gameplay.mp4",
+    "capture": "Actual packaged game recording; silent",
+    "bytes": 3000209,
+    "sha256": "351f5ce62246efb7d53a8ce17887d8aceeb5ec1b5cd22c4af8bc44e2c2bb27cb",
+    "width": 1280,
+    "height": 720,
+    "duration_seconds": 28,
+    "audio": "none"
+  }
+]

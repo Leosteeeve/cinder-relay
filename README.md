@@ -4,6 +4,8 @@ A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 
 
 **Active milestone: Phase05.1 — Asset Quality Overhaul.** A separate original ROOK-5 hero source, native socket-aligned sights, CC0 2K surface maps, curved industrial roofs/perimeter/skyline and an editable IK/contact restoration derivative extend the existing chapter. Native streaming, schema1 checkpoints, combat and the optional22s restoration remain authoritative. See [asset selection](docs/ASSET_SELECTION_05_1.md), [validation and visual limits](docs/MILESTONES.md#phase051-asset-quality-overhaul--active-plan-and-ledger), and [reproduction commands](docs/WINDOWS_SETUP.md#phase051-asset-quality). Human artistic acceptance remains open; Phase06 is not authorized.
 
+[View the Phase 05.1 screenshots and actual assembly recording](docs/media/phase-05-1/README.md).
+
 - 游戏名：CINDER RELAY。
 - 仓库：[Leosteeeve/cinder-relay](https://github.com/Leosteeeve/cinder-relay)，当前 **Public**（2026-10-31 远端查询；Phase 01A 未修改可见性）。
 - 工作目录：`D:\Projects\FPS Game`；工程：`CinderRelay/CinderRelay.uproject`。

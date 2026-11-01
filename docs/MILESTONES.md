@@ -20,6 +20,8 @@ Ruling: retain22s runtime duration initially so Phase03/04 cue/lifecycle invaria
 
 Evidence root: ignored `.environment-local/phase-05-1/`. Before-image camera transforms/FOV and protected baseline SHA256 roster are captured before mutation. Human artistic acceptance remains open; do not mark this phase complete from asset counts or passing tests.
 
+Owner-authorized media publication follow-up: six selected screenshots and the valid 28-second recording from the delivery report are now copied without alteration into [docs/media/phase-05-1](media/phase-05-1/README.md), with SHA-256 manifest and Git LFS tracking. This explicitly authorized selection supersedes the earlier local-only policy for these seven files. Raw logs, failed captures, packages and test saves remain ignored locally; publication does not close human artistic acceptance.
+
 Git delivery: implementation commits `e8f2f3682e3e7dcf111441d2ada522c4776990c5` and `a1926ca54ca092be45839f4375a7b8376a602c30` pushed to `origin/phase-05-1-asset-quality`;47/47 LFS objects uploaded (52MB). [PR7](https://github.com/Leosteeeve/cinder-relay/pull/7) targets main, OPEN/non-draft; GitHub reported MERGEABLE/CLEAN with no configured status-check results at inspection. No merge or visibility change. Engineering delivery is recorded separately from the outstanding owner visual/motion acceptance.
 
 ### Phase05.1 actual implementation and validation
