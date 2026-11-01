@@ -422,3 +422,38 @@ Final Windows package and bounded cross-process acceptance:
 ```
 
 Use a fresh test prefix; the runner refuses to overwrite existing test saves. Do not run this during an owner playtest. Three process launches use only `CR04_TEST_` slots. `-Fullscreen` explicitly verifies1920x1080, avoiding desktop DPI/window-size clamping. Diagnostic sight fixture flags are `-CRCombatCheck -CRSightReview -CRSightLabel=review1080`; it includes nine poses, ending with close-wall lowering and realigned ADS. It directly uses the existing upgrade API and is **not** evidence of normal chapter completion. Add `-CRSightNoCapture` for a separate lower-overhead timing sample. Native chapter acceptance remains the actual-input checkpoint route.
+
+## Phase05.2 presentation and contact
+
+The project/map and player controls are unchanged. Obtain LFS objects, open the persistent map, and use Standalone. The active bench references Phase052; do not run old generators. To play the locally validated package without test automation:
+
+```powershell
+Set-Location 'D:\Projects\FPS Game'
+Start-Process '.\.environment-local\phase-05-2\package\Windows\CinderRelay.exe' -WindowStyle Normal
+```
+
+Editable sources: `CinderRelay/ArtSource/Blender/Phase052/CR052_YardDetail.blend` and `CR052_RookRestoration.blend`. Authoring scripts accept `--export-dir`; run only when intentionally rebuilding these owned derivatives. `polish_presentation.py` and `import_contact_polish.py` use actual Editor operations and protect name ownership. The contact importer requires `-CR052Activate` to switch the existing bench's soft references. Do not mix a new animation source with stale FBX exports.
+
+Read-only visual and camera-track checks (close other Editor/game instances first):
+
+```powershell
+$cr52Editor='D:\Engines\Unreal\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe'
+$cr52Project='D:/Projects/FPS Game/CinderRelay/CinderRelay.uproject'
+$cr52Args='"{0}" -ExecutePythonScript="D:/Projects/FPS Game/CinderRelay/Scripts/review_presentation.py" -CR052After -unattended -nosplash' -f $cr52Project
+Start-Process $cr52Editor -ArgumentList $cr52Args -WindowStyle Hidden -Wait
+$cr52Args='"{0}" -ExecutePythonScript="D:/Projects/FPS Game/CinderRelay/Scripts/review_contact_polish.py" -unattended -nosplash' -f $cr52Project
+Start-Process $cr52Editor -ArgumentList $cr52Args -WindowStyle Hidden -Wait
+$cr52Args='"{0}" -ExecutePythonScript="D:/Projects/FPS Game/CinderRelay/Scripts/validate_contact_tracks.py" -unattended -nosplash -nullrhi' -f $cr52Project
+Start-Process $cr52Editor -ArgumentList $cr52Args -WindowStyle Hidden -Wait
+```
+
+Forward slashes inside Unreal arguments avoid Python-script path escape problems. Pose captures use a fixed settled review camera and do not evaluate its animated track; the separate track validator performs actual native evaluation/Stop restoration. `validate_presentation_polish.py` requires the original pre-edit `before-inventory.json` and `protected-hashes.json` in the ignored Phase052 evidence directory. Do not recreate those from the changed map and call it an original-preservation test.
+
+Final package / bounded regression commands used:
+
+```powershell
+& 'D:/Engines/Unreal/UE_5.8/Engine/Build/BatchFiles/RunUAT.bat' BuildCookRun '-project=D:/Projects/FPS Game/CinderRelay/CinderRelay.uproject' -noP4 -platform=Win64 -clientconfig=Development -target=CinderRelay -build -cook -stage -pak -archive '-archivedirectory=D:/Projects/FPS Game/.environment-local/phase-05-2/package' -nocompileeditor -installed -unattended -utf8output
+& './CinderRelay/Scripts/run_checkpoint_acceptance.ps1' -PackageRoot '.environment-local/phase-05-2/package/Windows' -EvidenceRoot '.environment-local/phase-05-2/packaged-acceptance' -TestPrefix Phase052Final -LowOverhead -Fullscreen
+```
+
+For a later rerun choose a new TestPrefix and evidence directory. Never overwrite player saves. Archive `Saved/Phase04` alongside process receipts before running any diagnostic video route, because the route-number output paths are reused. Do not record video or render Editor screenshots during performance sampling.

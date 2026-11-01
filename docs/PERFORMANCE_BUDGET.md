@@ -270,3 +270,31 @@ Evidence: `.environment-local/phase-05-1/packaged-acceptance/{process-results.js
 Final corrected package ADS sample: `sight-performance/summary.json`, 961 frames from six2s settled windows, no capture/recording/trace. Frame p50/p95/p99=12.540/13.542/14.028ms; GT/RT/GPU p95=2.184/13.530/11.970ms. Full nine-pose fixture has2 deltas>50ms. No comparable Phase05 ADS fixture was recorded, so no isolated old-versus-new sight cost is claimed.
 
 Those two sight-fixture spikes were55.992ms and56.841ms at elapsed4.537/4.767s, during initial hip-view settling before the measured ADS windows. Their GT/RT/GPU counters were lower than the frame delta; wall scheduling/initial presentation is a hypothesis, not a proven GPU or streaming cause. The28s animation video and Editor comparison captures ran separately and are not benchmark data.
+
+## Phase052 packaged observations
+
+2026-11-01: one Windows Development BuildCookRun99.57s, AutomationTool0. UE5.8.4, RTX5070Laptop/32GB, actual1920x1080 viewport, Epic groups3, ScreenPercentage100, DynamicRes0, VSync0, MaxFPS0; existing TSR/Lumen/ray-tracing configuration retained. No frame generation or quality reduction. No Editor, Blender render or recording ran during the three-process performance route. No requested Insights/allocation trace; native previous-frame counters,1Hz process memory and input/lifecycle automation remain overhead. Thermal/power/background desktop load was not controlled. Median p50 and nearest-rank p95/p99; thread counters are not additive.
+
+| Sample | Frames | Frame p50 ms | p95 ms | p99 ms | GT p95 ms | RT p95 ms | GPU p95 ms | Phase051 p95 ms |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Yard combat/approach | 865 | 12.651 | 17.077 | 18.736 | 1.894 | 17.137 | 16.061 | 16.987 |
+| Workshop full assembly | 1363 | 16.571 | 19.538 | 21.534 | 3.985 | 19.463 | 16.255 | 18.737 |
+| Relay Bunker | 2487 | 15.146 | 16.491 | 19.400 | 1.872 | 16.451 | 15.235 | 17.477 |
+| Streaming/backtracking | 2829 | 14.797 | 17.133 | 22.324 | 2.860 | 17.083 | 15.629 | 17.768 |
+| Route3 all recorded | 5242 | 14.607 | 16.562 | 19.400 | 2.705 | 16.531 | 15.235 | 17.214 |
+
+Assembly p95 is0.801ms higher than the prior sample and2.871ms above the16.667ms goal. Yard p95 increased0.090ms. RT tails dominate assembly, while GPU p95 is16.255ms. These are separate bounded runs, not a controlled causal cost isolation. Camera framing, added light/material work and scheduling are hypotheses; no renderer rewrite or blanket quality reduction follows. Route3 p95 being below budget does not establish sustained60FPS for the chapter.
+
+One of10,491 recorded gameplay frame deltas exceeded50ms:72.181ms at route1 wait_cp00, elapsed0.445s (RT55.855ms, GPU5.264ms). This is early presentation/startup, not proven normal zone-load GPU cost. Other two routes have no recorded>50ms gameplay deltas. CSV excludes much of menu/held bootstrap/controlled travel. Native LoadMap work24.658–161.278ms,15/17 above50ms, remains a recovery/restart hitch risk; it is not total input-visible latency. CP01/CP02 cross-process safe-control reconstruction107.492/55.096ms; three warm CP02 recoveries28.374/24.724/21.922ms. These start at native bootstrap, not OS launch; do not add them blindly to travel timings.
+
+Five native save dispatches0.116–0.303ms and successful callbacks9.848–15.849ms. Small samples are ranges, not population percentiles. Save restoration retained CP01 health68/ammo1+35/upgrade0 and CP02 health68/ammo5+30/upgrade1. Native readiness held the pawn before release. No user saves were modified.
+
+| Route | Peak working set MiB | Peak private commit MiB | Native unload counts A/B/C |
+|---|---:|---:|---|
+|1|1796.7|4173.6|0/0/0|
+|2|1792.4|4324.4|11/0/6|
+|3|1755.5|4217.2|1/5/1|
+
+No new texture images; reuse of existing CC0 2K maps and original mask. Eleven new static meshes total61,004 source triangles before instancing; the106,828-triangle assembly retains the previous geometry/bone budget. Thirty-six added actors include four local non-shadowed lights and seven decals. Source asset bytes and process peaks are not measured dedicated VRAM or per-asset residency. Long-run leaks, exact texture residency and isolated per-feature cost remain unmeasured. No pool-over-budget warning was found; no forced transition GC or cache clearing.
+
+Evidence: `.environment-local/phase-05-2/package.log`, `packaged-acceptance/{process-results.json,polish-summary.json,packaged-route1.log,packaged-route2.log,packaged-route3.log,SavedPhase04/}`. A compact public [validation receipt](media/phase-05-2/validation.json) preserves selected metrics. All native and bootstrap exits0, no forced stops; older777003 did not recur, without a claimed causal fix. The separate diagnostic recording attempt is excluded from these metrics and from publication because Windows firewall UI obstructed it.

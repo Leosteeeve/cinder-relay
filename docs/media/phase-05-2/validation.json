@@ -1,0 +1,451 @@
+{
+  "package": {
+    "build_cook_run_seconds": 99.57,
+    "automation_tool_exit": 0
+  },
+  "assets": {
+    "original_actors_preserved": 302,
+    "added": 36,
+    "ownership": {
+      "L_CH01_RailYard": 34,
+      "L_CH01_Workshop": 2
+    },
+    "protected_files_unchanged": 231,
+    "collision_camera_audit": {
+      "invalid_prior_camera": [
+        "CR_CarBody800"
+      ],
+      "train_route": [],
+      "shadow_flank": [],
+      "workshop_interior": []
+    },
+    "checkpoint_anchors": {
+      "CP00_START_YARD": [
+        [
+          -1450.0,
+          0.0,
+          110.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "CP01_WORKSHOP_ENTRY": [
+        [
+          2050.0,
+          0.0,
+          110.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0
+        ]
+      ],
+      "CP02_RELAY_ACCESS": [
+        [
+          4050.0,
+          0.0,
+          -40.18861
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          1.0,
+          1.0,
+          1.0
+        ]
+      ]
+    },
+    "sequence": "/Game/Generated/Phase052/Sequences/LS_CR052_RookRestoration.LS_CR052_RookRestoration",
+    "sequence_tracks": [
+      "MovieSceneSkeletalAnimationTrack",
+      "MovieSceneAudioTrack",
+      "MovieSceneAudioTrack",
+      "MovieScene3DTransformTrack"
+    ],
+    "runtime_acceptance": false
+  },
+  "camera_tracks": {
+    "initial": [
+      -62.0,
+      0.0,
+      166.0,
+      -48.00000000000002,
+      0.0,
+      -0.0
+    ],
+    "samples": [
+      {
+        "seconds": 6.0,
+        "evaluated": [
+          -65.92273411437341,
+          -0.38880003604888974,
+          172.64800003433228,
+          -46.538632942813294,
+          0.0,
+          0.0
+        ],
+        "after_stop": [
+          -62.0,
+          0.0,
+          166.0,
+          -48.00000000000002,
+          0.0,
+          -0.0
+        ]
+      },
+      {
+        "seconds": 19.2,
+        "evaluated": [
+          -67.99491138259289,
+          0.0,
+          173.9949113825929,
+          -44.002544308703555,
+          0.0,
+          0.0
+        ],
+        "after_stop": [
+          -62.0,
+          0.0,
+          166.0,
+          -48.00000000000002,
+          0.0,
+          -0.0
+        ]
+      }
+    ],
+    "passed": true,
+    "scope": "Native Editor sequence evaluation; packaged input/lifecycle tested separately"
+  },
+  "conditions": [
+    "Median p50 and nearest-rank p95/p99; small save/restore samples are not population estimates.",
+    "Windows Development, 1920x1080, Epic groups 3, ScreenPercentage100, native rendering; no frame generation.",
+    "No requested Insights/allocation trace; native previous-frame counters and 1Hz process memory.",
+    "Enhanced Input route automation, lifecycle faults and pause remain measurement overhead.",
+    "No repeated screenshots during samples; each route requests one final receipt screenshot.",
+    "Menu/held bootstrap/travel are absent from CSV; native SafeControl logs report reconstruction separately.",
+    "Position-based zone samples include movement and changing visibility, not isolated fixed-camera GPU benchmarks.",
+    "GT/RT/GPU counters are not additive. Process memory is not dedicated VRAM or proof of leak freedom.",
+    "Automated route durations are not first-time human pacing. No 12-16 minute acceptance is claimed."
+  ],
+  "selected_metrics": {
+    "Yard combat/approach": {
+      "frame_ms": {
+        "n": 865,
+        "p50": 12.6511,
+        "p95": 17.0771,
+        "p99": 18.736,
+        "max": 72.1809
+      },
+      "game_ms": {
+        "n": 865,
+        "p50": 1.5239,
+        "p95": 1.8942,
+        "p99": 2.4361,
+        "max": 15.9965
+      },
+      "render_ms": {
+        "n": 865,
+        "p50": 12.6725,
+        "p95": 17.137,
+        "p99": 18.7738,
+        "max": 55.8551
+      },
+      "gpu_ms": {
+        "n": 865,
+        "p50": 11.7441,
+        "p95": 16.0608,
+        "p99": 17.6335,
+        "max": 18.2149
+      }
+    },
+    "Workshop full assembly": {
+      "frame_ms": {
+        "n": 1363,
+        "p50": 16.5708,
+        "p95": 19.5382,
+        "p99": 21.5342,
+        "max": 32.7713
+      },
+      "game_ms": {
+        "n": 1363,
+        "p50": 2.4339,
+        "p95": 3.9849,
+        "p99": 5.4835,
+        "max": 7.7653
+      },
+      "render_ms": {
+        "n": 1363,
+        "p50": 16.5554,
+        "p95": 19.4627,
+        "p99": 21.7959,
+        "max": 32.5304
+      },
+      "gpu_ms": {
+        "n": 1363,
+        "p50": 15.0954,
+        "p95": 16.2547,
+        "p99": 17.028,
+        "max": 17.6684
+      }
+    },
+    "Relay Bunker": {
+      "frame_ms": {
+        "n": 2487,
+        "p50": 15.1461,
+        "p95": 16.4911,
+        "p99": 19.4002,
+        "max": 37.451
+      },
+      "game_ms": {
+        "n": 2487,
+        "p50": 1.5144,
+        "p95": 1.8724,
+        "p99": 2.5449,
+        "max": 22.2202
+      },
+      "render_ms": {
+        "n": 2487,
+        "p50": 15.1332,
+        "p95": 16.4505,
+        "p99": 18.478,
+        "max": 41.3216
+      },
+      "gpu_ms": {
+        "n": 2487,
+        "p50": 14.1906,
+        "p95": 15.2352,
+        "p99": 17.4717,
+        "max": 39.195
+      }
+    },
+    "Streaming/backtracking": {
+      "frame_ms": {
+        "n": 2829,
+        "p50": 14.7968,
+        "p95": 17.1334,
+        "p99": 22.3241,
+        "max": 37.451
+      },
+      "game_ms": {
+        "n": 2829,
+        "p50": 1.7239,
+        "p95": 2.8603,
+        "p99": 3.5907,
+        "max": 23.4551
+      },
+      "render_ms": {
+        "n": 2829,
+        "p50": 14.7816,
+        "p95": 17.0831,
+        "p99": 21.786,
+        "max": 41.3216
+      },
+      "gpu_ms": {
+        "n": 2829,
+        "p50": 13.8411,
+        "p95": 15.6289,
+        "p99": 19.5378,
+        "max": 39.195
+      }
+    },
+    "Route3 all recorded": {
+      "frame_ms": {
+        "n": 5242,
+        "p50": 14.60745,
+        "p95": 16.5621,
+        "p99": 19.4002,
+        "max": 37.451
+      },
+      "game_ms": {
+        "n": 5242,
+        "p50": 1.6498499999999998,
+        "p95": 2.7053,
+        "p99": 3.3821,
+        "max": 23.4551
+      },
+      "render_ms": {
+        "n": 5242,
+        "p50": 14.5957,
+        "p95": 16.5309,
+        "p99": 19.0809,
+        "max": 41.3216
+      },
+      "gpu_ms": {
+        "n": 5242,
+        "p50": 13.713149999999999,
+        "p95": 15.2352,
+        "p99": 17.0171,
+        "max": 39.195
+      }
+    }
+  },
+  "processes": [
+    {
+      "route": 1,
+      "started_utc": "2026-11-01T07:03:34.1306703Z",
+      "ended_utc": "2026-11-01T07:03:52.1449590Z",
+      "launcher_exit": 0,
+      "native_exit": 0,
+      "forced_stop": false,
+      "acceptance": {
+        "passed": true,
+        "route": 1,
+        "journey": 0,
+        "message": "CP01 saved; exit process before next route"
+      }
+    },
+    {
+      "route": 2,
+      "started_utc": "2026-11-01T07:03:52.1768327Z",
+      "ended_utc": "2026-11-01T07:05:05.2012460Z",
+      "launcher_exit": 0,
+      "native_exit": 0,
+      "forced_stop": false,
+      "acceptance": {
+        "passed": true,
+        "route": 2,
+        "journey": 0,
+        "message": "CP02 saved; exit process before next route"
+      }
+    },
+    {
+      "route": 3,
+      "started_utc": "2026-11-01T07:05:05.2051610Z",
+      "ended_utc": "2026-11-01T07:06:28.7266236Z",
+      "launcher_exit": 0,
+      "native_exit": 0,
+      "forced_stop": false,
+      "acceptance": {
+        "passed": true,
+        "route": 3,
+        "journey": 4,
+        "message": "Checkpoint recovery, backtracking, death retry, restart and optional ending passed"
+      }
+    }
+  ],
+  "memory_peaks_MiB": [
+    {
+      "route": 1,
+      "working_set": 1796.7,
+      "private_commit": 4173.6,
+      "unloads": {
+        "A": 0,
+        "B": 0,
+        "C": 0
+      }
+    },
+    {
+      "route": 2,
+      "working_set": 1792.4,
+      "private_commit": 4324.4,
+      "unloads": {
+        "A": 11,
+        "B": 0,
+        "C": 6
+      }
+    },
+    {
+      "route": 3,
+      "working_set": 1755.5,
+      "private_commit": 4217.2,
+      "unloads": {
+        "A": 1,
+        "B": 5,
+        "C": 1
+      }
+    }
+  ],
+  "load_map_ms": [
+    35.192,
+    55.724000000000004,
+    24.657999999999998,
+    55.127,
+    56.279999999999994,
+    76.945,
+    67.42399999999999,
+    72.397,
+    64.212,
+    80.541,
+    161.278,
+    111.169,
+    58.373000000000005,
+    67.467,
+    69.01400000000001,
+    52.282000000000004,
+    70.465
+  ],
+  "save_dispatch_ms": [
+    0.303,
+    0.152,
+    0.142,
+    0.123,
+    0.116
+  ],
+  "save_callback_ms": [
+    9.848,
+    13.983,
+    13.776,
+    15.849,
+    13.81
+  ],
+  "safe_control_events": {
+    "1": [
+      "[2026.11.01-07.03.38:210][  6]LogTemp: Display: CR04_RESTORE SafeControl checkpoint=CP00_START_YARD zone=0 objective=0 health=100.0 magazine=5 reserve=25 upgrade=0 reconstruction_ms=112.948 position=X=-1450.000 Y=0.000 Z=98.150"
+    ],
+    "2": [
+      "[2026.11.01-07.03.54:984][  7]LogTemp: Display: CR04_RESTORE SafeControl checkpoint=CP01_WORKSHOP_ENTRY zone=1 objective=1 health=68.0 magazine=1 reserve=35 upgrade=0 reconstruction_ms=107.492 position=X=2050.000 Y=0.000 Z=98.150",
+      "[2026.11.01-07.04.01:107][407]LogTemp: Display: CR04_RESTORE SafeControl checkpoint=CP01_WORKSHOP_ENTRY zone=1 objective=1 health=68.0 magazine=1 reserve=35 upgrade=0 reconstruction_ms=37.098 position=X=2050.000 Y=0.000 Z=98.150",
+      "[2026.11.01-07.04.07:256][817]LogTemp: Display: CR04_RESTORE SafeControl checkpoint=CP01_WORKSHOP_ENTRY zone=1 objective=1 health=68.0 magazine=1 reserve=35 upgrade=0 reconstruction_ms=36.637 position=X=2050.000 Y=0.000 Z=98.150",
+      "[2026.11.01-07.04.13:410][226]LogTemp: Display: CR04_RESTORE SafeControl checkpoint=CP01_WORKSHOP_ENTRY zone=1 objective=1 health=68.0 magazine=1 reserve=35 upgrade=0 reconstruction_ms=33.142 position=X=2050.000 Y=0.000 Z=98.150",
+      "[2026.11.01-07.04.19:562][635]LogTemp: Display: CR04_RESTORE SafeControl checkpoint=CP00_START_YARD zone=0 objective=0 health=100.0 magazine=5 reserve=25 upgrade=0 reconstruction_ms=43.761 position=X=-1450.000 Y=0.000 Z=98.150",
+      "[2026.11.01-07.04.19:678][640]LogTemp: Display: CR04_RESTORE SafeControl checkpoint=CP01_WORKSHOP_ENTRY zone=1 objective=1 health=68.0 magazine=1 reserve=35 upgrade=0 reconstruction_ms=29.513 position=X=2050.000 Y=0.000 Z=98.150",
+      "[2026.11.01-07.04.25:832][ 48]LogTemp: Display: CR04_RESTORE SafeControl checkpoint=CP01_WORKSHOP_ENTRY zone=1 objective=1 health=68.0 magazine=1 reserve=35 upgrade=0 reconstruction_ms=34.544 position=X=2050.000 Y=0.000 Z=98.150"
+    ],
+    "3": [
+      "[2026.11.01-07.05.10:980][  5]LogTemp: Display: CR04_RESTORE SafeControl checkpoint=CP02_RELAY_ACCESS zone=2 objective=2 health=68.0 magazine=5 reserve=30 upgrade=1 reconstruction_ms=55.096 position=X=4050.000 Y=0.000 Z=-49.767",
+      "[2026.11.01-07.05.21:719][765]LogTemp: Display: CR04_RESTORE SafeControl checkpoint=CP00_START_YARD zone=0 objective=0 health=100.0 magazine=5 reserve=25 upgrade=0 reconstruction_ms=70.303 position=X=-1450.000 Y=0.000 Z=98.150",
+      "[2026.11.01-07.05.35:717][816]LogTemp: Display: CR04_RESTORE SafeControl checkpoint=CP02_RELAY_ACCESS zone=2 objective=2 health=68.0 magazine=5 reserve=30 upgrade=1 reconstruction_ms=28.374 position=X=4050.000 Y=0.000 Z=-49.767",
+      "[2026.11.01-07.05.35:841][821]LogTemp: Display: CR04_RESTORE SafeControl checkpoint=CP02_RELAY_ACCESS zone=2 objective=2 health=68.0 magazine=5 reserve=30 upgrade=1 reconstruction_ms=24.724 position=X=4050.000 Y=0.000 Z=-49.767",
+      "[2026.11.01-07.05.35:941][826]LogTemp: Display: CR04_RESTORE SafeControl checkpoint=CP02_RELAY_ACCESS zone=2 objective=2 health=68.0 magazine=5 reserve=30 upgrade=1 reconstruction_ms=21.922 position=X=4050.000 Y=0.000 Z=-49.767",
+      "[2026.11.01-07.05.54:094][  3]LogTemp: Display: CR04_RESTORE SafeControl checkpoint=CP00_START_YARD zone=0 objective=0 health=100.0 magazine=5 reserve=25 upgrade=0 reconstruction_ms=58.240 position=X=-1450.000 Y=0.000 Z=98.150"
+    ]
+  },
+  "recorded_spikes_over_50ms": {
+    "1": [
+      {
+        "elapsed": "0.445",
+        "stage": "wait_cp00",
+        "frame_ms": "72.1809",
+        "game_ms": "4.4803",
+        "render_ms": "55.8551",
+        "gpu_ms": "5.2644",
+        "x": "-1450.0",
+        "y": "0.0",
+        "z": "98.1"
+      }
+    ],
+    "2": [],
+    "3": []
+  },
+  "human_aesthetic_acceptance": false
+}
