@@ -34,6 +34,7 @@ private:
     UPROPERTY() TObjectPtr<UStaticMeshComponent> ImpactMarker;
     TWeakObjectPtr<UCRWeaponComponent> Weapon;
     float Recoil = 0, BaseFOV = 85, CoverFraction = 0, CoverCountdown = 0;
+    float GaitPhase=0, ReloadPose=0, SmoothCover=0;
     FTimerHandle FlashTimer, ImpactTimer;
     UFUNCTION() void Shot(FVector Impact, bool bHitTarget, bool bBlockingHit);
     UFUNCTION() void Cue(FName Name);

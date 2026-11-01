@@ -14,6 +14,7 @@
 #include "TimerManager.h"
 #include "Engine/World.h"
 #include "Engine/LocalPlayer.h"
+#include "Kismet/GameplayStatics.h"
 
 ACRCharacter::ACRCharacter()
 {
@@ -47,6 +48,7 @@ void ACRCharacter::BeginPlay()
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeedCrouched = CrouchSpeed;
 	InstallInputContext();
+	LastFootLocation=GetActorLocation();
 	GetWorldTimerManager().SetTimer(PromptTimer, this, &ACRCharacter::UpdatePrompt, 0.1f, true);
 }
 
@@ -113,7 +115,7 @@ void ACRCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	}
 	if (JumpAction)
 	{
-		Input->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
+		Input->BindAction(JumpAction, ETriggerEvent::Started, this, &ACRCharacter::StartJump);
 		Input->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 		Input->BindAction(JumpAction, ETriggerEvent::Canceled, this, &ACharacter::StopJumping);
 	}
@@ -127,6 +129,7 @@ void ACRCharacter::LookYaw(const FInputActionValue& Value) { AddControllerYawInp
 // Unreal MouseY is already positive when the mouse moves up; preserve that sign.
 void ACRCharacter::LookPitch(const FInputActionValue& Value) { AddControllerPitchInput(Value.Get<float>() * MouseSensitivity); }
 void ACRCharacter::StartSprint() { if (!Health->IsDead() && !Weapon->IsPresentationLocked()) { GetCharacterMovement()->MaxWalkSpeed = SprintSpeed; Weapon->SetSprinting(true); } }
+void ACRCharacter::StartJump() { if(!Health->IsDead() && !Weapon->IsPresentationLocked()) Jump(); }
 void ACRCharacter::StopSprint() { GetCharacterMovement()->MaxWalkSpeed = WalkSpeed; Weapon->SetSprinting(false); }
 void ACRCharacter::StartCrouch() { if(!Weapon->IsPresentationLocked()) Crouch(); }
 void ACRCharacter::StopCrouch() { UnCrouch(); }
@@ -167,6 +170,13 @@ bool ACRCharacter::CanInteractWith(const AActor* Target) const { return Target &
 
 void ACRCharacter::UpdatePrompt()
 {
+	const FVector Here=GetActorLocation(); const float Travel=FVector::Dist2D(Here,LastFootLocation); LastFootLocation=Here;
+	if(!Health->IsDead() && !Weapon->IsPresentationLocked() && GetCharacterMovement()->IsMovingOnGround() && Travel<150)
+	{
+		FootDistance+=Travel;
+		if(FootDistance>145) { FootDistance=0; UGameplayStatics::PlaySoundAtLocation(this,Here.X<1600?YardFootstep:InteriorFootstep,Here,.12f,bIsCrouched?.85f:1.f); }
+	}
+	else FootDistance=0;
 	AActor* Target = TraceTarget();
 	const FText Next = Target ? ICRInteractable::Execute_GetInteractionPrompt(Target, this) : FText::GetEmpty();
 	if (!CurrentPrompt.EqualTo(Next))

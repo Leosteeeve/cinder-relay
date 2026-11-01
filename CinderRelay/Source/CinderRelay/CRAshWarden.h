@@ -6,6 +6,7 @@ class UCRHealthComponent;
 class UBehaviorTree;
 class UStaticMeshComponent;
 class USoundBase;
+class UAnimSequence;
 UCLASS()
 class CINDERRELAY_API ACRAshWarden : public ACharacter
 {
@@ -28,12 +29,23 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Audio") TObjectPtr<USoundBase> HitSound;
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Audio") TObjectPtr<USoundBase> DeathSound;
     void PresentAttack();
+    void PresentAlert();
+    void UpdatePresentation();
+    UPROPERTY(EditAnywhere, Category="Presentation") TObjectPtr<UAnimSequence> IdleAnimation;
+    UPROPERTY(EditAnywhere, Category="Presentation") TObjectPtr<UAnimSequence> WalkAnimation;
+    UPROPERTY(EditAnywhere, Category="Presentation") TObjectPtr<UAnimSequence> AlertAnimation;
+    UPROPERTY(EditAnywhere, Category="Presentation") TObjectPtr<UAnimSequence> AttackAnimation;
+    UPROPERTY(EditAnywhere, Category="Presentation") TObjectPtr<UAnimSequence> HitAnimation;
+    UPROPERTY(EditAnywhere, Category="Presentation") TObjectPtr<UAnimSequence> DeathAnimation;
 protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 private:
     UPROPERTY() TObjectPtr<UStaticMeshComponent> Flash;
     FTimerHandle FlinchTimer,FlashTimer;
+    double PresentationUntil=0;
+    TWeakObjectPtr<UAnimSequence> CurrentAnimation;
+    void PlayPresentation(UAnimSequence* Animation, bool Loop=false);
     UFUNCTION() void Damaged(float Current,float Damage);
     UFUNCTION() void Died();
     void EndFlinch();

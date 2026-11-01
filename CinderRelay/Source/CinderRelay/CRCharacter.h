@@ -13,6 +13,7 @@ class UCRWeaponComponent;
 class UCRWeaponViewComponent;
 class UCRWeaponData;
 struct FInputActionValue;
+class USoundBase;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCRPromptChanged, FText, Prompt);
 
@@ -31,6 +32,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category="Input") TObjectPtr<UInputAction> AimAction;
 	UPROPERTY(EditDefaultsOnly, Category="Input") TObjectPtr<UInputAction> ReloadAction;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Camera") TObjectPtr<UCameraComponent> Camera;
+	UPROPERTY(EditDefaultsOnly, Category="Audio") TObjectPtr<USoundBase> YardFootstep;
+	UPROPERTY(EditDefaultsOnly, Category="Audio") TObjectPtr<USoundBase> InteriorFootstep;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Movement", meta=(ClampMin="50", ClampMax="600")) float WalkSpeed = 300.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Movement", meta=(ClampMin="50", ClampMax="800")) float SprintSpeed = 500.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Movement", meta=(ClampMin="50", ClampMax="300")) float CrouchSpeed = 160.f;
@@ -76,9 +79,12 @@ private:
 	void LookYaw(const FInputActionValue& Value);
 	void LookPitch(const FInputActionValue& Value);
 	void StartSprint();
+	void StartJump();
 	void StopSprint();
 	void StartCrouch();
 	void StopCrouch();
 	FTimerHandle PromptTimer;
 	FText CurrentPrompt;
+	FVector LastFootLocation=FVector::ZeroVector;
+	float FootDistance=0;
 };

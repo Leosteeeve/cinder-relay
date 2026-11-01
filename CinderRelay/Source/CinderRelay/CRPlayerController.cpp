@@ -15,6 +15,7 @@
 #include "TimerManager.h"
 #include "CRChapterSaveSubsystem.h"
 #include "Engine/GameInstance.h"
+#include "CRZonePresentation.h"
 
 ASpectatorPawn* ACRPlayerController::SpawnSpectatorPawn()
 {
@@ -85,6 +86,12 @@ void ACRPlayerController::BindPawn()
 		ObservedPawn->Weapon->OnShot.AddDynamic(this, &ACRPlayerController::ShotFeedback);
 	}
 	RefreshCombat();
+	if(HUD && ObservedPawn.IsValid() && !bOpeningShown)
+	{
+		bOpeningShown=true;
+		if(const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>(); G && G->GetObjective()==ECRObjective::ReachWorkshop)
+			ShowSubtitle(FText::FromString(TEXT("THE DEAD STATION / 2118\nELIAS: Workshop lights. There may be a way to bring the relay back.")),6.f);
+	}
 }
 
 void ACRPlayerController::RefreshCombat()
@@ -93,7 +100,7 @@ void ACRPlayerController::RefreshCombat()
 }
 void ACRPlayerController::HealthChanged(float,float Damage) { RefreshCombat(); if (HUD && Damage>0) HUD->DamageFeedback(); }
 void ACRPlayerController::ShotFeedback(FVector,bool Hit,bool) { if (HUD) HUD->ShotFeedback(Hit); }
-void ACRPlayerController::PlayerDefeated() { AbortAssembly(); bPrototypeDefeated=true; ApplyPause(true); }
+void ACRPlayerController::PlayerDefeated() { AbortAssembly(); if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset(); bPrototypeDefeated=true; ApplyPause(true); }
 
 void ACRPlayerController::ObjectiveChanged(ECRObjective Objective)
 {
@@ -106,10 +113,16 @@ void ACRPlayerController::ObjectiveChanged(ECRObjective Objective)
 	}
 	if (Objective == ECRObjective::Complete)
 	{
-		bPrototypeEnded = true;
-		ApplyPause(true);
+		for(TActorIterator<ACRZonePresentation> It(GetWorld()); It; ++It)
+			if(It->BeginEnding(this)) { ActiveEnding=*It; RefreshHUD(); return; }
+		FinishChapterPresentation();
 	}
 	RefreshHUD();
+}
+
+void ACRPlayerController::FinishChapterPresentation()
+{
+	ActiveEnding.Reset(); bPrototypeEnded=true; ShowSubtitle(FText::GetEmpty(),.1f); ApplyPause(true);
 }
 
 void ACRPlayerController::PromptChanged(FText Prompt)
@@ -157,6 +170,7 @@ void ACRPlayerController::RestartPrototype()
 void ACRPlayerController::TravelToChapter()
 {
 	bPendingContinue = false;
+	if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset();
 	AbortAssembly();
 	ApplyPause(false);
 	UGameplayStatics::OpenLevel(this, FName(*UGameplayStatics::GetCurrentLevelName(this, true)));
@@ -183,11 +197,11 @@ void ACRPlayerController::ShowCheckpointFeedback(const FString& Text)
 	HUD->SetCheckpointStatus(FText::FromString(Text));
 	GetWorldTimerManager().SetTimer(CheckpointMessageTimer, FTimerDelegate::CreateWeakLambda(this, [this](){ if (HUD) HUD->SetCheckpointStatus(FText::GetEmpty()); }), 5.f, false);
 }
-void ACRPlayerController::ExitPrototype() { AbortAssembly(); UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit, false); }
+void ACRPlayerController::ExitPrototype() { AbortAssembly(); if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset(); UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit, false); }
 void ACRPlayerController::SetAssembly(ACRWorkbench* Workbench)
 { ActiveWorkbench=Workbench; if(HUD) HUD->SetAssembly(Workbench!=nullptr); }
 void ACRPlayerController::SkipAssembly()
-{ if(!bPrototypePaused && ActiveWorkbench.IsValid()) ActiveWorkbench->Skip(); }
+{ if(!bPrototypePaused) { if(ActiveWorkbench.IsValid()) ActiveWorkbench->Skip(); else if(ActiveEnding.IsValid()) ActiveEnding->SkipEnding(); } }
 void ACRPlayerController::AbortAssembly()
 { if(ActiveWorkbench.IsValid()) ActiveWorkbench->Abort(); }
 void ACRPlayerController::ShowSubtitle(const FText& Text,float Seconds)
@@ -197,6 +211,7 @@ void ACRPlayerController::ShowSubtitle(const FText& Text,float Seconds)
 }
 void ACRPlayerController::EndPlay(const EEndPlayReason::Type Reason)
 {
+	if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset();
 	if (auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>()) Store->OnAvailabilityChanged.RemoveAll(this);
 	AbortAssembly(); GetWorldTimerManager().ClearTimer(SubtitleTimer); GetWorldTimerManager().ClearTimer(CheckpointMessageTimer); Super::EndPlay(Reason);
 }
