@@ -1,0 +1,170 @@
+{
+  "phase": "05.5",
+  "source_type": "Original AI-assisted Blender geometry/vector authoring, no image-generation service",
+  "blender": "4.5.11 LTS",
+  "render_engine": "CYCLES",
+  "color_management": {
+    "transform": "AgX",
+    "look": "AgX - Medium High Contrast",
+    "exposure": -0.10000000149011612
+  },
+  "objects": 2754,
+  "source_meshes": 991,
+  "external_unpacked_dependencies": [],
+  "readonly_original_kit": {
+    "path": "CinderRelay/ArtSource/Blender/Phase052/CR052_YardDetail.blend",
+    "sha256": "a58607d882a8cd1faeb161a24e61e8e301d431694771a274dacb1e5a50a43184",
+    "appended": [
+      "SM_CR052_CableSpool",
+      "SM_CR052_MaintenanceTrolley",
+      "SM_CR052_ScrapStack",
+      "SM_CR052_ServiceCrate"
+    ]
+  },
+  "cameras": {
+    "CR055_LandscapeCamera": {
+      "location": [
+        -16.5,
+        -36.0,
+        5.199999809265137
+      ],
+      "rotation_radians": [
+        1.592516303062439,
+        -1.3231719719897228e-08,
+        -0.3441929519176483
+      ],
+      "lens_mm": 42.0
+    },
+    "CR055_PortraitCamera": {
+      "location": [
+        -9.0,
+        -35.0,
+        5.0
+      ],
+      "rotation_radians": [
+        1.6010448932647705,
+        -2.45547671084978e-08,
+        -0.3073974847793579
+      ],
+      "lens_mm": 34.0
+    }
+  },
+  "files": [
+    {
+      "path": "CinderRelay/ArtSource/Interface/Phase055/CR055_KeyArt_Landscape.png",
+      "dimensions": [
+        2560,
+        1440
+      ],
+      "role": "Promotional original Blender plate",
+      "bytes": 3437478,
+      "sha256": "82ae7e56b47725e428c29ac1696288b0fd8efe875c25c333c78d7fd495ede636"
+    },
+    {
+      "path": "CinderRelay/ArtSource/Interface/Phase055/CR055_MenuBackground.png",
+      "dimensions": [
+        1920,
+        1080
+      ],
+      "role": "Runtime title-only background source; no title typography",
+      "bytes": 1959303,
+      "sha256": "39132dbadce7fdd6736446be84a5b312e142d8efaf8b5ef1e5cbaa828ed17937"
+    },
+    {
+      "path": "CinderRelay/ArtSource/Interface/Phase055/CR055_KeyArt_Portrait.png",
+      "dimensions": [
+        1600,
+        2400
+      ],
+      "role": "Promotional original Blender plate",
+      "bytes": 3615454,
+      "sha256": "32885c9d6c57efaad342ef8b837f899463d5e893c540cb128436b261226746a0"
+    },
+    {
+      "path": "CinderRelay/ArtSource/Interface/Phase055/CR055_Cover_Landscape.png",
+      "dimensions": [
+        2560,
+        1440
+      ],
+      "role": "Promotional composite; editable SVG counterpart",
+      "bytes": 2803150,
+      "sha256": "d946b9662188ba8c20344e459c5e28a20b747c332ee536aa1e480ccde6091d3e"
+    },
+    {
+      "path": "CinderRelay/ArtSource/Interface/Phase055/CR055_Cover_Portrait.png",
+      "dimensions": [
+        1600,
+        2400
+      ],
+      "role": "Promotional composite; editable SVG counterpart",
+      "bytes": 2932774,
+      "sha256": "598a0aa42a77c5b1aea31d718cd44f091f3da7140d1be70dbd412c3e0653248d"
+    },
+    {
+      "path": "CinderRelay/ArtSource/Interface/Phase055/CR055_GameIcon.png",
+      "dimensions": [
+        512,
+        512
+      ],
+      "role": "Original monogram on steel",
+      "bytes": 12236,
+      "sha256": "7909d6b7942943512501d9ac95408b43d02e4e244abfae32299639ec536e691e"
+    },
+    {
+      "path": "CinderRelay/ArtSource/Interface/Phase055/CR055_RelayMark.png",
+      "dimensions": [
+        512,
+        512
+      ],
+      "role": "Original transparent monogram",
+      "bytes": 12081,
+      "sha256": "1340f70d601e443c0082b5baf9f17a6300585cd0ff530f1f87c4afde5e30dea4"
+    },
+    {
+      "path": "CinderRelay/ArtSource/Blender/Phase055/CR055_TheLastSignal.blend",
+      "bytes": 9606712,
+      "sha256": "354049ab7b3fccba6850d329c205f2ff880e2e4fafb3f6c693bf70f2d312de95"
+    },
+    {
+      "path": "CinderRelay/ArtSource/Blender/Phase055/create_identity.py",
+      "bytes": 22938,
+      "sha256": "a3e4206fd7a34bce4596157afb82b56ee2ee313db5de5e75c23c76062b13fc1f"
+    },
+    {
+      "path": "CinderRelay/ArtSource/Interface/Phase055/create_identity_graphics.py",
+      "bytes": 6653,
+      "sha256": "c61f653863793c2623b56ce6f76ed564d59d0bd76b1b77503c10eb2865e0d4ab"
+    },
+    {
+      "path": "CinderRelay/ArtSource/Interface/Phase055/CR055_Cover_Landscape.svg",
+      "bytes": 768,
+      "sha256": "69596dbf1d013721fd9dc4f1de068ff008387144310aadad7bb4056a52f9d414"
+    },
+    {
+      "path": "CinderRelay/ArtSource/Interface/Phase055/CR055_Cover_Portrait.svg",
+      "bytes": 769,
+      "sha256": "9ffdf1bf033eff5dbec05954388f9dee1174089146323857e325db6a5e910609"
+    },
+    {
+      "path": "CinderRelay/ArtSource/Interface/Phase055/CR055_GameIcon.svg",
+      "bytes": 628,
+      "sha256": "5a0eddb89e7960a71a47d04a6e522d3677e0449cf70ecee2f7a93bbf52054a4a"
+    },
+    {
+      "path": "CinderRelay/ArtSource/Interface/Phase055/CR055_RelayMark.svg",
+      "bytes": 605,
+      "sha256": "8418622bfed9d652d41f9269f5224f016acea59c100360ac5ea045d2e9adda34"
+    },
+    {
+      "path": "CinderRelay/ArtSource/Interface/Phase055/CR055_TitleTypography.svg",
+      "bytes": 1208,
+      "sha256": "7e06ad80c79c3e9931f46bd77fa1ff2a249acc14e76c5970b53b891f50d5d396"
+    }
+  ],
+  "native_reopen_passed": true,
+  "not_proven": [
+    "Unreal runtime import/texture residency",
+    "Packaged menu function",
+    "Human artistic acceptance"
+  ]
+}

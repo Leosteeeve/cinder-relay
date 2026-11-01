@@ -1,0 +1,29 @@
+{
+  "author": "Cinder Relay project / Phase055 original UI symbols",
+  "source": "render_icons.py",
+  "external_images": false,
+  "format": "RGBA PNG512x256",
+  "public_repository_redistribution": "Original project source; no separate asset license granted",
+  "files": [
+    {
+      "file": "CR055_IconRook.png",
+      "sha256": "0ee7c0d78d61e1bdf761b9f327645167bf1d76c70ccd030154775d4567e816b5",
+      "bytes": 10768
+    },
+    {
+      "file": "CR055_IconOptic.png",
+      "sha256": "53dbabb57e14544ae22919aba89bdcb3b53ff840e795a3b5c6a6cbb6ad519b55",
+      "bytes": 11209
+    },
+    {
+      "file": "CR055_IconAmmo.png",
+      "sha256": "072874b09f93c84a5906faa4f7c9c9c84968911e9ae0dc0aad28dc0bc4da05c8",
+      "bytes": 4571
+    },
+    {
+      "file": "CR055_IconPowerModule.png",
+      "sha256": "995b758faf43a034a663c271bb48c7b49b959758eb38919f140ab872241bc7d1",
+      "bytes": 8489
+    }
+  ]
+}

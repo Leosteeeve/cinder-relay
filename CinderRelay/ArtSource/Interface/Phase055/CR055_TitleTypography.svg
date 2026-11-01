@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="420" viewBox="0 0 1500 420">
+ <title>CINDER RELAY — The Last Signal, editable title typography</title>
+ <defs><style>@font-face{font-family:BarlowCondensed;src:url(Fonts/BarlowCondensed-SemiBold.ttf)}@font-face{font-family:Barlow;src:url(Fonts/Barlow-Medium.ttf)}</style></defs>
+ <g transform="translate(-38,-40) scale(.82)"><g fill="none" stroke="#E8E3D8" stroke-width="28" stroke-linecap="square" stroke-linejoin="miter">
+ <path id="open-c" d="M 310,142 H 190 L 134,198 V 314 L 190,370 H 310"/>
+ <path id="relay-r" d="M 245,370 V 208 H 310 L 350,246 L 310,284 H 245 M 292,284 L 350,370"/>
+ </g><g stroke="#C99553" stroke-width="20" fill="none"><path id="signal-contact" d="M 350,174 V 142 H 382"/></g>
+ <circle id="carrier-point" cx="350" cy="112" r="9" fill="#77B6B0"/></g>
+ <text id="title" x="390" y="222" font-family="BarlowCondensed, sans-serif" font-size="190" letter-spacing="9" fill="#E8E3D8">CINDER RELAY</text>
+ <path d="M 400,277 H 458" stroke="#C99553" stroke-width="5"/>
+ <text id="subtitle" x="490" y="286" font-family="Barlow, sans-serif" font-size="30" letter-spacing="9" fill="#C99553">THE LAST SIGNAL</text>
+</svg>

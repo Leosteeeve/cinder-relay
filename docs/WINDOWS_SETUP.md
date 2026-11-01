@@ -1,5 +1,27 @@
 # Windows Setup and Reproduction
 
+## Phase05.5 interface, audio and Field Pack
+
+Normal owner playtest (real player save namespace; no automation flags):
+
+```powershell
+Set-Location 'D:\Projects\FPS Game'
+Start-Process -FilePath '.\.environment-local\phase-05-5\package\Windows\CinderRelay.exe' -WindowStyle Normal
+```
+
+I opens/closes Elias's Field Pack; Escape closes it before the regular pause menu. Opening clears held aim/sprint/crouch, cancels a slide and pauses a reload; closing resumes the existing reload. Pack is unavailable during assembly, ending, death, startup, ordinary pause or checkpoint travel. Tab still skips the existing presentation. Settings contains controls/help and five independent audio sliders. Music has a native category but no misleading slider because this chapter has no music asset.
+
+Reproduce focused packaged integration with fresh test prefixes and fresh evidence folders:
+
+```powershell
+./CinderRelay/Scripts/run_interface_acceptance.ps1 -PackageRoot .environment-local/phase-05-5/package/Windows -EvidenceRoot .environment-local/phase-05-5/repro-interface -TestPrefix Phase055Repro01 -Trace
+./CinderRelay/Scripts/run_checkpoint_acceptance.ps1 -PackageRoot .environment-local/phase-05-5/package/Windows -EvidenceRoot .environment-local/phase-05-5/repro-checkpoints -TestPrefix Phase055CPRepro01 -LowOverhead -Fullscreen -SlideCheck
+```
+
+The first command runs real Slate/input interactions in separate1080p Write and1600p Read processes, exports native ShowUI captures and mixed stereo WAV, and uses independent `CR04_TEST_Audio_*.ini` preferences. The second retains existing CP01/CP02/streaming/workbench/death/ending tests. Neither touches a player save. Process exit codes, fresh acceptance receipts and forced-stop fields must all be inspected. Traced or recorded runs are diagnostics, not the untraced paired frame-time benchmark.
+
+Editable sources live in `CinderRelay/ArtSource/{Blender/Phase055,Interface/Phase055,Audio/Phase055}`. `import_interface.py` and `import_audio055.py` are intentionally bounded to Phase055-owned content and the three explicit streamed-map audio references. Do not rerun historical generators. `verify_interface055.py` reads native assets and checks Designer bindings, source hashes, classes/concurrency/attenuation, protected weapon values and unchanged sequence transform/animation tracks. [Validation ledger](INTERFACE_AUDIO_05_5.md) distinguishes authored assets, automated evidence and pending human acceptance.
+
 ## Phase05.4 combat / slide / environment
 
 Normal owner playtest (no test flags; actual player saves remain separate from test slots):

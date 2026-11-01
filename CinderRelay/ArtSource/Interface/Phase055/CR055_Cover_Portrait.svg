@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2400" viewBox="0 0 1600 2400">
+ <defs><style>@font-face{font-family:BarlowCondensed;src:url(Fonts/BarlowCondensed-SemiBold.ttf)}@font-face{font-family:Barlow;src:url(Fonts/Barlow-Medium.ttf)}</style></defs>
+ <image id="original-blender-plate" href="CR055_KeyArt_Portrait.png" width="1600" height="2400"/>
+ <g id="editable-title" fill="#E8E3D8" font-family="BarlowCondensed" font-size="194" letter-spacing="8">
+  <text x="122" y="344">CINDER</text><text x="122" y="518.6">RELAY</text>
+ </g><path d="M 126,545.76 H 194" stroke="#C99553" stroke-width="4"/>
+ <text id="editable-tagline" x="222" y="561.24" fill="#C99553" font-family="Barlow" font-size="31" letter-spacing="5">THE LAST SIGNAL</text>
+</svg>

@@ -16,6 +16,15 @@
 #include "CRChapterSaveSubsystem.h"
 #include "Engine/GameInstance.h"
 #include "CRZonePresentation.h"
+#include "CRWeaponViewComponent.h"
+#include "CRAudioSettingsSubsystem.h"
+#include "UObject/ConstructorHelpers.h"
+
+ACRPlayerController::ACRPlayerController()
+{
+	static ConstructorHelpers::FClassFinder<UCRHUDWidget> AuthoredHUD(TEXT("/Game/Generated/Phase055/Interface/Widgets/WBP_CR_HUDRoot"));
+	HUDClass=AuthoredHUD.Succeeded()?AuthoredHUD.Class.Get():UCRHUDWidget::StaticClass();
+}
 
 ASpectatorPawn* ACRPlayerController::SpawnSpectatorPawn()
 {
@@ -31,11 +40,15 @@ void ACRPlayerController::BeginPlay()
 	if (!IsLocalController()) return;
 	PlayerCameraManager->ViewPitchMin = -80.f;
 	PlayerCameraManager->ViewPitchMax = 80.f;
-	HUD = CreateWidget<UCRHUDWidget>(this, UCRHUDWidget::StaticClass());
+	if(auto* Audio=GetGameInstance()->GetSubsystem<UCRAudioSettingsSubsystem>())Audio->ApplyMix(GetWorld());
+	HUD = CreateWidget<UCRHUDWidget>(this, HUDClass?HUDClass.Get():UCRHUDWidget::StaticClass());
 	if (HUD) HUD->AddToViewport();
 	if (auto* Mode = GetWorld()->GetAuthGameMode<ACRGameMode>())
 	{
 		Mode->OnObjectiveChanged.AddDynamic(this, &ACRPlayerController::ObjectiveChanged);
+		Mode->OnRestorationChanged.AddDynamic(this,&ACRPlayerController::RestorationChanged);
+		Mode->OnFieldItemsChanged.AddDynamic(this,&ACRPlayerController::FieldItemsChanged);
+		bLastOptic=Mode->HasSurveyOptic();bLastUpgrade=Mode->HasSurveyUpgrade();
 		bStartupMenu = Mode->IsStartupMenu();
 	}
 	if (auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>()) Store->OnAvailabilityChanged.AddUObject(this, &ACRPlayerController::SaveAvailabilityChanged);
@@ -52,6 +65,7 @@ void ACRPlayerController::SetupInputComponent()
 	// Pause must remain available when the game is paused; movement uses Enhanced Input assets.
 	FInputKeyBinding& PauseBinding = InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &ACRPlayerController::TogglePrototypePause);
 	PauseBinding.bExecuteWhenPaused = true;
+	InputComponent->BindKey(EKeys::I,IE_Pressed,this,&ACRPlayerController::ToggleFieldPack).bExecuteWhenPaused=true;
 	InputComponent->BindKey(EKeys::F5, IE_Pressed, this, &ACRPlayerController::RetryStreaming);
 	InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ACRPlayerController::SkipAssembly);
 }
@@ -99,11 +113,17 @@ void ACRPlayerController::BindPawn()
 void ACRPlayerController::RefreshCombat()
 {
 	if (HUD && ObservedPawn.IsValid()) HUD->SetCombat(ObservedPawn->Health->Health, ObservedPawn->Weapon->Magazine, ObservedPawn->Weapon->Reserve, ObservedPawn->Weapon->State==ECRWeaponState::Reloading);
+	if(HUD&&ObservedPawn.IsValid())
+	{
+		const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();
+		HUD->SetSightState(ObservedPawn->Weapon->bAiming&&ObservedPawn->WeaponView&&ObservedPawn->WeaponView->HasImportedAppearance(),G&&G->HasSurveyUpgrade());
+		if(bFieldPackOpen)HUD->RefreshFieldPack();
+	}
 }
 void ACRPlayerController::HealthChanged(float,float Damage) { RefreshCombat(); if (HUD && Damage>0) HUD->DamageFeedback(); }
 void ACRPlayerController::ShotFeedback(FVector,bool Hit,bool) { if (HUD) HUD->ShotFeedback(Hit); }
 void ACRPlayerController::ConfirmedImpact(FVector,FVector,ECRImpactKind Kind) { if(HUD && Kind!=ECRImpactKind::Surface) HUD->HitFeedback(Kind==ECRImpactKind::EnemyKill); }
-void ACRPlayerController::PlayerDefeated() { AbortAssembly(); if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset(); bPrototypeDefeated=true; ApplyPause(true); }
+void ACRPlayerController::PlayerDefeated() { CloseFieldPackForTravel(); AbortAssembly(); if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset(); bPrototypeDefeated=true; ApplyPause(true); }
 
 void ACRPlayerController::ObjectiveChanged(ECRObjective Objective)
 {
@@ -138,7 +158,7 @@ void ACRPlayerController::RefreshHUD()
 	if (!HUD) return;
 	if (const auto* Mode = GetWorld()->GetAuthGameMode<ACRGameMode>()) HUD->SetObjective(Mode->GetObjectiveText());
 	HUD->SetPrompt(!bPrototypePaused && ObservedPawn.IsValid() ? ObservedPawn->GetCurrentPrompt() : FText::GetEmpty());
-	HUD->SetMenu(bPrototypePaused, bPrototypeEnded, bPrototypeDefeated);
+	HUD->SetMenu(bPrototypePaused&&!bFieldPackOpen, bPrototypeEnded, bPrototypeDefeated);
 	if (auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>())
 		HUD->SetRecoveryMenu(bStartupMenu, bPrototypeDefeated, GetPawn() != nullptr && !bPrototypeEnded && !bPrototypeDefeated, Store->HasCheckpoint() && !Store->IsBusy(), Store->GetStatus());
 	RefreshCombat();
@@ -163,8 +183,8 @@ void ACRPlayerController::ApplyPause(bool bPause)
 	else SetInputMode(FInputModeGameOnly());
 }
 
-void ACRPlayerController::TogglePrototypePause() { if (!bStartupMenu && !bPrototypeEnded && !bPrototypeDefeated) ApplyPause(!bPrototypePaused); }
-void ACRPlayerController::ResumePrototype() { if (!bStartupMenu && GetPawn() && !bPrototypeEnded && !bPrototypeDefeated) ApplyPause(false); }
+void ACRPlayerController::TogglePrototypePause() { if(bFieldPackOpen){ToggleFieldPack();return;} if(HUD&&HUD->HandleBack())return; if (!bStartupMenu && !bPrototypeEnded && !bPrototypeDefeated) ApplyPause(!bPrototypePaused); }
+void ACRPlayerController::ResumePrototype() { if(bFieldPackOpen){ToggleFieldPack();return;} if (!bStartupMenu && GetPawn() && !bPrototypeEnded && !bPrototypeDefeated) ApplyPause(false); }
 void ACRPlayerController::RestartPrototype()
 {
 	if (auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>()) Store->PrepareNewChapter();
@@ -173,6 +193,7 @@ void ACRPlayerController::RestartPrototype()
 void ACRPlayerController::TravelToChapter()
 {
 	bPendingContinue = false;
+	CloseFieldPackForTravel();
 	if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset();
 	AbortAssembly();
 	ApplyPause(false);
@@ -198,6 +219,7 @@ void ACRPlayerController::ShowCheckpointFeedback(const FString& Text)
 {
 	if (!HUD) return;
 	HUD->SetCheckpointStatus(FText::FromString(Text));
+	if(Text==TEXT("CHECKPOINT SAVED")||Text.StartsWith(TEXT("CHECKPOINT RESTORED")))HUD->PlayInterfaceSound(TEXT("Confirm"));
 	GetWorldTimerManager().SetTimer(CheckpointMessageTimer, FTimerDelegate::CreateWeakLambda(this, [this](){ if (HUD) HUD->SetCheckpointStatus(FText::GetEmpty()); }), 5.f, false);
 }
 void ACRPlayerController::ExitPrototype() { AbortAssembly(); if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset(); UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit, false); }
@@ -214,6 +236,14 @@ void ACRPlayerController::ShowSubtitle(const FText& Text,float Seconds)
 }
 void ACRPlayerController::EndPlay(const EEndPlayReason::Type Reason)
 {
+	CloseFieldPackForTravel();
+	if (auto* Mode = GetWorld()->GetAuthGameMode<ACRGameMode>())
+	{
+		Mode->OnObjectiveChanged.RemoveDynamic(this, &ACRPlayerController::ObjectiveChanged);
+		Mode->OnRestorationChanged.RemoveDynamic(this, &ACRPlayerController::RestorationChanged);
+		Mode->OnFieldItemsChanged.RemoveDynamic(this, &ACRPlayerController::FieldItemsChanged);
+	}
+	if (HUD) { HUD->RemoveFromParent(); HUD = nullptr; }
 	if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset();
 	if (auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>()) Store->OnAvailabilityChanged.RemoveAll(this);
 	AbortAssembly(); GetWorldTimerManager().ClearTimer(SubtitleTimer); GetWorldTimerManager().ClearTimer(CheckpointMessageTimer); Super::EndPlay(Reason);

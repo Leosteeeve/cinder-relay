@@ -1,5 +1,19 @@
 # CINDER RELAY — Milestones
 
+## Phase05.5 identity, interface, audio and Field Pack — integration ledger
+
+Authorized by the owner's2026-11-01 Phase05.5 brief. Baseline `09eaa5fe39beb1c4365220e09fde311e0d3b10fe`; branch `phase-05-5-ui-audio-inventory`; UE5.8.4 CL58902052. [Design, behavior and evidence](INTERFACE_AUDIO_05_5.md). No Phase06 work.
+
+Delivered source includes four-reference UI research, six original dual-resolution mockups, original Blender key art/cover/mark, OFL fonts, real Designer UMG, event-driven HUD, independent audio settings and a read-only Field Pack. Native import produced85new assets. An independent Editor reload passed590asset/reference/sequence-keyframe checks.307protected old file hashes retain304unchanged files; only the three intended audio-reference sublevels differ. Schema/checksum/weapon/animation source assets remain unchanged.
+
+Validation: Editor target builds exit0 after compiler-diagnosed type/name fixes;11focused Automation tests have0failures (one expected-warning case). A native UI route initially exposed a test-state waiting bug; the corrected route passed at1080p and an independent1600p process restored CP00 and all five audio preferences. Actual Slate/input interactions, reload freeze/exactly-once completion, aim/slide cancellation, screenshots and native mixed WAV are recorded locally. Captures prompted bounded title/health/Pack readability corrections.
+
+One final Windows Development BuildCookRun completed in169.31s, exit0. Three fresh candidate checkpoint processes and both normal packaged UI processes returned0 with successful native receipts and no forced stop. A separate real mouse session verified Continue, carried Power Module, category/close, Settings slider/save, Credits and Exit confirmation, exit0. A17.5s1280x720 gameplay video contains the same process's native stereo mix; capture/game/decode exits0. Original failed fullscreen capture and traced shutdown777003 remain explicitly excluded from successful process counts. Fullscreen Slate screenshot size mismatch was avoided with a bounded recording window; no second package was made.307final protected hashes still differ only in the three authorized audio-reference maps.
+
+Performance remains open: primary combat p95 changed15.063→28.762ms; a bounded quiet repeat changed20.427→16.877ms. These variable samples do not isolate a causal regression, prove no first-use hitch or establish60FPS. Slide/movement tails remain. Human artistic, continuous gameplay-feel and stereo-headphone acceptance are pending. No Phase06 work or automatic merge.
+
+Review delivery: implementation commit `149beca`; [Draft PR11](https://github.com/Leosteeeve/cinder-relay/pull/11), feature branch `phase-05-5-ui-audio-inventory` to `main`. LFS upload succeeded; raw local evidence, saves and packages are excluded. Draft status preserves the explicit open acceptance items.
+
 ## Phase05.4 — combat feel, slide and curated environment (integrated candidate)
 
 Base PR9 merge811aaa5; scope excludes Phase06 and weapon/arm remodeling. Implementation and exact slide contract are in [COMBAT_ENVIRONMENT_05_4.md](COMBAT_ENVIRONMENT_05_4.md). Initial native Editor compilation72.16s succeeded; focused slide decay automation succeeded; real input route reached CP01 with a0.751s slide, one accepted hip-fire round and conserved reload. A standalone Editor-game shutdown stalled after its successful receipt and requested exit0; the owned process was stopped and is not counted as a successful process exit. The Windows package passed three independent native processes: CP01 acquisition, CP01-to-CP02 restoration/assembly lifecycle, and CP02 recovery/backtracking/death/restart/optional ending. Launcher/native exits were all0. Additional six slide physics/input edge fixtures passed; they used NullRHI and are not visual or performance evidence.

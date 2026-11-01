@@ -5,6 +5,7 @@
 #include "CRStreamingAcceptance.h"
 #include "CRCombatAcceptance.h"
 #include "CRCombatRoute.h"
+#include "CRInterfaceAcceptance.h"
 #include "EngineUtils.h"
 #include "Misc/CommandLine.h"
 #include "Misc/Parse.h"
@@ -164,6 +165,8 @@ void ACRGameMode::BeginPlay()
 	Super::BeginPlay();
 #if !UE_BUILD_SHIPPING
 	int32 CheckpointRoute = 0;
+	FString InterfaceCheck;
+	if (FParse::Value(FCommandLine::Get(), TEXT("CR055InterfaceCheck="), InterfaceCheck)) GetWorld()->SpawnActor<ACRInterfaceAcceptance>();
 	if (FParse::Value(FCommandLine::Get(), TEXT("CRCheckpointRoute="), CheckpointRoute)) GetWorld()->SpawnActor<ACRCheckpointRoute>();
 	if (FParse::Param(FCommandLine::Get(), TEXT("CRStreamAcceptance"))) GetWorld()->SpawnActor<ACRStreamingAcceptance>();
 	if (FParse::Param(FCommandLine::Get(), TEXT("CRWeaponCheck"))) GetWorld()->SpawnActor<ACRCombatAcceptance>();

@@ -14,6 +14,7 @@ class UCRWeaponViewComponent;
 class UCRWeaponData;
 struct FInputActionValue;
 class USoundBase;
+class UAudioComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCRPromptChanged, FText, Prompt);
 
@@ -96,4 +97,7 @@ private:
 	FText CurrentPrompt;
 	FVector LastFootLocation=FVector::ZeroVector;
 	float FootDistance=0;
+	void StartSlideAudio();
+	void StopSlideAudio(bool PlayEnd);
+	UPROPERTY(Transient) TObjectPtr<UAudioComponent> SlideAudio;
 };

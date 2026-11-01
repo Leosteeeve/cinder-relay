@@ -1,5 +1,50 @@
 # CINDER RELAY — Performance Budget
 
+## Phase055 packaged observations, 2026-11-01
+
+Performance acceptance is open. Unchanged Phase054 and Phase055 Windows Development packages ran the same three native checkpoint routes at1920x1080/Epic3, native ScreenPercentage100, DynamicRes0, VSync0, MaxFPS0, on the RTX5070 Laptop8GB/32GB machine. All six processes passed their native receipts and exited0 without forced stop. These primary runs requested no trace or recording. Desktop/tool workload, thermal/power state and caches were not controlled; small previous-frame counter samples do not identify causes. No global quality reduction was made. Raw input and settings receipts are sealed under ignored `.environment-local/phase-05-5/performance-{baseline,candidate}/`.
+
+| Sample | Before / after frames | Before p95 ms | After p50 / p95 / p99 ms | After GT / RT / GPU p95 ms | Before / after >50ms |
+|---|---:|---:|---|---|---:|
+| Combat |245 /159|15.063|19.595 /28.762 /31.812|11.076 /29.056 /11.834|0 /0|
+| Yard traversal |443 /307|18.290|18.015 /26.679 /59.588|18.677 /26.000 /19.477|0 /5|
+| Slide and hip fire |60 /43|21.236|19.154 /25.200 /25.902|13.345 /25.236 /13.891|0 /0|
+| Reload after slide |208 /132|16.283|19.111 /26.956 /29.918|14.857 /27.558 /12.323|0 /0|
+| Workshop assembly |1277 /1274|21.590|17.829 /21.043 /23.451|4.412 /21.017 /16.905|0 /0|
+| Workshop movement |1263 /1233|24.904|16.521 /26.099 /46.441|12.512 /25.488 /17.540|7 /10|
+| Bunker |2269 /2240|20.905|16.391 /21.582 /27.667|5.693 /21.437 /15.857|2 /3|
+| Streaming traversal |2447 /2548|22.120|16.060 /21.142 /27.359|7.286 /21.032 /16.705|2 /3|
+
+Across all raw rows, baseline has10frames over50ms (max102.150ms); candidate has20(max400.000ms). The400ms value is the engine-clamped frame counter during route1 walk atx644.9, with prior-frame GT11.645/RT71.829/GPU10.691ms; it is not a measured400ms UI call. Route2 movement also contains113.982/100.524ms frames. Groups overlap; do not add their counts. No first-use-hitch pass can be claimed from these data.
+
+The unexpectedly worse combat sample justified **one bounded quiet route1 pair**, with no recording, Insights, Git/LFS inspection or other agent work during either process. Both use native executables, fresh test slots, identical settings and `au.DisableAppVolume1` so foreground loss cannot mute game output. Both native receipts/exit codes passed. This changes the background-audio condition relative to the primary pair; it is a separate diagnostic, not a replacement score.
+
+| Quiet sample | Before / after frames | Before p95 ms | After p95 / p99 ms | Before / after >50ms |
+|---|---:|---:|---|---:|
+| Combat |202 /225|20.427|16.877 /18.830|0 /0|
+| Yard traversal |373 /338|22.857|28.076 /36.315|0 /0|
+| Slide and hip fire |35 /36|43.233|41.152 /49.342|1 /0|
+| Reload after slide |170 /168|21.424|24.061 /29.657|0 /0|
+
+Quiet baseline still has startup116.361ms and slide-acceleration66.847ms; quiet candidate has startup53.618/54.373/66.101ms and slide-acceleration78.880/52.541ms. Combat regression did not consistently reproduce, while yard/reload and slide tails remain concerning. These two pairs cannot establish causality, stable60FPS or no new critical first-use hitch. No speculative optimization or repeated package loop followed.
+
+Separate traced1080p UI/mixed-audio diagnostic, not a gameplay benchmark:
+
+| CPU scope | Calls | Inclusive average / maximum ms |
+|---|---:|---:|
+| CR055_HUDTransient |910|0.004 /0.091|
+| CR055_HUDUpdate (SetCombat) |36|0.070 /0.657|
+| CR055_FieldPackUpdate |6|1.288 /2.117|
+| CR055_UIAudio dispatch |11|0.034 /0.103|
+| CR055_GameAudio dispatch |18|0.033 /0.083|
+| FAudioDevic_Update |1066|0.158 /3.466|
+| FAudioRenderScheduler::RenderBlock |1020|0.078 /0.331|
+| AudioMixerThreadCommands::PumpCommandQueue |1022|0.025 /0.921|
+
+Scope timing comes from exported native Insights CPU statistics, in seconds converted to milliseconds. It excludes uninstrumented Slate layout/paint and is not an incremental old-versus-new UI/mixer benchmark. Audio scopes can nest and must not be summed. Pack updates are event-driven, not per-frame scans. Critical shot/handling sounds are resident; no synchronous asset load occurs in an accepted-shot callback. Title-only texture residency is released on travel; no full-screen shader/render-target effect was introduced. Incremental VRAM and full mixer-device overhead were not isolated.
+
+The traced game completed its functional receipt then exited777003 after requesting normal exit0; therefore it is not a successful process-exit validation. Native Core labels777003 `CrashReporterCrashed`; root cause remains unresolved. Insights itself exited0 and exported CPU scopes but also reported allocation-tag errors, so no memory conclusion is supported. Normal untraced dual-resolution UI processes exited0. Exact evidence/limits: [Phase055 ledger](INTERFACE_AUDIO_05_5.md#exceptions-performance-and-remaining-acceptance). `Scripts/summarize_interface055.py` regenerates the primary tables from sealed inputs; quiet receipts and summary are under `quiet-pair/`.
+
 ## Phase05.4 measured integration sample, 2026-11-01
 
 Paired unchanged Phase053 and candidate Phase054 packages ran once each through three independent native processes. RTX5070 Laptop8GB,32GB RAM;1920x1080, Epic quality3, ScreenPercentage100, DynamicRes0, VSync0, MaxFPS0. No frame generation, recording, requested allocation trace, Editor or Blender during the primary sample. Enhanced Input route instrumentation, previous-frame engine counters,1Hz process sampler and one final receipt screenshot remain overhead. Desktop activity, temperature and power were not controlled; caches were not cleared. Lower observed numbers are not proof of an optimization caused by this patch.
