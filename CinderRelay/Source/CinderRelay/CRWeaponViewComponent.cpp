@@ -17,8 +17,8 @@
 UCRWeaponViewComponent::UCRWeaponViewComponent()
 {
     PrimaryComponentTick.bCanEverTick = true;
-    RookAppearance=TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Generated/Phase03/Meshes/SM_CR03_Rook5.SM_CR03_Rook5")));
-    SurveyAppearance=TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Generated/Phase03/Meshes/SM_CR03_SurveyOptic.SM_CR03_SurveyOptic")));
+    RookAppearance=TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Generated/Phase05/Meshes/SM_CR05_Rook5.SM_CR05_Rook5")));
+    SurveyAppearance=TSoftObjectPtr<UStaticMesh>(FSoftObjectPath(TEXT("/Game/Generated/Phase05/Meshes/SM_CR05_SurveyOptic.SM_CR05_SurveyOptic")));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Mesh(TEXT("/Engine/BasicShapes/Cube.Cube")); Cube = Mesh.Object;
 }
 void UCRWeaponViewComponent::BeginPlay()
@@ -78,10 +78,16 @@ void UCRWeaponViewComponent::TickComponent(float Delta,ELevelTick TickType,FActo
     P->Camera->SetFieldOfView(FMath::FInterpTo(P->Camera->FieldOfView,Aim?Weapon->GetAimFOV():BaseFOV,Delta,3.f/FMath::Max(.01f,D->AimSeconds)));
     Recoil=FMath::FInterpTo(Recoil,0,Delta,FMath::Max(1.f,D->RecoverySpeed));
     const bool Lower=Weapon->State==ECRWeaponState::Reloading || Weapon->bSprinting || Weapon->State==ECRWeaponState::Disabled;
-    FVector Target=Aim?D->AimLocation:D->HipLocation; Target.Z-=Lower?9.f:CoverFraction*14.f; Target.X-=Recoil;
+    SmoothCover=FMath::FInterpTo(SmoothCover,CoverFraction,Delta,9);
+    ReloadPose=FMath::FInterpTo(ReloadPose,Weapon->State==ECRWeaponState::Reloading?1.f:0.f,Delta,6);
+    const float Speed=FMath::Clamp(P->GetVelocity().Size2D()/300.f,0.f,1.5f);
+    GaitPhase+=Delta*(Speed>0.05f?Speed*8.f:1.5f);
+    const float Bob=(Aim?.08f:.38f)*Speed;
+    FVector Target=Aim?D->AimLocation:D->HipLocation; Target.Z-=Lower?9.f:SmoothCover*14.f; Target.X-=Recoil;
+    Target.Y+=FMath::Sin(GaitPhase)*Bob; Target.Z+=FMath::Cos(GaitPhase*2)*Bob*.65f;
     if(Aim) if(const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();G && G->HasSurveyUpgrade()) Target.Z-=2.f; // Imported optic aperture is 2cm above the original iron sight.
     ViewRoot->SetRelativeLocation(FMath::VInterpTo(ViewRoot->GetRelativeLocation(),Target,Delta,18));
-    ViewRoot->SetRelativeRotation(FMath::RInterpTo(ViewRoot->GetRelativeRotation(),FRotator(Recoil-(Lower?25:CoverFraction*35),0,Lower?-10:0),Delta,18));
+    ViewRoot->SetRelativeRotation(FMath::RInterpTo(ViewRoot->GetRelativeRotation(),FRotator(Recoil-(Lower?25:SmoothCover*35),ReloadPose*12,ReloadPose*-28+(Lower?-10:0)),Delta,18));
 }
 void UCRWeaponViewComponent::Shot(FVector Impact,bool Hit,bool BlockingHit)
 {

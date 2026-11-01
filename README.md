@@ -2,7 +2,7 @@
 
 A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 5.8, C++ and Unreal Blueprints.
 
-**Active milestone: Phase04 — Persistent World.** Native versioned checkpoints preserve Chapter01 state across process restarts. New Game, Continue, death Retry and explicit Restart Chapter use the existing controller/UMG and native streamed map. Phase03 combat, Survey Optic and editable22s assembly assets remain intact. Actual build/runtime evidence and unresolved issues are recorded in MILESTONES; Phase05 is not authorized.
+**Active milestone: Phase05 — The Dead Station vertical-slice presentation.** Original Blender environment, Warden and first-person assets, spatial audio, native relay sequences and HUD refinements extend the existing playable chapter. Native streaming, schema1 checkpoints, combat and the optional22s restoration remain authoritative. See MILESTONES for actual acceptance and remaining visual/pacing limits; Phase06 is not authorized.
 
 - 游戏名：CINDER RELAY。
 - 仓库：[Leosteeeve/cinder-relay](https://github.com/Leosteeeve/cinder-relay)，当前 **Public**（2026-10-31 远端查询；Phase 01A 未修改可见性）。
@@ -21,13 +21,13 @@ Phase02 的精确生成、编译、打包和验收命令见 [WINDOWS_SETUP](docs
 
 Phase03: recover the amber/teal Survey Optic from the cache near the Rail Yard starting area, or from the backup on the Workshop calibration bench. Press E at that bench, positioned separately from the original power module. Tab skips and applies the upgrade; Esc pauses. Completing or skipping adds the visible optic and changes ADS from65 to60degrees. The weapon works before the optional upgrade. Main objectives and `MERIDIAN NETWORK / CONNECTION RESTORED` are unchanged. Restart clears the upgrade and salvage session state.
 
-Phase03 historical delivery: Windows Development package and bounded functional acceptance passed after one documented test-harness readiness correction. Human animation/pacing acceptance remains pending; segmented hands are prototype art, and the Phase03 assembly p95=22.108ms was not a clean60FPS result. See [historical validation and limits](docs/MILESTONES.md#phase03-final-local-delivery-evidence). Use the current Phase04 package below.
+Phase03 historical delivery: Windows Development package and bounded functional acceptance passed after one documented test-harness readiness correction. Human animation/pacing acceptance remains pending; segmented hands are prototype art, and the Phase03 assembly p95=22.108ms was not a clean60FPS result. See [historical validation and limits](docs/MILESTONES.md#phase03-final-local-delivery-evidence). Phase05 uses an editable derivative, preserving the original source.
 
 Editable source: `CinderRelay/ArtSource/Blender/Phase03/CR03_RookRestoration.blend`. Unreal sequence: `/Game/Generated/Phase03/Sequences/LS_CR03_RookRestoration`. Use the existing persistent map; do not rerun older level generators. See [Phase03 setup](docs/WINDOWS_SETUP.md#phase03-restoration) for exact authoring, build and test commands.
 
 Phase04: New Game starts in the Rail Yard; Continue resumes the latest validated checkpoint. CP00 is created for a genuinely new save, CP01 activates inside the Workshop, and CP02 activates on the relay ramp after collecting the original power module. Saves contain health/ammo, objectives, enemy/pickup IDs, salvage/upgrade and one-time story flags. Progress after the latest successful checkpoint rolls back when recovered. Restart Chapter resets the session and preserves the stored checkpoint until a later natural checkpoint succeeds. A damaged/incompatible newer slot can fall back to the earlier valid generation; files are retained on failure. See [checkpoint setup](docs/WINDOWS_SETUP.md#phase04-persistent-checkpoints) and [validation ledger](docs/MILESTONES.md#phase04-persistent-world--implementation-plan-and-ledger).
 
-Current local package: `.environment-local/phase-04/package/Windows/CinderRelay.exe`; omit test flags for normal play. One Windows Development BuildCookRun and three separate packaged processes passed the bounded checkpoint acceptance route. Native Automation schema and disk-fallback groups passed. All three game processes closed themselves, but Windows returned777003 even when launching the native executable directly; engine exit logs requested0. This unresolved automated-run exit status is separate from gameplay receipts. A separate interactive native run exited0 through Exit Game. Actual New Game/pause/Continue clicks and current-window HUD fit were visually checked after the owner dismissed the firewall prompt; broader human playtest acceptance remains pending. Startup/recovery hitches remain; see [measured results](docs/PERFORMANCE_BUDGET.md#phase04-packaged-checkpoint-observations--2026-10-31).
+Historical Phase04 package: `.environment-local/phase-04/package/Windows/CinderRelay.exe`; omit test flags for normal play. One Windows Development BuildCookRun and three separate packaged processes passed the bounded checkpoint acceptance route. Native Automation schema and disk-fallback groups passed. All three game processes closed themselves, but Windows returned777003 even when launching the native executable directly; engine exit logs requested0. This unresolved automated-run exit status is separate from gameplay receipts. A separate interactive native run exited0 through Exit Game. Actual New Game/pause/Continue clicks and current-window HUD fit were visually checked after the owner dismissed the firewall prompt; broader human playtest acceptance remains pending. Startup/recovery hitches remain; see [measured results](docs/PERFORMANCE_BUDGET.md#phase04-packaged-checkpoint-observations--2026-10-31).
 
 ## 游戏方向
 
@@ -61,4 +61,17 @@ Phase 01A 已由用户接受。01B 的 Editor 路线已验证三轮回访、门�
 
 保留 CinderRelay 模块、EngineAssociation GUID 和模板渲染设置；未改引擎源码。01B 在功能验证后将默认地图改到 persistent，Packaging 明确包含四图。Python/EditorScriptingUtilities 仍仅 Editor target；AndroidFileServer 继续停用。
 
-Phase02 的武器、AI、资产生成与验证记录见现有 TECHNICAL_DESIGN / MILESTONES。用户短试玩负责枪感、瞄准遮挡和遭遇节奏；自动路线与截图不能代替这些判断。Phase04 delivery stops before Phase05.
+Phase02 的武器、AI、资产生成与验证记录见现有 TECHNICAL_DESIGN / MILESTONES。用户短试玩负责枪感、瞄准遮挡和遭遇节奏；自动路线与截图不能代替这些判断。Phase05 delivery stops before Phase06.
+
+## Phase05 presentation and local review
+
+The map remains `/Game/Generated/Phase01B/Maps/L_CH01_Persistent`, with the same three streamed zones and checkpoint anchors. Original models/animations live in `CinderRelay/ArtSource/Blender/Phase05/`; imported content lives in `/Game/Generated/Phase05/`. No third-party packs or new saved IDs were introduced. See [art direction](docs/ART_DIRECTION.md), [source register](docs/ASSET_SOURCES.md) and [reproduction commands](docs/WINDOWS_SETUP.md#phase05-vertical-slice-presentation).
+
+The opening is a player-controlled environmental reveal. Relay activation and the ending use actual4s/8s native light/audio Level Sequences; Tab skips the ending safely, Esc pauses. The22s workbench sequence keeps its existing Skip/Stop/Abort behavior. The original ending text remains unchanged. The enemy visuals use six imported skeletal clips driven by existing combat/AI events.
+
+Phase05 is an original prototype art pass. Segmented hands, coarse cloth/metal surfaces, simple clip transitions and portions of the original architectural shell remain visible. A complete owner visual/pacing review is still required;12–16minutes is a design target, not a measured human playthrough. Do not treat automation or static frames as final animation-quality acceptance.
+
+
+Current Phase05 package: `.environment-local/phase-05/package/Windows/CinderRelay.exe`. One BuildCookRun passed; all three independent checkpoint/combat/restoration routes passed and exited0. Run without test flags for normal play.70 original Unreal assets and107 cosmetic/presentation actors supplement the173 preserved original actors. No claim of final human art acceptance or a measured12–16minute route. Assembly p95=15.891ms, route3 p95=17.694ms at1080p/Epic in the low-overhead sample; controlled recovery travel still takes38.685–99.894ms outside the gameplay frame table. See PERFORMANCE_BUDGET for exact conditions and measurement limits.
+
+Packaged HUD follow-up passed at1920x1080 windowed and2560x1600 fullscreen: bottom controls, health/ammo, objectives and menus fit; actual New Game, Continue, Restart and normal Exit were inspected. Native exit0. Full human art/animation/audio and natural pacing acceptance remain pending.

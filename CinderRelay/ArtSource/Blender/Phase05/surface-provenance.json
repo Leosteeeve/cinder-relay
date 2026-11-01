@@ -1,0 +1,10 @@
+{
+  "author": "Cinder Relay original mathematical synthesis",
+  "seed": 2118,
+  "size": 512,
+  "channels": {
+    "mask": "R macro/micro noise; G directional wear; B fine height",
+    "normal": "RGB tangent normal"
+  },
+  "third_party_samples": false
+}

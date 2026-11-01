@@ -256,6 +256,7 @@ void ACRCheckpointRoute::Tick(float Delta)
     }
     else if(Stage==TEXT("ending"))
     {
+        if(!PC->bPrototypeEnded) return; // Real native ending playback, bounded by the route stage timeout.
         Check(PC->bPrototypeEnded,TEXT("Original MERIDIAN chapter ending still completes"));
         if(Journey==4) { Check(!G->HasSurveyOptic()&&!G->HasSurveyUpgrade(),TEXT("Optional workbench bypass reaches ending")); Finish(true,TEXT("Checkpoint recovery, backtracking, death retry, restart and optional ending passed")); }
         else Travel(false,4);

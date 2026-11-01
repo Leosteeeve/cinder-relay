@@ -6,6 +6,7 @@
 class UCRHUDWidget;
 class ACRCharacter;
 class ACRWorkbench;
+class ACRZonePresentation;
 
 UCLASS()
 class CINDERRELAY_API ACRPlayerController : public APlayerController
@@ -27,6 +28,7 @@ public:
 	bool IsAssembling() const { return ActiveWorkbench.IsValid(); }
 	void SkipAssembly();
 	void AbortAssembly();
+	void FinishChapterPresentation();
 	UFUNCTION() void RefreshCombat();
 	UFUNCTION() void HealthChanged(float Health, float Damage);
 	UFUNCTION() void ShotFeedback(FVector Impact, bool bHitTarget, bool bBlockingHit);
@@ -44,12 +46,13 @@ private:
 	void ApplyPause(bool bPause);
 	void SaveAvailabilityChanged();
 	void TravelToChapter();
-	bool bStartupMenu = false, bPendingContinue = false;
+	bool bStartupMenu = false, bPendingContinue = false, bOpeningShown=false;
 	UFUNCTION() void ObjectiveChanged(ECRObjective Objective);
 	UFUNCTION() void PromptChanged(FText Prompt);
 	UPROPERTY(Transient) TObjectPtr<UCRHUDWidget> HUD;
 	TWeakObjectPtr<ACRCharacter> ObservedPawn;
 	TWeakObjectPtr<ACRWorkbench> ActiveWorkbench;
+	TWeakObjectPtr<ACRZonePresentation> ActiveEnding;
 	FTimerHandle SubtitleTimer;
 	FTimerHandle CheckpointMessageTimer;
 };

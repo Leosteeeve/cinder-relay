@@ -16,6 +16,7 @@ class CINDERRELAY_API ACRInteractionActor : public AActor, public ICRInteractabl
 public:
 	ACRInteractionActor();
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UStaticMeshComponent> Mesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Presentation") TObjectPtr<UStaticMeshComponent> PresentationMesh;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Interaction") ECRInteractionKind Kind = ECRInteractionKind::PowerModule;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Interaction") bool bUsed = false;
 	virtual bool CanInteract_Implementation(ACRCharacter* Player) const override;

@@ -34,13 +34,14 @@ void UCRHUDWidget::NativeOnInitialized()
 	auto* ObjectiveSlot = Root->AddChildToCanvas(ObjectiveText); ObjectiveSlot->SetPosition(FVector2D(36, 64)); ObjectiveSlot->SetSize(FVector2D(670, 90));
 	PromptText = MakeText(TEXT("Prompt"), TEXT(""), 22, Amber);
 	PromptText->SetJustification(ETextJustify::Center);
-	auto* PromptSlot = Root->AddChildToCanvas(PromptText); PromptSlot->SetAnchors(FAnchors(0.5f, 1.f)); PromptSlot->SetAlignment(FVector2D(0.5f, 1.f)); PromptSlot->SetPosition(FVector2D(0, -82)); PromptSlot->SetAutoSize(true);
+	PromptText->SetAutoWrapText(true);
+	auto* PromptSlot = Root->AddChildToCanvas(PromptText); PromptSlot->SetAnchors(FAnchors(.18f,1.f,.82f,1.f)); PromptSlot->SetOffsets(FMargin(0,-118,0,64));
 	StreamingText = MakeText(TEXT("StreamingStatus"), TEXT(""), 18, Amber);
 	auto* StreamingSlot = Root->AddChildToCanvas(StreamingText); StreamingSlot->SetPosition(FVector2D(36, 150)); StreamingSlot->SetAutoSize(true);
 	CheckpointText = MakeText(TEXT("CheckpointStatus"), TEXT(""), 18, Amber);
 	auto* CheckpointSlot = Root->AddChildToCanvas(CheckpointText); CheckpointSlot->SetPosition(FVector2D(36, 182)); CheckpointSlot->SetAutoSize(true);
 	CombatText=MakeText(TEXT("Combat"),TEXT("ROOK-5"),22,Amber);
-	auto* CombatSlot=Root->AddChildToCanvas(CombatText); CombatSlot->SetAnchors(FAnchors(1,1)); CombatSlot->SetAlignment(FVector2D(1,1)); CombatSlot->SetPosition(FVector2D(-36,-56)); CombatSlot->SetAutoSize(true);
+	auto* CombatSlot=Root->AddChildToCanvas(CombatText); CombatSlot->SetAnchors(FAnchors(1,1)); CombatSlot->SetAlignment(FVector2D(1,1)); CombatSlot->SetPosition(FVector2D(-36,-80)); CombatSlot->SetAutoSize(true);
 	DamageBorder=WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(),TEXT("DamageTint"));
 	DamageBorder->SetBrushColor(FLinearColor(.8f,.025f,.01f,.22f)); DamageBorder->SetVisibility(ESlateVisibility::HitTestInvisible); DamageBorder->SetRenderOpacity(0);
 	auto* DamageSlot=Root->AddChildToCanvas(DamageBorder); DamageSlot->SetAnchors(FAnchors(0,0,1,1)); DamageSlot->SetOffsets(FMargin(0));
@@ -48,8 +49,9 @@ void UCRHUDWidget::NativeOnInitialized()
 	ControlsText=Controls;
 	SubtitleText=MakeText(TEXT("Subtitle"),TEXT(""),22,FLinearColor::White);
 	SubtitleText->SetJustification(ETextJustify::Center); SubtitleText->SetAutoWrapText(true);
-	auto* SubSlot=Root->AddChildToCanvas(SubtitleText); SubSlot->SetAnchors(FAnchors(.15f,1.f,.85f,1.f)); SubSlot->SetOffsets(FMargin(0,-210,0,92));
-	auto* ControlsSlot = Root->AddChildToCanvas(Controls); ControlsSlot->SetAnchors(FAnchors(0.f, 1.f)); ControlsSlot->SetAlignment(FVector2D(0.f, 1.f)); ControlsSlot->SetPosition(FVector2D(36, -26)); ControlsSlot->SetAutoSize(true);
+	auto* SubSlot=Root->AddChildToCanvas(SubtitleText); SubSlot->SetAnchors(FAnchors(.15f,1.f,.85f,1.f)); SubSlot->SetOffsets(FMargin(0,-230,0,92));
+	Controls->SetAutoWrapText(true);
+	auto* ControlsSlot = Root->AddChildToCanvas(Controls); ControlsSlot->SetAnchors(FAnchors(0,1,1,1)); ControlsSlot->SetOffsets(FMargin(36,-62,36,40));
 	UTextBlock* Reticle = MakeText(TEXT("Reticle"), TEXT("+"), 18, FLinearColor::White);
 	ReticleText=Reticle;
 	auto* ReticleSlot = Root->AddChildToCanvas(Reticle); ReticleSlot->SetAnchors(FAnchors(0.5f)); ReticleSlot->SetAlignment(FVector2D(0.5f)); ReticleSlot->SetAutoSize(true);

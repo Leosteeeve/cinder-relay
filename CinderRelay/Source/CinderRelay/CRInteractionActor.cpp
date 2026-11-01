@@ -23,6 +23,8 @@ ACRInteractionActor::ACRInteractionActor()
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("InteractionMesh"));
 	SetRootComponent(Mesh);
 	Mesh->SetCollisionProfileName(TEXT("BlockAll"));
+	PresentationMesh=CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PresentationMesh")); PresentationMesh->SetupAttachment(Mesh);
+	PresentationMesh->SetCollisionProfileName(TEXT("NoCollision")); PresentationMesh->SetCanEverAffectNavigation(false);
 }
 
 bool ACRInteractionActor::CanInteract_Implementation(ACRCharacter* Player) const
@@ -34,6 +36,7 @@ bool ACRInteractionActor::CanInteract_Implementation(ACRCharacter* Player) const
 void ACRInteractionActor::BeginPlay()
 {
 	Super::BeginPlay();
+	if(PresentationMesh->GetStaticMesh()) Mesh->SetVisibility(false); // Keep the original trace/collision shape.
 	const auto* Mode = GetWorld()->GetAuthGameMode<ACRGameMode>();
 	bUsed = Mode && Mode->GetObjective() > RequiredObjective(Kind);
 	if (bUsed && Kind == ECRInteractionKind::PowerModule)

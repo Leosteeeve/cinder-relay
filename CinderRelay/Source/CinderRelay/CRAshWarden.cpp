@@ -10,6 +10,8 @@
 #include "TimerManager.h"
 #include "Kismet/GameplayStatics.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Animation/AnimSequence.h"
 ACRAshWarden::ACRAshWarden()
 {
     PrimaryActorTick.bCanEverTick=false; AIControllerClass=ACRAshWardenController::StaticClass(); AutoPossessAI=EAutoPossessAI::PlacedInWorldOrSpawned;
@@ -40,12 +42,20 @@ void ACRAshWarden::BeginPlay()
         if(auto* AI=Cast<ACRAshWardenController>(GetController()))AI->Shutdown(); Destroy(); return;
     }
     Health->OnHealthChanged.AddDynamic(this,&ACRAshWarden::Damaged); Health->OnDeath.AddDynamic(this,&ACRAshWarden::Died);
+    if(GetMesh()->GetSkeletalMeshAsset() && IdleAnimation)
+    {
+        TArray<USceneComponent*> Parts; Silhouette->GetChildrenComponents(true,Parts);
+        for(auto* Part:Parts) if(Part!=Flash) Part->SetVisibility(false);
+        GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision); GetMesh()->SetCanEverAffectNavigation(false);
+        PlayPresentation(IdleAnimation,true);
+    }
 }
 void ACRAshWarden::Damaged(float,float Damage)
 {
     if(Damage<=0)return;
     UGameplayStatics::PlaySoundAtLocation(this,HitSound,GetActorLocation(),.3f);
-    Silhouette->SetRelativeRotation(FRotator(-8,0,4)); GetWorldTimerManager().SetTimer(FlinchTimer,this,&ACRAshWarden::EndFlinch,.16f,false);
+    if(GetMesh()->GetSkeletalMeshAsset()) { if(!Health->IsDead()) PlayPresentation(HitAnimation); }
+    else { Silhouette->SetRelativeRotation(FRotator(-8,0,4)); GetWorldTimerManager().SetTimer(FlinchTimer,this,&ACRAshWarden::EndFlinch,.16f,false); }
 }
 void ACRAshWarden::EndFlinch() { if(!Health->IsDead())Silhouette->SetRelativeRotation(FRotator::ZeroRotator); }
 void ACRAshWarden::Died()
@@ -54,11 +64,26 @@ void ACRAshWarden::Died()
     if(auto* AI=Cast<ACRAshWardenController>(GetController()))AI->Shutdown();
     GetWorldTimerManager().ClearTimer(FlinchTimer); GetWorldTimerManager().ClearTimer(FlashTimer); EndFlash();
     GetCharacterMovement()->DisableMovement(); SetActorEnableCollision(false);
-    Silhouette->SetRelativeLocation(FVector(0,0,-65)); Silhouette->SetRelativeRotation(FRotator(0,0,85));
+    if(GetMesh()->GetSkeletalMeshAsset()) PlayPresentation(DeathAnimation);
+    else { Silhouette->SetRelativeLocation(FVector(0,0,-65)); Silhouette->SetRelativeRotation(FRotator(0,0,85)); }
     UGameplayStatics::PlaySoundAtLocation(this,DeathSound,GetActorLocation(),.35f);
     UE_LOG(LogTemp,Display,TEXT("CR_ENEMY Defeated id=%s"),*EnemyId.ToString());
 }
-void ACRAshWarden::PresentAttack() { Flash->SetVisibility(true); GetWorldTimerManager().SetTimer(FlashTimer,this,&ACRAshWarden::EndFlash,.08f,false); UGameplayStatics::PlaySoundAtLocation(this,ShotSound,GetActorLocation(),.2f); }
+void ACRAshWarden::PresentAttack() { PlayPresentation(AttackAnimation); Flash->SetVisibility(true); GetWorldTimerManager().SetTimer(FlashTimer,this,&ACRAshWarden::EndFlash,.08f,false); UGameplayStatics::PlaySoundAtLocation(this,ShotSound,GetActorLocation(),.2f); }
+void ACRAshWarden::PlayPresentation(UAnimSequence* Animation,bool Loop)
+{
+    if(!Animation || !GetMesh()->GetSkeletalMeshAsset()) return;
+    if(Loop && CurrentAnimation==Animation) return;
+    GetMesh()->PlayAnimation(Animation,Loop); CurrentAnimation=Animation;
+    PresentationUntil=Loop?0:GetWorld()->GetTimeSeconds()+Animation->GetPlayLength();
+}
+void ACRAshWarden::PresentAlert() { if(!Health->IsDead()) PlayPresentation(AlertAnimation); }
+void ACRAshWarden::UpdatePresentation()
+{
+    // Reuse the existing bounded AI decision cadence; native skeletal evaluation interpolates poses.
+    if(Health->IsDead() || GetWorld()->GetTimeSeconds()<PresentationUntil) return;
+    PlayPresentation(GetVelocity().SizeSquared2D()>100?WalkAnimation:IdleAnimation,true);
+}
 void ACRAshWarden::EndFlash() { Flash->SetVisibility(false); }
 void ACRAshWarden::EndPlay(const EEndPlayReason::Type Reason)
 {

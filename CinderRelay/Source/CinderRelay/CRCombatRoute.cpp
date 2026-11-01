@@ -188,6 +188,7 @@ void ACRCombatRoute::Tick(float Delta)
     else if(Stage==TEXT("signal")) { if(Interact(FindItem(ECRInteractionKind::Signal)))Next(TEXT("ending")); }
     else if(Stage==TEXT("ending")&&Age>1)
     {
+        if(!PC->bPrototypeEnded) return; // Wait for the actual Phase05 native presentation; stage timeout still applies.
         if(bRestoration&&CombatScenario==3)Check(!GM->HasSurveyOptic()&&!GM->HasSurveyUpgrade(),TEXT("Chapter ending reached without salvage or optional workbench"));
         Check(GM->GetObjective()==ECRObjective::Complete&&PC->bPrototypeEnded,TEXT("Original final signal and ending still work"));
         FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Phase02/ending.png"),true,false); Next(TEXT("final_restart"));

@@ -62,6 +62,7 @@ void ACRAshWardenController::Perceived(AActor* Actor,FAIStimulus Stimulus)
     auto* H=Actor->FindComponentByClass<UCRHealthComponent>(); if(!H||H->IsDead())return;
     if(Stimulus.Type==UAISense::GetSenseID<UAISense_Sight>())
     {
+        if(!bSight && Stimulus.WasSuccessfullySensed() && Warden.IsValid()) Warden->PresentAlert();
         bSight=Stimulus.WasSuccessfullySensed();
         if(bSight) { Target=Actor; LastKnown=Stimulus.StimulusLocation; LastStimulus=GetWorld()->GetTimeSeconds(); NextAttack=LastStimulus+.65; MoveFailures=0; SearchStarted=-1; }
         else { LastStimulus=GetWorld()->GetTimeSeconds(); SearchStarted=-1; }
@@ -107,6 +108,7 @@ void ACRAshWardenController::Decide()
 {
     TRACE_CPUPROFILER_EVENT_SCOPE(CR_WardenDecision);
     if(bStopped||!bNavigationReady||!Warden.IsValid()||Warden->Health->IsDead())return;
+    Warden->UpdatePresentation();
     const double Now=GetWorld()->GetTimeSeconds();
     if(Target.IsValid()) { const auto* H=Target->FindComponentByClass<UCRHealthComponent>(); if(!H||H->IsDead()) { bSight=false; Target.Reset(); LastStimulus=-100; } }
     if(bSight && Target.IsValid())
