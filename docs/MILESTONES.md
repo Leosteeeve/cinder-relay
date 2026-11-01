@@ -1,5 +1,22 @@
 # CINDER RELAY — Milestones
 
+## Phase052 presentation and contact polish
+
+Authorized focused revision of Phase05.1, not Phase06. Base merged PR7 `e5d0ef641e99a71b59012e18e5d56880988cdb4b`; branch `phase-05-2-presentation-contact`. Detailed audit/plan/visual comparison: [PRESENTATION_05_2](PRESENTATION_05_2.md). No runtime C++ changes, saved-ID/schema changes or new mechanics.
+
+Delivered assets: two editable Phase052 Blender sources; eleven original static meshes; SK/AN/skeleton derivative; native22s Level Sequence with camera and two original audio tracks; shared PBR instances/decal. Twenty-nine new Unreal assets. Persistent map changes only local exposure settings; RailYard changes cosmetic car assignments and34 added owned actors; Workshop adds2 local fill lights and changes existing bench soft appearance references. Bunker and original Phase01A rollback map untouched. Read-only native audit preserved302 original actors and231 protected-file hashes, all CP00/01/02 transforms and gameplay collisions. New static decorations have no collision/navigation.
+
+Validation performed:
+
+- Real UE5.8.4 FBX import with bounds/bones/duration checks; nine actual skeletal poses and six matched environment views inspected. Native sequence component binding evaluated at6s/19.2s; actual Stop restored original camera transform twice. Audio completion-cache issue fixed through native editor property notification and verified after fresh load.
+- One Windows Development BuildCookRun99.57s, AutomationTool0. The game target compiled/linked successfully as part of that pass; no separate Editor-target rebuild was performed because runtime source was unchanged. Explicit Phase052 cook directory included.
+- One bounded three-process actual-input acceptance, fresh `CR04_TEST_Phase052Final` slots. Route1 native31440/bootstrap20572 savedCP01; route2 native13768 restoredCP01 and savedCP02; route3 native71388 restoredCP02, recovered/backtracked and reached both endings. All fresh receipts passed, every native/bootstrap exit0, no forced stop. Raw evidence is ignored locally; [compact public receipt](media/phase-05-2/validation.json) records selected results.
+- CP01 restores health68/ammo1+35 and prior enemy/pickup/objective state. CP02 restores health68/ammo5+30/SurveyUpgrade1/objectiveRestorePower. Three additional warm CP02 recoveries retain those values. Native loaded/visible readiness veto holds the pawn; old zones actually unload (route3 A/B/C1/5/1).
+- Workbench route exercises explicit Skip/exactly-once upgrade, lethal interruption, presentation actor destruction, Restart/world EndPlay, controller destruction, real SequencePlayer Stop without upgrade, rejection of checkpoint requests during playback, pause/freeze/resume and natural completion. Real imported upgraded view and reload remain functional. Reverse streaming preserves collected salvage/upgrade; death Retry and optional-bypass MERIDIAN ending pass. Repeated assertions are not counted as independent gameplay cases.
+- Lower-overhead1080p/Epic sample: yard p95=17.077ms, assembly19.538ms, traversal17.133ms; not sustained60FPS. Detailed ranges, memory and startup/travel limitations: [performance report](PERFORMANCE_BUDGET.md#phase052-packaged-observations).
+
+Actual source/assets, static visual review, native runtime tests and human artistic acceptance are distinct. The first diagnostic video was blocked by Windows firewall UI and excluded. After owner dismissal, a separate dedicated test process produced the published28s1280x720/30fps silent gameplay recording:840frames decoded, ten sampled frames inspected, native/capture exits0 and route passed. It includes full assembly and return to gameplay, without changing the measured performance run. No claim of final hand anatomy, natural continuous motion, polished hero surfaces or measured12–16minute pacing. No Phase06 work started.
+
 ## Phase05.1 Asset Quality Overhaul — active plan and ledger
 
 **Goal:** materially improve the fictional ROOK-5, actual sight picture, Rail Yard depth and first-person contact animation while retaining Chapter01 gameplay. **Spec:** owner's Phase05.1 sections0–19, especially visual feedbackA–H. **Baseline:** merged PR6 `fd257fbe56768abb7eea007aa547473919ed4b3a`; clean workspace, branch `phase-05-1-asset-quality`; UE5.8.4/CL58902052. No game/Editor process remained at audit.

@@ -86,3 +86,15 @@ Selection rationale and all owner candidate URLs: [ASSET_SELECTION_05_1.md](ASSE
 `CinderRelay/ArtSource/Textures/Phase051/provenance.json` records each exact publisher download URL, file size, publisher MD5 and independently checked SHA256. Source images total approximately6.1MB. Material texture import is real UE5.8.4 import, with DX normal compression and non-sRGB ARM. Final cook/runtime status is recorded in MILESTONES, not inferred from license or format compatibility.
 
 Local recording tool only: imageio-ffmpeg0.7.0 Windows wheel from the publisher's PyPI metadata, SHA256 checked; wrapper BSD-2-Clause and bundled FFmpeg's own reported build license are separate. Ignored `.environment-local/phase-05-1/tools/provenance.json` retains the download record. No recording executable/wheel is shipped, committed, or treated as a game asset.
+
+## Phase05.2 original derivatives
+
+No new external acquisition, paid provider or marketplace package. Existing Phase051 CC0 rusty_metal_02 maps and original Phase05 mask are reused; their licenses/authorship above are unchanged. All added geometry, poses and synthesized cues are original project work, without a separate public asset-license grant.
+
+| Source | Actual imported content | Authorship / compatibility |
+|---|---|---|
+| `ArtSource/Blender/Phase052/CR052_YardDetail.blend`, `polish_environment.py` |11 `SM_CR052_*` meshes, original native master/instances/decal | Original modeled railcar, entrance, industrial service props and exterior midground kit;61,004 source triangles total. Blender4.5.11, real UE5.8.4 FBX import and bounds check. No external model pack. |
+| `ArtSource/Blender/Phase052/CR052_RookRestoration.blend`, `polish_contact.py` | SK/AN/skeleton and `LS_CR052_RookRestoration` | Editable derivative of project-owned Phase051 source;39 authored/40 imported bones,106,828 triangles,22s. Original weapon/skeleton source retained. Actual poses inspected; human motion-quality acceptance remains pending. |
+| `ArtSource/Audio/Phase052/S_CR052_Seat.wav`, `S_CR052_Secure.wav`, `provenance.json`; generator `create_contact_audio.py` | Two SoundWaves and native sequence sections | Original deterministic additive/noise synthesis,48kHz monoPCM,0.26s/0.38s. No samples, music, voice acting or third-party attribution requirements. Quiet fictional calibration sounds, not authentic recorded machinery. |
+
+The29 Phase052 Unreal assets were included in the successful Windows Development cook. Editable .blend sources and intentional tiny original WAV sources use LFS; exported FBX, build outputs and raw local capture directories remain ignored. Selected review media is published separately with provenance and no claim of final artistic acceptance.

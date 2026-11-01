@@ -1,0 +1,18 @@
+[
+  {
+    "file": "S_CR052_Seat.wav",
+    "seconds": 0.26,
+    "sample_rate": 48000,
+    "authorship": "Original deterministic additive/noise synthesis",
+    "external_samples": false,
+    "usage": "Quiet fictional exterior calibration cue; not recorded voice or real firearm operation"
+  },
+  {
+    "file": "S_CR052_Secure.wav",
+    "seconds": 0.38,
+    "sample_rate": 48000,
+    "authorship": "Original deterministic additive/noise synthesis",
+    "external_samples": false,
+    "usage": "Quiet fictional exterior calibration cue; not recorded voice or real firearm operation"
+  }
+]

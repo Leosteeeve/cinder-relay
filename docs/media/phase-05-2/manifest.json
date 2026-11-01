@@ -1,0 +1,205 @@
+{
+  "phase": "05.2",
+  "media": [
+    {
+      "file": "after-midground.png",
+      "sha256": "0ba501fd5e77856704acf69ed6fa8c3e3e88eeb2f6adb629b3f7064daa4ab682",
+      "bytes": 2456612,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Matched before/after Editor environment; not runtime streaming proof"
+    },
+    {
+      "file": "after-shadow-flank.png",
+      "sha256": "935a14c0f8bbce395f01a0618fdf8f00c3038cb5d3ebef299780d80ec940f885",
+      "bytes": 2746477,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Matched before/after Editor environment; not runtime streaming proof"
+    },
+    {
+      "file": "after-spawn.png",
+      "sha256": "0d4d1e85bb579ffee2895f34c99513d6ca97544be86b5cb30874c347fddab95a",
+      "bytes": 2629937,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Matched before/after Editor environment; not runtime streaming proof"
+    },
+    {
+      "file": "after-train-route.png",
+      "sha256": "480eb405a6be553b2e2dc0fe7aa89c0dbeffed575e9a9071d34bc50c99a0f58e",
+      "bytes": 2671874,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Matched before/after Editor environment; not runtime streaming proof"
+    },
+    {
+      "file": "after-workshop-entrance.png",
+      "sha256": "122b7d409da7df06c2f9af847c126318d0a79c31835370106887f8f65d2481b4",
+      "bytes": 2559356,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Matched before/after Editor environment; not runtime streaming proof"
+    },
+    {
+      "file": "after-workshop-interior.png",
+      "sha256": "27fe94d5abcadf19a8f16ee4a2163bfb75bd9123c2cfc6f782f3e04339c4ec82",
+      "bytes": 2471491,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Matched before/after Editor environment; not runtime streaming proof"
+    },
+    {
+      "file": "before-midground.png",
+      "sha256": "6de26f7ced68486fe45801bf96ae3aaf5f5b9b0563ad0e6ea41967c62e605f5e",
+      "bytes": 2431582,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Matched before/after Editor environment; not runtime streaming proof"
+    },
+    {
+      "file": "before-shadow-flank.png",
+      "sha256": "86454fb5fa3bf7eef0ac848de2053298d856f15873dfe14694ab11ed2a297898",
+      "bytes": 2559863,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Matched before/after Editor environment; not runtime streaming proof"
+    },
+    {
+      "file": "before-spawn.png",
+      "sha256": "575d3c4b2fbb44f9724ecc6772d966c74021876d8bb3d85d4e1ea0a28bec535f",
+      "bytes": 2559990,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Matched before/after Editor environment; not runtime streaming proof"
+    },
+    {
+      "file": "before-train-route.png",
+      "sha256": "dafb966c5ac2ef275304d80b8711a35d56d499d3bb2a41342ccef0d135f9951b",
+      "bytes": 2624811,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Matched before/after Editor environment; not runtime streaming proof"
+    },
+    {
+      "file": "before-workshop-entrance.png",
+      "sha256": "c9d4f55d832e5e6548cd6f68718bb405b25fdea7ccdead85b5d873c3e2d04716",
+      "bytes": 2591286,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Matched before/after Editor environment; not runtime streaming proof"
+    },
+    {
+      "file": "before-workshop-interior.png",
+      "sha256": "5cea86b9ecd70a9359804d8d65469cc234fbe0fee9e563e90ac29f35decc7560",
+      "bytes": 2430338,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Matched before/after Editor environment; not runtime streaming proof"
+    },
+    {
+      "file": "contact-2.png",
+      "sha256": "286680271d32bcac24841897c0a73990afc1ab3f8df6a7aadeb27eb261455f97",
+      "bytes": 2508775,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Static pose, fixed settled camera"
+    },
+    {
+      "file": "contact-4.png",
+      "sha256": "5692d23001d0c570dfab92b3f1f61beeeb16a2a221b7e58bc99e93aed192c7d2",
+      "bytes": 2548425,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Static pose, fixed settled camera"
+    },
+    {
+      "file": "contact-5.png",
+      "sha256": "f8909a75687f743bf566795393dc9b87a64c480e0771fb2779bb052c6115bbe1",
+      "bytes": 2533307,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Static pose, fixed settled camera"
+    },
+    {
+      "file": "contact-6.png",
+      "sha256": "e5e2913bb70ba39d1565004f932907ddb2614d05749a7f6494a5a1f177340460",
+      "bytes": 2529928,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Static pose, fixed settled camera"
+    },
+    {
+      "file": "contact-8.png",
+      "sha256": "8e10961f0ef076bae342fab64e2dfdb0fda056e6cecf85a4f0d6255a1c46598f",
+      "bytes": 2566990,
+      "width": 1920,
+      "height": 1080,
+      "source": "Actual native Unreal Editor capture",
+      "unchanged_copy": true,
+      "scope": "Static pose, fixed settled camera"
+    },
+    {
+      "file": "assembly-gameplay.mp4",
+      "sha256": "42c7bbb0c585c51ef9121c6e6dbd8e1afe6b11593ad6185c6ff77a537fd6b839",
+      "bytes": 3893087,
+      "width": 1280,
+      "height": 720,
+      "duration_seconds": 28,
+      "frame_rate": 30,
+      "decoded_frames": 840,
+      "codec": "H.264",
+      "audio": false,
+      "source": "Actual packaged Windows Development game; sequential desktop capture cropped to verified game client",
+      "unchanged_copy": true,
+      "scope": "Diagnostic recording separate from performance; includes deliberate Stop recovery, complete assembly, pause and upgraded gameplay return",
+      "sampled_review_seconds": [
+        0,
+        3,
+        6,
+        9,
+        12,
+        15,
+        18,
+        21,
+        24,
+        27
+      ],
+      "human_continuous_motion_acceptance": false
+    }
+  ],
+  "video_status": "Published actual replacement recording; obstructed first capture excluded",
+  "human_visual_acceptance": false
+}
