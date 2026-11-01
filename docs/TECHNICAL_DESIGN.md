@@ -1,5 +1,16 @@
 # CINDER RELAY — Technical Design
 
+## Phase05.4 movement and combat presentation
+
+`UCRCharacterMovementComponent` is the default movement subobject of `ACRCharacter`. It retains `MOVE_Walking`/native PhysWalking, floor tests, step-up, swept capsule collision and crouch clearance; it overrides only bounded velocity policy and lifecycle hooks. Slide inputs are existing Enhanced Input Sprint/Crouch actions, with a single transient flag and cooldown. No network prediction or parkour architecture is introduced for this single-player slice. Defaults:430cm/s threshold,600cm/s start from normal500 sprint (620 cap),0.75s duration,1s cooldown after end. Slope deceleration is260–1000cm/s²,540 on flat ground; downhill cannot accelerate. Wall obstruction/falling/reload/presentation/death/input cleanup terminate the state.
+
+Character owns held-input reconciliation and smoothly compensates native crouch capsule center changes before easing eye height. Camera roll2deg leaves the forward trace axis intact. Weapon/arms share a lowered root; the existing idle pose replaces gait while sliding and native fire/reload montages remain in control. No Phase053 animation, skeleton, weapon mesh or DataAsset is modified.
+
+`UCRWeaponComponent::OnShot` retains its signature/authority. New `OnImpact(Position,Normal,ECRImpactKind)` classifies only confirmed applied damage as EnemyHit/EnemyKill, otherwise Surface. PC forwards transient hit/kill feedback to existing UMG; it remains visible during ADS independently of the sight reticle. Surface chips use the actual impact normal, enemy cues use the existing original sound, and native ejection notifies remain once-only cosmetic events. View-root recoil now supplements the imported action; the fixed authored sight solution is restored on recovery. The muzzle uses a small engine cone with the existing project light material instead of a visible box. Ash Warden hit clips receive a300ms presentation-priority window; attack damage/perception/navigation are unchanged.
+
+Phase054 environment: six original static meshes under `/Game/Generated/Phase054/Meshes`, edited with `Scripts/polish_combat_environment.py`.40 owned actors,20 Workshop/11 RailYard/9 RelayBunker; all new static decoration is NoCollision and cannot affect navigation. Existing338 actors compared before and after save/reload are unchanged. Keep workbench camera/hand volume, module trace and central paths clear. The script uses stable tags/metadata and refuses to overwrite foreign assets; no old generator is executed.
+
+
 ## Phase053 isolated anatomical candidate
 
 `/Game/Generated/Phase053/Review/` contains only an inspection mesh, skeleton,3s/60fps articulation animation, two textures, three character materials and a neutral review-stage material/map. `import_arms_review.py` writes only assets tagged `CinderRelay.Phase053.Review.v1`; existing-name collisions without ownership are rejected. `review_arms.py` captures real Editor poses without saving camera/pose changes. The map has no chapter bootstrap, gameplay collision or checkpoint authority and is **not a playable replacement** for `L_CH01_Persistent`.

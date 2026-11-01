@@ -76,6 +76,7 @@ void ACRPlayerController::BindPawn()
 		ObservedPawn->Health->OnHealthChanged.RemoveDynamic(this, &ACRPlayerController::HealthChanged);
 		ObservedPawn->Weapon->OnChanged.RemoveDynamic(this, &ACRPlayerController::RefreshCombat);
 		ObservedPawn->Weapon->OnShot.RemoveDynamic(this, &ACRPlayerController::ShotFeedback);
+		ObservedPawn->Weapon->OnImpact.RemoveDynamic(this, &ACRPlayerController::ConfirmedImpact);
 	}
 	ObservedPawn = Cast<ACRCharacter>(GetPawn());
 	if (ObservedPawn.IsValid())
@@ -84,6 +85,7 @@ void ACRPlayerController::BindPawn()
 		ObservedPawn->Health->OnHealthChanged.AddDynamic(this, &ACRPlayerController::HealthChanged);
 		ObservedPawn->Weapon->OnChanged.AddDynamic(this, &ACRPlayerController::RefreshCombat);
 		ObservedPawn->Weapon->OnShot.AddDynamic(this, &ACRPlayerController::ShotFeedback);
+		ObservedPawn->Weapon->OnImpact.AddDynamic(this, &ACRPlayerController::ConfirmedImpact);
 	}
 	RefreshCombat();
 	if(HUD && ObservedPawn.IsValid() && !bOpeningShown)
@@ -100,6 +102,7 @@ void ACRPlayerController::RefreshCombat()
 }
 void ACRPlayerController::HealthChanged(float,float Damage) { RefreshCombat(); if (HUD && Damage>0) HUD->DamageFeedback(); }
 void ACRPlayerController::ShotFeedback(FVector,bool Hit,bool) { if (HUD) HUD->ShotFeedback(Hit); }
+void ACRPlayerController::ConfirmedImpact(FVector,FVector,ECRImpactKind Kind) { if(HUD && Kind!=ECRImpactKind::Surface) HUD->HitFeedback(Kind==ECRImpactKind::EnemyKill); }
 void ACRPlayerController::PlayerDefeated() { AbortAssembly(); if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset(); bPrototypeDefeated=true; ApplyPause(true); }
 
 void ACRPlayerController::ObjectiveChanged(ECRObjective Objective)

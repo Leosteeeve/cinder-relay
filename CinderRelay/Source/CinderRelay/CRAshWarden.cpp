@@ -53,6 +53,7 @@ void ACRAshWarden::BeginPlay()
 void ACRAshWarden::Damaged(float,float Damage)
 {
     if(Damage<=0)return;
+    HitReactionUntil=GetWorld()->GetTimeSeconds()+.3f;
     UGameplayStatics::PlaySoundAtLocation(this,HitSound,GetActorLocation(),.3f);
     if(GetMesh()->GetSkeletalMeshAsset()) { if(!Health->IsDead()) PlayPresentation(HitAnimation); }
     else { Silhouette->SetRelativeRotation(FRotator(-8,0,4)); GetWorldTimerManager().SetTimer(FlinchTimer,this,&ACRAshWarden::EndFlinch,.16f,false); }
@@ -69,7 +70,7 @@ void ACRAshWarden::Died()
     UGameplayStatics::PlaySoundAtLocation(this,DeathSound,GetActorLocation(),.35f);
     UE_LOG(LogTemp,Display,TEXT("CR_ENEMY Defeated id=%s"),*EnemyId.ToString());
 }
-void ACRAshWarden::PresentAttack() { PlayPresentation(AttackAnimation); Flash->SetVisibility(true); GetWorldTimerManager().SetTimer(FlashTimer,this,&ACRAshWarden::EndFlash,.08f,false); UGameplayStatics::PlaySoundAtLocation(this,ShotSound,GetActorLocation(),.2f); }
+void ACRAshWarden::PresentAttack() { if(GetWorld()->GetTimeSeconds()>=HitReactionUntil) PlayPresentation(AttackAnimation); Flash->SetVisibility(true); GetWorldTimerManager().SetTimer(FlashTimer,this,&ACRAshWarden::EndFlash,.08f,false); UGameplayStatics::PlaySoundAtLocation(this,ShotSound,GetActorLocation(),.2f); }
 void ACRAshWarden::PlayPresentation(UAnimSequence* Animation,bool Loop)
 {
     if(!Animation || !GetMesh()->GetSkeletalMeshAsset()) return;
@@ -77,7 +78,7 @@ void ACRAshWarden::PlayPresentation(UAnimSequence* Animation,bool Loop)
     GetMesh()->PlayAnimation(Animation,Loop); CurrentAnimation=Animation;
     PresentationUntil=Loop?0:GetWorld()->GetTimeSeconds()+Animation->GetPlayLength();
 }
-void ACRAshWarden::PresentAlert() { if(!Health->IsDead()) PlayPresentation(AlertAnimation); }
+void ACRAshWarden::PresentAlert() { if(!Health->IsDead() && GetWorld()->GetTimeSeconds()>=HitReactionUntil) PlayPresentation(AlertAnimation); }
 void ACRAshWarden::UpdatePresentation()
 {
     // Reuse the existing bounded AI decision cadence; native skeletal evaluation interpolates poses.

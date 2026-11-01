@@ -23,7 +23,12 @@ private:
     TWeakObjectPtr<ACRChapterStreamingController> Streaming;
     FString Stage = TEXT("menu"), AfterWalk;
     TArray<FVector2D> Waypoints;
-    int32 Route = 0;
+    int32 Route = 0, SlideEdgeCase=0;
+    bool bSlideEdges=false;
+    FVector SlideEdgeOrigin=FVector::ZeroVector;
+    TWeakObjectPtr<AActor> SlideObstacle;
+    AActor* SlideBlock(FVector Position,FVector Size);
+    void FinishSlideEdge();
     bool bFinished = false, bPauseChecked = false, bHeld = false, bLifecycle = false;
     double Started = 0, StageStarted = 0, LastShot = 0, PausedAt = 0;
     float PausedPosition = 0;

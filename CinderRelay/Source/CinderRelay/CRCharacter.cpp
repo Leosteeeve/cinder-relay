@@ -1,4 +1,5 @@
 #include "CRCharacter.h"
+#include "CRCharacterMovementComponent.h"
 #include "CRHealthComponent.h"
 #include "CRWeaponComponent.h"
 #include "CRWeaponViewComponent.h"
@@ -16,9 +17,10 @@
 #include "Engine/LocalPlayer.h"
 #include "Kismet/GameplayStatics.h"
 
-ACRCharacter::ACRCharacter()
+ACRCharacter::ACRCharacter(const FObjectInitializer& ObjectInitializer)
+ : Super(ObjectInitializer.SetDefaultSubobjectClass<UCRCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 	Health = CreateDefaultSubobject<UCRHealthComponent>(TEXT("Health"));
 	Weapon = CreateDefaultSubobject<UCRWeaponComponent>(TEXT("Rook5"));
 	WeaponView = CreateDefaultSubobject<UCRWeaponViewComponent>(TEXT("RookView"));
@@ -45,6 +47,7 @@ void ACRCharacter::BeginPlay()
 	Weapon->Data = RookData;
 	Super::BeginPlay();
 	Health->OnDeath.AddDynamic(this, &ACRCharacter::Died);
+	Weapon->OnChanged.AddDynamic(this, &ACRCharacter::MovementWeaponChanged);
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	GetCharacterMovement()->MaxWalkSpeedCrouched = CrouchSpeed;
 	InstallInputContext();
@@ -76,6 +79,7 @@ void ACRCharacter::InstallInputContext()
 
 void ACRCharacter::EndPlay(const EEndPlayReason::Type Reason)
 {
+	Weapon->OnChanged.RemoveDynamic(this, &ACRCharacter::MovementWeaponChanged);
 	GetWorldTimerManager().ClearTimer(PromptTimer);
 	if (InputSubsystem.IsValid() && MappingContext) InputSubsystem->RemoveMappingContext(MappingContext);
 	if (InputSubsystem.IsValid() && CombatMappingContext) InputSubsystem->RemoveMappingContext(CombatMappingContext);
@@ -128,16 +132,44 @@ void ACRCharacter::MoveLeft() { AddMovementInput(GetActorRightVector(), -1.f); }
 void ACRCharacter::LookYaw(const FInputActionValue& Value) { AddControllerYawInput(Value.Get<float>() * MouseSensitivity); }
 // Unreal MouseY is already positive when the mouse moves up; preserve that sign.
 void ACRCharacter::LookPitch(const FInputActionValue& Value) { AddControllerPitchInput(Value.Get<float>() * MouseSensitivity); }
-void ACRCharacter::StartSprint() { if (!Health->IsDead() && !Weapon->IsPresentationLocked()) { GetCharacterMovement()->MaxWalkSpeed = SprintSpeed; Weapon->SetSprinting(true); } }
-void ACRCharacter::StartJump() { if(!Health->IsDead() && !Weapon->IsPresentationLocked()) Jump(); }
-void ACRCharacter::StopSprint() { GetCharacterMovement()->MaxWalkSpeed = WalkSpeed; Weapon->SetSprinting(false); }
-void ACRCharacter::StartCrouch() { if(!Weapon->IsPresentationLocked()) Crouch(); }
-void ACRCharacter::StopCrouch() { UnCrouch(); }
-void ACRCharacter::ClearHeldActions() { StopSprint(); StopJumping(); UnCrouch(); AimStop(); }
+bool ACRCharacter::IsSliding() const { const auto* M=Cast<UCRCharacterMovementComponent>(GetCharacterMovement()); return M && M->bSliding; }
+void ACRCharacter::RefreshSprint()
+{
+    const bool Sprint=bSprintHeld && !bCrouchHeld && !bIsCrouched && !IsSliding() && !Health->IsDead() && !Weapon->IsPresentationLocked() && Weapon->State!=ECRWeaponState::Reloading && Weapon->State!=ECRWeaponState::Disabled;
+    GetCharacterMovement()->MaxWalkSpeed=Sprint?SprintSpeed:WalkSpeed;
+    if(Weapon->bSprinting!=Sprint) Weapon->SetSprinting(Sprint);
+}
+void ACRCharacter::StartSprint() { bSprintHeld=true; RefreshSprint(); }
+void ACRCharacter::StopSprint() { bSprintHeld=false; RefreshSprint(); }
+void ACRCharacter::StartJump() { if(!Health->IsDead() && !Weapon->IsPresentationLocked() && !IsSliding()) Jump(); }
+void ACRCharacter::StartCrouch()
+{
+    if(Health->IsDead() || Weapon->IsPresentationLocked()) return;
+    bCrouchHeld=true;
+    if(auto* M=Cast<UCRCharacterMovementComponent>(GetCharacterMovement())) M->TryStartSlide();
+    Crouch(); RefreshSprint();
+}
+void ACRCharacter::StopCrouch() { bCrouchHeld=false; if(!IsSliding()) UnCrouch(); RefreshSprint(); }
+void ACRCharacter::SlideEnded() { if(!bCrouchHeld) UnCrouch(); RefreshSprint(); }
+void ACRCharacter::CancelSlide(FName Reason) { if(auto* M=Cast<UCRCharacterMovementComponent>(GetCharacterMovement())) M->EndSlide(Reason); }
+void ACRCharacter::MovementWeaponChanged()
+{
+    if(Weapon->State==ECRWeaponState::Reloading || Weapon->State==ECRWeaponState::Disabled || Weapon->IsPresentationLocked()) CancelSlide(TEXT("WeaponState"));
+    RefreshSprint();
+}
+void ACRCharacter::ClearHeldActions() { bSprintHeld=false; bCrouchHeld=false; CancelSlide(TEXT("ClearInput")); StopSprint(); StopJumping(); UnCrouch(); AimStop(); }
 void ACRCharacter::Fire() { if(WeaponView->IsPresentationResident()) Weapon->TryFire(); }
 void ACRCharacter::Reload() { if(WeaponView->IsPresentationResident()) Weapon->TryReload(); }
-void ACRCharacter::AimStart() { if(WeaponView->IsPresentationResident()) Weapon->SetAiming(true); }
+void ACRCharacter::AimStart() { if(WeaponView->IsPresentationResident() && !IsSliding()) Weapon->SetAiming(true); }
 void ACRCharacter::AimStop() { Weapon->SetAiming(false); }
+void ACRCharacter::Tick(float Delta)
+{
+    Super::Tick(Delta);
+    const float Target=bIsCrouched?40.f:64.f;
+    FVector Location=Camera->GetRelativeLocation(); Location.Z=FMath::FInterpTo(Location.Z,Target,Delta,14.f); Camera->SetRelativeLocation(Location);
+    SlideLean=FMath::FInterpTo(SlideLean,IsSliding()?2.f:0.f,Delta,12.f);
+    Camera->ClearAdditiveOffset(); Camera->AddAdditiveOffset(FTransform(FRotator(0,0,SlideLean)),0.f);
+}
 void ACRCharacter::Died()
 {
 	Weapon->Disable(); ClearHeldActions(); GetCharacterMovement()->DisableMovement();
@@ -147,12 +179,15 @@ void ACRCharacter::Died()
 void ACRCharacter::OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
 {
 	Super::OnStartCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
-	Camera->SetRelativeLocation(FVector(0.f, 0.f, 40.f));
+	// Compensate the capsule center step, then ease the eye height in Tick.
+	Camera->AddRelativeLocation(FVector(0,0,ScaledHalfHeightAdjust));
+	RefreshSprint();
 }
 void ACRCharacter::OnEndCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust)
 {
 	Super::OnEndCrouch(HalfHeightAdjust, ScaledHalfHeightAdjust);
-	Camera->SetRelativeLocation(FVector(0.f, 0.f, 64.f));
+	Camera->AddRelativeLocation(FVector(0,0,-ScaledHalfHeightAdjust));
+	RefreshSprint();
 }
 
 AActor* ACRCharacter::TraceTarget() const
@@ -171,7 +206,7 @@ bool ACRCharacter::CanInteractWith(const AActor* Target) const { return Target &
 void ACRCharacter::UpdatePrompt()
 {
 	const FVector Here=GetActorLocation(); const float Travel=FVector::Dist2D(Here,LastFootLocation); LastFootLocation=Here;
-	if(!Health->IsDead() && !Weapon->IsPresentationLocked() && GetCharacterMovement()->IsMovingOnGround() && Travel<150)
+	if(!Health->IsDead() && !Weapon->IsPresentationLocked() && GetCharacterMovement()->IsMovingOnGround() && !IsSliding() && Travel<150)
 	{
 		FootDistance+=Travel;
 		if(FootDistance>145) { FootDistance=0; UGameplayStatics::PlaySoundAtLocation(this,Here.X<1600?YardFootstep:InteriorFootstep,Here,.12f,bIsCrouched?.85f:1.f); }

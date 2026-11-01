@@ -1,14 +1,21 @@
 # CINDER RELAY
 
+## Phase05.4 combat, slide and industrial spaces
+
+Active branch: `codex/phase-05-4-combat-slide-environment`, based on merged PR9. See [design contract and evidence](docs/COMBAT_ENVIRONMENT_05_4.md). Sprint with Shift, then press Ctrl above430cm/s for a0.75s grounded slide. Hip fire works; ADS is unavailable during slide. Hold Ctrl to finish crouched, release to request standing; native ceiling checks still apply. Reload ends a valid active slide before the unchanged2.4s transfer.
+
+The accepted ROOK-5/arm assets, Survey Optic, workbench and schema1 saves remain in use. Added original utility meshes belong to the existing three sublevels; the persistent map and rollback map are unchanged. The current Windows Development package is `.environment-local/phase-05-4/package/Windows/CinderRelay.exe` (launch without test flags). Three independent packaged checkpoint processes and six focused slide edge fixtures passed. Human feel/art acceptance remains pending; results and limits are in the phase document.
+
+
 A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 5.8, C++ and Unreal Blueprints.
 
-**Active milestone: Phase05.3 — First-Person Arms and Weapon Handling.** Owner-approved anatomy is integrated into seven native weapon clips and the separate22s workbench derivative. Gameplay authority, schema1, native streaming and earlier rollback sources are retained. See [implementation, verification and art-review limits](docs/FIRST_PERSON_05_3.md). Final human continuous-motion acceptance remains pending. Phase06 is not authorized.
+**Previous milestone: Phase05.3 — First-Person Arms and Weapon Handling.** Owner-approved anatomy is integrated into seven native weapon clips and the separate22s workbench derivative. Gameplay authority, schema1, native streaming and earlier rollback sources are retained. See [implementation, verification and art-review limits](docs/FIRST_PERSON_05_3.md). Final human continuous-motion acceptance remains pending. Phase06 is not authorized.
 
 Reload follow-up: corrected the authored right wrist frame and left feeding-component grip in `CR053_FirstPerson_ReloadCorrected.blend`. Original sources and seven rollback actions remain intact. The seven shared-grip clips were reimported into the unchanged Skeleton; a fresh packaged recording and focused weapon fixture passed. The right hand now retains the primary grip while the left handles the component. Local fingertip/near-camera clipping remains; see the [diagnosis and evidence](docs/FIRST_PERSON_05_3.md#reload-rig-correction--2026-11-01).
 
 [View the Phase 05.1 screenshots and actual assembly recording](docs/media/phase-05-1/README.md).
 
-[View the earlier Phase05.2 matched environment/contact review](docs/media/phase-05-2/README.md). Current Phase05.3 local package: `.environment-local/phase-05-3/package/Windows/CinderRelay.exe`; launch without test flags for normal play. Three independent checkpoint/combat/restoration processes passed, all native/bootstrap exits0. Assembly p95=17.678ms at1080p/Epic versus17.057ms in the same-session unchanged Phase052 baseline; this does not meet a clean60FPS budget. First-use/recovery hitches and human motion-quality acceptance remain open. [Actual results and limitations](docs/PERFORMANCE_BUDGET.md#phase053-integrated-packaged-comparison-2026-11-01).
+[View the earlier Phase05.2 matched environment/contact review](docs/media/phase-05-2/README.md). Previous Phase05.3 local package: `.environment-local/phase-05-3/package/Windows/CinderRelay.exe`; launch without test flags for normal play. Three independent checkpoint/combat/restoration processes passed, all native/bootstrap exits0. Assembly p95=17.678ms at1080p/Epic versus17.057ms in the same-session unchanged Phase052 baseline; this does not meet a clean60FPS budget. First-use/recovery hitches and human motion-quality acceptance remain open. [Actual results and limitations](docs/PERFORMANCE_BUDGET.md#phase053-integrated-packaged-comparison-2026-11-01).
 
 - 游戏名：CINDER RELAY。
 - 仓库：[Leosteeeve/cinder-relay](https://github.com/Leosteeeve/cinder-relay)，当前 **Public**（2026-10-31 远端查询；Phase 01A 未修改可见性）。
@@ -21,7 +28,7 @@ Reload follow-up: corrected the authored right wrist frame and left feeding-comp
 
 打开 `D:\Projects\FPS Game\CinderRelay\CinderRelay.uproject`，默认地图为 `/Game/Generated/Phase01B/Maps/L_CH01_Persistent`。Play 下拉选择 **Standalone Game**：普通 PIE 的 Esc 默认会结束 Editor 试玩，Standalone 中 Esc 才作为游戏暂停键。原图 `/Game/Generated/Phase01A/Maps/L_CH01_Greybox` 保留为回滚参考，不由新地图加载。
 
-WASD 移动、鼠标看、Shift 跑、Ctrl 蹲、Space 跳、E 交互、Esc 暂停；**LMB 射击、RMB 瞄准、R 装填，流送重试改为 F5**。铁路场可交战、退回或沿北侧铁路线绕行；侦察兵死亡不作为主线门槛。工坊前有一份有限弹药。进入工坊，在左侧工作台拿青色电力模块，沿后门坡道下行，在橙色 Relay Nine 终端安装，再调查青色信号台；死亡和结束菜单均支持重新开始。
+WASD 移动、鼠标看、Shift 跑、Ctrl 蹲／冲刺滑铲、Space 跳、E 交互、Esc 暂停；**LMB 射击、RMB 瞄准、R 装填，流送重试改为 F5**。铁路场可交战、退回或沿北侧铁路线绕行；侦察兵死亡不作为主线门槛。工坊前有一份有限弹药。进入工坊，在左侧工作台拿青色电力模块，沿后门坡道下行，在橙色 Relay Nine 终端安装，再调查青色信号台；死亡和结束菜单均支持重新开始。
 
 Phase02 的精确生成、编译、打包和验收命令见 [WINDOWS_SETUP](docs/WINDOWS_SETUP.md#phase02-first-contact)，实际结果见 [MILESTONES](docs/MILESTONES.md)。不要运行 Phase01A generator 或 Phase01B migration 重建当前地图。
 

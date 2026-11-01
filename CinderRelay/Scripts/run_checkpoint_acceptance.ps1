@@ -3,7 +3,8 @@ param(
     [Parameter(Mandatory=$true)][string]$EvidenceRoot,
     [Parameter(Mandatory=$true)][ValidatePattern('^[A-Za-z0-9_]{1,40}$')][string]$TestPrefix,
     [switch]$LowOverhead,
-    [switch]$Fullscreen
+    [switch]$Fullscreen,
+    [switch]$SlideCheck
 )
 $ErrorActionPreference = 'Stop'
 $crPackage = (Resolve-Path -LiteralPath $PackageRoot).Path
@@ -28,6 +29,7 @@ foreach ($crRoute in 1..3) {
     if ($Fullscreen) { $crArgs = $crArgs.Replace('-windowed','-fullscreen').Replace('-ExecCmds="','-ExecCmds="r.SetRes 1920x1080f,') }
     if (!$LowOverhead) { $crArgs += " -trace=cpu,gpu,frame,bookmark,loadtime -tracefile=`"$crTrace`"" }
     if ($crRoute -eq 2) { $crArgs += ' -CRCheckpointLifecycle' }
+    if ($SlideCheck -and $crRoute -eq 1) { $crArgs += ' -CRSlideCheck' }
     $crStarted = [DateTime]::UtcNow
     $crRootProcess = Start-Process -FilePath $crExecutable -ArgumentList $crArgs -WindowStyle Hidden -PassThru
     $null = $crRootProcess.Handle # retain OS handle so exit code remains readable

@@ -1,5 +1,12 @@
 # CINDER RELAY — Asset Sources and Licensing
 
+## Phase05.4 original utility kit and feedback reuse
+
+No new external acquisition, marketplace pack, paid provider, audio sample or texture download. `ArtSource/Blender/Phase054/author_utility_kit.py` and `CR054_IndustrialUtilities.blend` contain original project-authored ToolWall, ServiceShelf, OverheadServices, ElectricalPanel, PneumaticSkid and TracksideService geometry.19,772 source triangles total, six native static-mesh imports with centimeter bounds checked. Source helper functions are reused from the original Phase052 script without executing that generator or changing its source. UE5.8.4 imported paths are `/Game/Generated/Phase054/Meshes/SM_CR054_*`.
+
+Materials reuse registered Phase052 originals and Phase051 CC0 rusty-metal textures; no new texture residency is requested. Existing original shot/hit/impact audio is reused at bounded gain/pitch. The small muzzle cone is an engine basic shape referencing the existing project lamp material; engine source/raw packs are not redistributed. Intentional project-owned `.blend`/`.uasset` derivatives use Git LFS; FBX intermediates, local media and packaged builds remain ignored. No separate standalone asset license is granted for original project additions. Actual import/placement evidence is in the Phase05.4 report; human art acceptance remains separate.
+
+
 ## Phase053 anatomical review kit
 
 - **Used:** [MakeHuman graphical data](https://github.com/makehumancommunity/makehuman/tree/a8bc2d54ff0ac92e78ff71431b1023eda42bf482), **CC0-1.0**, zero purchase cost. Base geometry, default rig/weights and six morphological targets only. Headers credit Data Collection AB, Joel Palmius, Jonas Hauquier and Manuel Bastioni/MakeHuman contributors. Attribution is not required by CC0; credits are retained. CC0 permits derivative/public-source redistribution. No MakeHuman AGPL application code is copied or executed; no external skin textures are used. Exact pinned URLs/hashes and license references: `CinderRelay/ArtSource/Blender/Phase053/{upstream-manifest.json,PROVENANCE.md}`.

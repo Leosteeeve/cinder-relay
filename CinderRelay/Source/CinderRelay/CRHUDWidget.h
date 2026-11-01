@@ -20,6 +20,7 @@ public:
 	void SetCheckpointStatus(const FText& Text);
 	void SetCombat(float Health, int32 Magazine, int32 Reserve, bool Reloading);
 	void ShotFeedback(bool Hit);
+	void HitFeedback(bool Killed);
 	void DamageFeedback();
 	void SetSubtitle(const FText& Text);
 	void SetAssembly(bool Active);
@@ -44,6 +45,8 @@ private:
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> CombatText;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> ReticleText;
 	UPROPERTY(Transient) TObjectPtr<UBorder> DamageBorder;
+	UPROPERTY(Transient) TObjectPtr<UTextBlock> HitText;
+	bool bKillFeedback=false;
 	float ShotPulse=0, HitPulse=0, HurtPulse=0;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> MenuTitle;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> MenuBody;

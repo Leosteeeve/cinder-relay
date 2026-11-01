@@ -6,6 +6,8 @@ class UCRWeaponData;
 UENUM(BlueprintType) enum class ECRWeaponState : uint8 { Ready, Cycling, Reloading, Disabled };
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FCRWeaponChanged);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FCRShotAccepted, FVector, Impact, bool, bHitTarget, bool, bBlockingHit);
+UENUM(BlueprintType) enum class ECRImpactKind : uint8 { Surface, EnemyHit, EnemyKill };
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FCRImpactConfirmed,FVector,Position,FVector,Normal,ECRImpactKind,Kind);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCRWeaponCue, FName, Cue);
 UCLASS(ClassGroup=(CinderRelay), meta=(BlueprintSpawnableComponent))
 class CINDERRELAY_API UCRWeaponComponent : public UActorComponent
@@ -22,6 +24,7 @@ public:
     UPROPERTY(EditAnywhere, Category="Debug") bool bDebugTraces = false;
     UPROPERTY(BlueprintAssignable) FCRWeaponChanged OnChanged;
     UPROPERTY(BlueprintAssignable) FCRShotAccepted OnShot;
+    UPROPERTY(BlueprintAssignable) FCRImpactConfirmed OnImpact;
     UPROPERTY(BlueprintAssignable) FCRWeaponCue OnCue;
     UFUNCTION(BlueprintCallable) bool TryFire();
     UFUNCTION(BlueprintCallable) bool TryReload();

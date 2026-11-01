@@ -14,6 +14,7 @@
 #include "Sound/SoundBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/StaticMesh.h"
+#include "Materials/MaterialInterface.h"
 #include "Engine/StaticMeshSocket.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
@@ -32,6 +33,8 @@ UCRWeaponViewComponent::UCRWeaponViewComponent()
     for(const TCHAR* Name:{TEXT("Secure"),TEXT("Seat")})
         HandlingSounds.Add(TSoftObjectPtr<USoundBase>(FSoftObjectPath(FString::Printf(TEXT("/Game/Generated/Phase052/Audio/S_CR052_%s.S_CR052_%s"),Name,Name))));
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Mesh(TEXT("/Engine/BasicShapes/Cube.Cube")); Cube = Mesh.Object;
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> Cone(TEXT("/Engine/BasicShapes/Cone.Cone")); FlashCone=Cone.Object;
+    static ConstructorHelpers::FObjectFinder<UMaterialInterface> Glow(TEXT("/Game/Generated/Phase05/Materials/MI_CR05_Light.MI_CR05_Light")); FlashMaterial=Glow.Object;
 }
 FTransform UCRWeaponViewComponent::SolveSightRoot(const FTransform& SightLocal,float EyeRelief)
 {
@@ -63,6 +66,8 @@ void UCRWeaponViewComponent::BeginPlay()
     Part(TEXT("RookSightRight"),FVector(-4,2.5,9),FVector(3,1,4),true);
     Part(TEXT("RookSightFront"),FVector(34,0,10),FVector(1.5,1,2),true);
     Flash=Part(TEXT("RookFlash"),FVector(44,0,2),FVector(10,5,5),true); Flash->SetVisibility(false);
+    Flash->SetStaticMesh(FlashCone); Flash->SetMaterial(0,FlashMaterial);
+    Flash->SetRelativeRotation(FRotator(90,0,0)); Flash->SetRelativeScale3D(FVector(.04f,.04f,.12f));
     ImpactMarker=Part(TEXT("RookImpact"),FVector::ZeroVector,FVector(3,3,3),true);
     ImpactMarker->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform); ImpactMarker->SetVisibility(false);
     FallbackParts.Remove(Flash); FallbackParts.Remove(ImpactMarker);
@@ -76,6 +81,7 @@ void UCRWeaponViewComponent::BeginPlay()
     if(auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>()) G->OnRestorationChanged.AddDynamic(this,&UCRWeaponViewComponent::RefreshAppearance);
     AppearanceLoad=UAssetManager::GetStreamableManager().RequestAsyncLoad({RookAppearance.ToSoftObjectPath(),SurveyAppearance.ToSoftObjectPath()},FStreamableDelegate::CreateUObject(this,&UCRWeaponViewComponent::AppearanceLoaded));
     if(!AppearanceLoad) AppearanceLoaded();
+    Weapon->OnImpact.AddDynamic(this,&UCRWeaponViewComponent::ConfirmedImpact);
     Weapon->OnShot.AddDynamic(this,&UCRWeaponViewComponent::Shot); Weapon->OnCue.AddDynamic(this,&UCRWeaponViewComponent::Cue);
     Weapon->OnChanged.AddDynamic(this,&UCRWeaponViewComponent::WeaponStateChanged);
     LoadHandling();
@@ -106,11 +112,13 @@ void UCRWeaponViewComponent::TickComponent(float Delta,ELevelTick TickType,FActo
     const auto* Chapter=GetWorld()->GetAuthGameMode<ACRGameMode>();
     const FTransform& SightRoot=Chapter && Chapter->HasSurveyUpgrade()?OpticAimRoot:IronAimRoot;
     FVector Target=Aim?(bSightAnchorsValid?SightRoot.GetLocation():D->AimLocation):(bSightAnchorsValid?ImportedHipLocation:D->HipLocation);
-    Target.Z-=Lower?9.f:SmoothCover*14.f; Target.X-=bHandlingReady?0.f:Recoil;
+    Target.Z-=Lower?9.f:SmoothCover*14.f; Target.X-=Recoil*(bHandlingReady?.55f:1.f);
+    if(P->IsSliding()) { Target.Z-=3.5f; Target.X-=2.f; }
     Target.Y+=FMath::Sin(GaitPhase)*Bob; Target.Z+=FMath::Cos(GaitPhase*2)*Bob*.65f;
     if(Aim && !bSightAnchorsValid && Chapter && Chapter->HasSurveyUpgrade()) Target.Z-=2.f; // Legacy rollback appearance only.
     ViewRoot->SetRelativeLocation(FMath::VInterpTo(ViewRoot->GetRelativeLocation(),Target,Delta,18));
-    FRotator Pose((Aim && bSightAnchorsValid) || bHandlingReady?0.f:Recoil,0,0);
+    FRotator Pose(Aim && bSightAnchorsValid?0.f:Recoil*(bHandlingReady?.35f:1.f),0,0);
+    if(P->IsSliding()) Pose.Pitch-=4.f;
     if(Aim && bSightAnchorsValid) Pose+=SightRoot.Rotator();
     Pose+=FRotator(-(Lower?25:SmoothCover*35),ReloadPose*12,ReloadPose*-28+(Lower?-10:0));
     ViewRoot->SetRelativeRotation(FMath::RInterpTo(ViewRoot->GetRelativeRotation(),Pose,Delta,18));
@@ -121,12 +129,21 @@ void UCRWeaponViewComponent::Shot(FVector Impact,bool Hit,bool BlockingHit)
 {
     if (!Weapon.IsValid() || !Weapon->Data) return;
     PlayHandling(0);
-    Recoil=Weapon->Data->RecoilDegrees; Flash->SetVisibility(true);
+    Recoil=FMath::Min(Weapon->Data->RecoilDegrees,2.f); Flash->SetVisibility(true);
     GetWorld()->GetTimerManager().SetTimer(FlashTimer,this,&UCRWeaponViewComponent::HideFlash,.055f,false);
-    ImpactMarker->SetWorldLocation(Impact); ImpactMarker->SetVisibility(BlockingHit);
-    if(BlockingHit) GetWorld()->GetTimerManager().SetTimer(ImpactTimer,this,&UCRWeaponViewComponent::HideImpact,.18f,false);
-    UGameplayStatics::PlaySound2D(this,Weapon->Data->ShotSound,.45f);
-    if(BlockingHit) UGameplayStatics::PlaySound2D(this,Hit?Weapon->Data->HitSound:Weapon->Data->ImpactSound,.3f);
+    // Confirmed impact classification follows this accepted-shot event.
+    UGameplayStatics::PlaySound2D(this,Weapon->Data->ShotSound,.55f);
+
+}
+void UCRWeaponViewComponent::ConfirmedImpact(FVector Position,FVector Normal,ECRImpactKind Kind)
+{
+    if(!Weapon.IsValid() || !Weapon->Data || bPresentationHidden) return;
+    const bool Enemy=Kind!=ECRImpactKind::Surface;
+    ImpactMarker->SetWorldLocation(Position+Normal*1.5f); ImpactMarker->SetWorldRotation(Normal.Rotation());
+    ImpactMarker->SetWorldScale3D(FVector(.008f,.045f,.018f)); ImpactMarker->SetVisibility(!Enemy);
+    GetWorld()->GetTimerManager().SetTimer(ImpactTimer,this,&UCRWeaponViewComponent::HideImpact,.085f,false);
+    if(Enemy) UGameplayStatics::PlaySound2D(this,Weapon->Data->HitSound,Kind==ECRImpactKind::EnemyKill?.4f:.26f,Kind==ECRImpactKind::EnemyKill?.8f:1.1f);
+    else UGameplayStatics::PlaySoundAtLocation(this,Weapon->Data->ImpactSound,Position,.18f);
 }
 void UCRWeaponViewComponent::Cue(FName Name)
 {
@@ -147,7 +164,7 @@ void UCRWeaponViewComponent::EndPlay(const EEndPlayReason::Type Reason)
     if(AppearanceLoad) { AppearanceLoad->CancelHandle(); AppearanceLoad.Reset(); }
     if(auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>()) G->OnRestorationChanged.RemoveDynamic(this,&UCRWeaponViewComponent::RefreshAppearance);
     if (GetWorld()) { GetWorld()->GetTimerManager().ClearTimer(FlashTimer); GetWorld()->GetTimerManager().ClearTimer(ImpactTimer); }
-    if (Weapon.IsValid()) { Weapon->OnShot.RemoveDynamic(this,&UCRWeaponViewComponent::Shot); Weapon->OnCue.RemoveDynamic(this,&UCRWeaponViewComponent::Cue); Weapon->OnChanged.RemoveDynamic(this,&UCRWeaponViewComponent::WeaponStateChanged); }
+    if (Weapon.IsValid()) { Weapon->OnImpact.RemoveDynamic(this,&UCRWeaponViewComponent::ConfirmedImpact); Weapon->OnShot.RemoveDynamic(this,&UCRWeaponViewComponent::Shot); Weapon->OnCue.RemoveDynamic(this,&UCRWeaponViewComponent::Cue); Weapon->OnChanged.RemoveDynamic(this,&UCRWeaponViewComponent::WeaponStateChanged); }
     if (auto* Health=GetOwner()->FindComponentByClass<UCRHealthComponent>()) Health->OnHealthChanged.RemoveDynamic(this,&UCRWeaponViewComponent::Hurt);
     Super::EndPlay(Reason);
 }

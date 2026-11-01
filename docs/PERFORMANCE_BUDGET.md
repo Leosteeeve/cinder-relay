@@ -1,5 +1,36 @@
 # CINDER RELAY — Performance Budget
 
+## Phase05.4 measured integration sample, 2026-11-01
+
+Paired unchanged Phase053 and candidate Phase054 packages ran once each through three independent native processes. RTX5070 Laptop8GB,32GB RAM;1920x1080, Epic quality3, ScreenPercentage100, DynamicRes0, VSync0, MaxFPS0. No frame generation, recording, requested allocation trace, Editor or Blender during the primary sample. Enhanced Input route instrumentation, previous-frame engine counters,1Hz process sampler and one final receipt screenshot remain overhead. Desktop activity, temperature and power were not controlled; caches were not cleared. Lower observed numbers are not proof of an optimization caused by this patch.
+
+| Sample | Frames | Before p95 ms | After p50 / p95 / p99 ms | GT / RT / GPU p95 ms | >50ms |
+|---|---:|---:|---|---|---:|
+| Combat | 239 | 17.138 | 13.105 / 15.299 / 16.260 | 2.354 / 15.301 / 13.812 | 0 |
+| Yard traversal | 436 | 18.534 | 14.051 / 17.804 / 19.109 | 2.897 / 17.805 / 16.468 | 0 |
+| Slide and hip fire | 60 | n/a | 12.373 / 20.423 / 23.702 | 8.643 / 20.797 / 19.011 | 0 |
+| Reload after slide | 208 | n/a | 12.080 / 15.835 / 17.181 | 1.996 / 15.800 / 14.487 | 0 |
+| Workshop assembly | 1324 | 23.382 | 17.384 / 18.737 / 19.524 | 2.124 / 18.736 / 17.132 | 0 |
+| Workshop movement | 1337 | 21.982 | 16.156 / 20.028 / 28.169 | 6.313 / 19.570 / 16.880 | 0 |
+| Bunker | 2405 | 23.828 | 15.596 / 17.651 / 21.047 | 3.696 / 17.614 / 15.918 | 1 |
+| Streaming traversal | 2716 | 20.613 | 15.426 / 18.814 / 24.575 | 4.601 / 18.779 / 16.906 | 3 |
+
+The slide sample contains only60 frames. Workshop assembly p95 remains2.070ms above16.667ms and slide p95 exceeds it by3.756ms; this is not a stable60FPS result. RT/GPU intervals are observations, not additive costs or a causal diagnosis. Source code changes did not reduce global quality.
+
+Five distinct >50ms frames in the entire candidate route CSV:79.120ms during initial CP00 readiness,60.123ms in low-speed crouch setup before the actual slide, then57.673/59.864/51.080ms during route3 walking/backtracking. None occurred inside the measured slide/reload/assembly subsets. The latter walking samples show RT58.789/59.964/50.648ms; startup and rendering/travel remain investigation candidates, not established causes. No speculative optimization or repeated cache clearing was performed.
+
+| Process | Peak working set bytes | Peak private commit bytes | Safe-control reconstruction |
+|---|---:|---:|---|
+| Route1 |1,951,567,872|4,368,359,424|47.021ms,1 event|
+| Route2 |1,956,782,080|4,446,035,968|p50 44.247/max99.119ms,7 events|
+| Route3 |1,915,146,240|4,414,570,496|p50 44.821/max78.937ms,6 events|
+
+Successful save callback maxima:17.471/15.228/15.443ms by route. Safe-control timings measure in-engine bootstrap/reconstruction, not OS process launch. Native A/B/C unload counts: route1=0/0/0, route2=11/0/6, route3=1/5/1. No leak or VRAM claim follows from these small process-memory samples.
+
+Asset increment: six original meshes,19,772 source triangles total,40 zone-owned decorative actors, two bounded nonshadow local lights and existing-material grime decals. No new texture files or render features. Existing texture residency can still change with added visibility; incremental GPU memory was not isolated. All gameplay collision/navigation and338 old actors remained unchanged.
+
+The primary sample precedes a final noncolliding support-position correction (ramp slope, hanger contact and two bunker placements), with identical mesh/material/actor counts and gameplay code. The final content receives a focused cook and recorded route rather than silently replacing or repeating the entire benchmark. Final video is separate, includes capture overhead and is not performance evidence. Raw receipts: `.environment-local/phase-05-4/{baseline-performance,packaged-acceptance}/SavedPhase04`, `performance-comparison.json`, `performance-table.md`. `Scripts/summarize_combat_environment.py` reproduces the comparison from those sealed CSVs.
+
 ## Phase053 integrated packaged comparison, 2026-11-01
 
 One unchanged Phase052 baseline and one integrated Phase053 three-process suite used the same1080p/Epic/native input routes, ScreenPercentage100, DynamicRes0, VSync0 and MaxFPS0. No frame generation, allocation trace, continuous screenshot capture, Editor or Blender ran in the primary samples. Input automation, lifecycle fault checks, one final receipt screenshot and1Hz process-memory sampling remain overhead. OS/driver caches were not cleared; thermal/desktop conditions were not controlled. Frame percentiles are median/nearest-rank, counters are not additive, and held startup/menu/controlled map travel are excluded from CSV. This is a bounded engineering sample, not a guaranteed60FPS benchmark.
