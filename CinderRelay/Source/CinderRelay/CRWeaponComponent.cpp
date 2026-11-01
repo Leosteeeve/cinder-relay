@@ -97,7 +97,8 @@ void UCRWeaponComponent::CompleteReload()
     if (State != ECRWeaponState::Reloading || !Data) return;
     const int32 Transfer = FMath::Min(FMath::Max(0,Data->MagazineCapacity-Magazine),Reserve);
     Magazine += Transfer; Reserve -= Transfer; State = ECRWeaponState::Ready;
-    OnChanged.Broadcast(); UE_LOG(LogTemp,Display,TEXT("CR_RELOAD ammo=%d reserve=%d"),Magazine,Reserve);
+    OnChanged.Broadcast(); OnCue.Broadcast(TEXT("ReloadComplete"));
+    UE_LOG(LogTemp,Display,TEXT("CR_RELOAD ammo=%d reserve=%d"),Magazine,Reserve);
 }
 void UCRWeaponComponent::SetAiming(bool bAim) { const auto* P=Cast<ACRCharacter>(GetOwner()); bAiming = bAim && CanUse() && !bSprinting && (!P || !P->IsSliding()) && State != ECRWeaponState::Reloading; OnChanged.Broadcast(); }
 void UCRWeaponComponent::SetSprinting(bool bSprint) { bSprinting = bSprint; if (bSprint) bAiming = false; OnChanged.Broadcast(); }

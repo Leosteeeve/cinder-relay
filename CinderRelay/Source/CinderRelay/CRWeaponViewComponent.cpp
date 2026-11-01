@@ -4,6 +4,7 @@
 #include "CRHealthComponent.h"
 #include "CRCharacter.h"
 #include "CRGameMode.h"
+#include "CRAudioSettingsSubsystem.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
 #include "Camera/CameraComponent.h"
@@ -132,7 +133,9 @@ void UCRWeaponViewComponent::Shot(FVector Impact,bool Hit,bool BlockingHit)
     Recoil=FMath::Min(Weapon->Data->RecoilDegrees,2.f); Flash->SetVisibility(true);
     GetWorld()->GetTimerManager().SetTimer(FlashTimer,this,&UCRWeaponViewComponent::HideFlash,.055f,false);
     // Confirmed impact classification follows this accepted-shot event.
-    UGameplayStatics::PlaySound2D(this,Weapon->Data->ShotSound,.55f);
+    if(auto* Audio=UCRAudioSettingsSubsystem::Get(this);Audio && Audio->IsReady())
+        Audio->PlayEvent(TEXT("Shot"),this,GetOwner()->GetActorLocation(),false);
+    else UGameplayStatics::PlaySound2D(this,Weapon->Data->ShotSound,.55f,1.f,0.f,nullptr,nullptr,false);
 
 }
 void UCRWeaponViewComponent::ConfirmedImpact(FVector Position,FVector Normal,ECRImpactKind Kind)
@@ -142,18 +145,29 @@ void UCRWeaponViewComponent::ConfirmedImpact(FVector Position,FVector Normal,ECR
     ImpactMarker->SetWorldLocation(Position+Normal*1.5f); ImpactMarker->SetWorldRotation(Normal.Rotation());
     ImpactMarker->SetWorldScale3D(FVector(.008f,.045f,.018f)); ImpactMarker->SetVisibility(!Enemy);
     GetWorld()->GetTimerManager().SetTimer(ImpactTimer,this,&UCRWeaponViewComponent::HideImpact,.085f,false);
-    if(Enemy) UGameplayStatics::PlaySound2D(this,Weapon->Data->HitSound,Kind==ECRImpactKind::EnemyKill?.4f:.26f,Kind==ECRImpactKind::EnemyKill?.8f:1.1f);
+    if(auto* Audio=UCRAudioSettingsSubsystem::Get(this);Audio && Audio->IsReady())
+        Audio->PlayEvent(Enemy?(Kind==ECRImpactKind::EnemyKill?TEXT("Kill"):TEXT("Hit")):TEXT("Impact"),this,Position,!Enemy);
+    else if(Enemy) UGameplayStatics::PlaySound2D(this,Weapon->Data->HitSound,Kind==ECRImpactKind::EnemyKill?.4f:.26f,Kind==ECRImpactKind::EnemyKill?.8f:1.1f,0.f,nullptr,nullptr,false);
     else UGameplayStatics::PlaySoundAtLocation(this,Weapon->Data->ImpactSound,Position,.18f);
 }
 void UCRWeaponViewComponent::Cue(FName Name)
 {
     if(Name==TEXT("Reload")) PlayHandling(1);
     else if(Name==TEXT("Dry")) PlayHandling(2);
-    if (Weapon.IsValid() && Weapon->Data) UGameplayStatics::PlaySound2D(this,Name==TEXT("Reload")?Weapon->Data->ReloadSound:Weapon->Data->DrySound,.35f);
+    if(auto* Audio=UCRAudioSettingsSubsystem::Get(this);Audio && Audio->IsReady())
+    {
+        if(Name==TEXT("Reload") || Name==TEXT("Dry") || Name==TEXT("ReloadComplete"))
+            Audio->PlayEvent(Name==TEXT("Reload")?FName(TEXT("ReloadStart")):Name,this,GetOwner()->GetActorLocation(),false);
+    }
+    else if(Weapon.IsValid() && Weapon->Data && (Name==TEXT("Reload") || Name==TEXT("Dry")))
+        UGameplayStatics::PlaySound2D(this,Name==TEXT("Reload")?Weapon->Data->ReloadSound:Weapon->Data->DrySound,.35f,1.f,0.f,nullptr,nullptr,false);
 }
 void UCRWeaponViewComponent::Hurt(float,float Damage)
 {
-    if (Damage>0 && Weapon.IsValid() && Weapon->Data) UGameplayStatics::PlaySound2D(this,Weapon->Data->HurtSound,.4f);
+    if(Damage<=0 || !Weapon.IsValid() || !Weapon->Data) return;
+    if(auto* Audio=UCRAudioSettingsSubsystem::Get(this);Audio && Audio->IsReady())
+        Audio->PlayEvent(TEXT("Damage"),this,GetOwner()->GetActorLocation(),false);
+    else UGameplayStatics::PlaySound2D(this,Weapon->Data->HurtSound,.4f,1.f,0.f,nullptr,nullptr,false);
 }
 void UCRWeaponViewComponent::HideFlash() { if (Flash) Flash->SetVisibility(false); }
 void UCRWeaponViewComponent::HideImpact() { if (ImpactMarker) ImpactMarker->SetVisibility(false); }

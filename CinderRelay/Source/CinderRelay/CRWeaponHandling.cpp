@@ -13,6 +13,7 @@
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundBase.h"
+#include "CRAudioSettingsSubsystem.h"
 
 bool UCRWeaponViewComponent::ConsumeShotCue(int32 Expected,int32 Received,bool& Spent)
 {
@@ -108,8 +109,10 @@ void UCRWeaponViewComponent::HandleAnimationCue(USkeletalMeshComponent* Mesh,UAn
         if(Index!=INDEX_NONE && !(PlayedCueMask&(1<<Index)))
         {
             PlayedCueMask|=1<<Index;
-            if(HandlingSounds.IsValidIndex(Index) && HandlingSounds[Index].Get())
-                UGameplayStatics::PlaySound2D(this,HandlingSounds[Index].Get(),.24f);
+            if(auto* Audio=UCRAudioSettingsSubsystem::Get(this);Audio && Audio->IsReady())
+                Audio->PlayEvent(Index==0?TEXT("FeedOut"):TEXT("FeedIn"),this,GetOwner()->GetActorLocation(),false);
+            else if(HandlingSounds.IsValidIndex(Index) && HandlingSounds[Index].Get())
+                UGameplayStatics::PlaySound2D(this,HandlingSounds[Index].Get(),.24f,1.f,0.f,nullptr,nullptr,false);
         }
         return;
     }
@@ -118,6 +121,13 @@ void UCRWeaponViewComponent::HandleAnimationCue(USkeletalMeshComponent* Mesh,UAn
 #if !UE_BUILD_SHIPPING
     if(bSuppressNextCase) { bSuppressNextCase=false;return; }
 #endif
+    // Existing validated marker owns both cosmetic sounds; no gameplay reward.
+    // Cycle and case share this authored timestamp rather than inventing a timer.
+    if(auto* Audio=UCRAudioSettingsSubsystem::Get(this);Audio && Audio->IsReady())
+    {
+        Audio->PlayEvent(TEXT("Cycle"),this,GetOwner()->GetActorLocation(),false);
+        Audio->PlayEvent(TEXT("Case"),this,GetOwner()->GetActorLocation(),false);
+    }
     const int32 Index=NextCase++%CasePool.Num();auto& Motion=CaseMotions[Index];
     Motion.Age=0;Motion.Origin=ImportedRook->GetComponentTransform().TransformPosition(FVector(-8,4,4));
     Motion.Velocity=ImportedRook->GetComponentTransform().TransformVectorNoScale(FVector(-35,130,65));

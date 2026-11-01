@@ -13,7 +13,7 @@ public class CinderRelay : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "LevelSequence", "MovieScene", "AnimGraphRuntime" });
 		// Read native frame counters only in the opt-in Development acceptance runner.
 		if (Target.Configuration != UnrealTargetConfiguration.Shipping)
-			PrivateDependencyModuleNames.AddRange(new string[] { "RenderCore", "RHI" });
+			PrivateDependencyModuleNames.AddRange(new string[] { "RenderCore", "RHI", "AudioMixer" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

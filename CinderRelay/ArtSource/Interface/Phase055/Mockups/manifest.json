@@ -1,0 +1,48 @@
+{
+  "purpose": "Original UI layout mockups, not Unreal captures",
+  "resolutions": [
+    [
+      1920,
+      1080
+    ],
+    [
+      2560,
+      1600
+    ]
+  ],
+  "source": "render_mockups.py",
+  "fonts": "../Fonts (SIL OFL 1.1)",
+  "background": "Original procedural graphic blockout; no borrowed game pixels",
+  "files": [
+    {
+      "name": "MainMenu_1920x1080.png",
+      "sha256": "59e0e594e1dd31572d7cd65360b317707a831387c1e32ce412c843d055a32424",
+      "bytes": 74015
+    },
+    {
+      "name": "GameplayHUD_1920x1080.png",
+      "sha256": "1508039c0068f4727cf4ed5296f30a185fd0a548e8aa4fe8506fb53f32bc0b2f",
+      "bytes": 60355
+    },
+    {
+      "name": "EliasFieldPack_1920x1080.png",
+      "sha256": "c4c4ad62b70684cb46413202fe58cbd79ceb1f6d48d448dc8d239018d0490ffc",
+      "bytes": 85556
+    },
+    {
+      "name": "MainMenu_2560x1600.png",
+      "sha256": "ccedaaec4070dba2f88a993232f173555535359a9faf5e2bc844783da3fffdb7",
+      "bytes": 102027
+    },
+    {
+      "name": "GameplayHUD_2560x1600.png",
+      "sha256": "7a458187923c0929ea6b23ade33011b92def96578d0e90ed434eb4d55646076d",
+      "bytes": 85636
+    },
+    {
+      "name": "EliasFieldPack_2560x1600.png",
+      "sha256": "f49f1f70a97b340e4908ea6242b35c1823f74d19207ce8fd156703e3c07e296d",
+      "bytes": 122700
+    }
+  ]
+}

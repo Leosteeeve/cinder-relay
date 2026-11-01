@@ -1,8 +1,14 @@
 # CINDER RELAY
 
+## Phase05.5 identity, interface, audio and Field Pack
+
+Active branch: `phase-05-5-ui-audio-inventory`, based on Phase054 merge `09eaa5f`. The Industrial Field Interface adds an original Blender title plate, licensed Barlow typography, a real Designer-editable UMG root, separate health/weapon/objective/subtitle regions, Settings/Help/Credits and **I: Elias's Field Pack**. The pack reads existing chapter and weapon state, pauses reload/world time, and clears held aim/sprint/slide on opening. Escape closes it; Tab retains workbench/ending Skip.
+
+Audio uses project-original effects, native SoundClasses/concurrency/attenuation and independent volume preferences. No new chapter-save schema, item economy, music, voice acting or Phase06 systems. [Implementation and validation ledger](docs/INTERFACE_AUDIO_05_5.md), [UI research](docs/PHASE055_UI_RESEARCH.md), [art provenance](docs/PHASE055_ART_PROVENANCE.md), [audio sources](docs/PHASE055_AUDIO_RESEARCH.md). One Windows Development package, three independent checkpoint processes and dual-resolution UI/persistence processes passed with exit0. The local playable package is `.environment-local/phase-05-5/package/Windows/CinderRelay.exe`. Performance is **not accepted**: frame-time tails and variable paired results remain; see [measurements](docs/PERFORMANCE_BUDGET.md#phase055-packaged-observations-2026-11-01). Human visual, gameplay-feel and stereo-headphone acceptance remain open.
+
 ## Phase05.4 combat, slide and industrial spaces
 
-Active branch: `codex/phase-05-4-combat-slide-environment`, based on merged PR9. See [design contract and evidence](docs/COMBAT_ENVIRONMENT_05_4.md). Sprint with Shift, then press Ctrl above430cm/s for a0.75s grounded slide. Hip fire works; ADS is unavailable during slide. Hold Ctrl to finish crouched, release to request standing; native ceiling checks still apply. Reload ends a valid active slide before the unchanged2.4s transfer.
+Previous phase branch: `codex/phase-05-4-combat-slide-environment`, based on merged PR9. See [design contract and evidence](docs/COMBAT_ENVIRONMENT_05_4.md). Sprint with Shift, then press Ctrl above430cm/s for a0.75s grounded slide. Hip fire works; ADS is unavailable during slide. Hold Ctrl to finish crouched, release to request standing; native ceiling checks still apply. Reload ends a valid active slide before the unchanged2.4s transfer.
 
 The accepted ROOK-5/arm assets, Survey Optic, workbench and schema1 saves remain in use. Added original utility meshes belong to the existing three sublevels; the persistent map and rollback map are unchanged. The current Windows Development package is `.environment-local/phase-05-4/package/Windows/CinderRelay.exe` (launch without test flags). Three independent packaged checkpoint processes and six focused slide edge fixtures passed. Human feel/art acceptance remains pending; results and limits are in the phase document.
 

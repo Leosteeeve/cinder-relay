@@ -14,6 +14,11 @@ class CINDERRELAY_API ACRPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 public:
+	ACRPlayerController();
+	UFUNCTION(BlueprintCallable) void ToggleFieldPack();
+	bool CanOpenFieldPack() const;
+	bool IsFieldPackOpen() const { return bFieldPackOpen; }
+	UCRHUDWidget* GetInterface() const { return HUD; }
 	UFUNCTION(BlueprintCallable) void TogglePrototypePause();
 	UFUNCTION(BlueprintCallable) void ResumePrototype();
 	UFUNCTION(BlueprintCallable) void RestartPrototype();
@@ -38,12 +43,17 @@ public:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="UI") bool bPrototypePaused = false;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="UI") bool bPrototypeEnded = false;
 protected:
+	UPROPERTY(EditDefaultsOnly,Category="UI") TSubclassOf<UCRHUDWidget> HUDClass;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual ASpectatorPawn* SpawnSpectatorPawn() override;
 private:
+	UFUNCTION() void RestorationChanged();
+	UFUNCTION() void FieldItemsChanged();
+	void CloseFieldPackForTravel();
+	bool bFieldPackOpen=false, bLastOptic=false, bLastUpgrade=false;
 	void BindPawn();
 	void ApplyPause(bool bPause);
 	void SaveAvailabilityChanged();

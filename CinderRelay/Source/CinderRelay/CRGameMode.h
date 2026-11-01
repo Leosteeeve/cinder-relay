@@ -25,6 +25,7 @@ public:
 	ACRGameMode();
 	UPROPERTY(BlueprintAssignable) FCRObjectiveChanged OnObjectiveChanged;
 	UPROPERTY(BlueprintAssignable) FCRRestorationChanged OnRestorationChanged;
+	UPROPERTY(BlueprintAssignable) FCRRestorationChanged OnFieldItemsChanged;
 	UFUNCTION(BlueprintPure) bool HasSurveyOptic() const { return bSurveyOptic; }
 	UFUNCTION(BlueprintPure) bool HasSurveyUpgrade() const { return bSurveyUpgrade; }
 	bool TryCollectSurveyOptic(FName SourceId);
@@ -46,7 +47,7 @@ public:
 	UFUNCTION(BlueprintPure) bool IsEnemyDefeated(FName Id) const { return DefeatedEnemies.Contains(Id); }
 	UFUNCTION(BlueprintCallable) void RecordEnemyDefeated(FName Id) { if(!Id.IsNone()) DefeatedEnemies.Add(Id); }
 	UFUNCTION(BlueprintPure) bool IsPickupCollected(FName Id) const { return CollectedPickups.Contains(Id); }
-	UFUNCTION(BlueprintCallable) void RecordPickupCollected(FName Id) { if(!Id.IsNone()) CollectedPickups.Add(Id); }
+	UFUNCTION(BlueprintCallable) void RecordPickupCollected(FName Id) { if(!Id.IsNone()&&!CollectedPickups.Contains(Id)) { CollectedPickups.Add(Id); OnFieldItemsChanged.Broadcast(); } }
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Chapter|Combat") TSet<FName> DefeatedEnemies;
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Chapter|Combat") TSet<FName> CollectedPickups;
 protected:

@@ -16,6 +16,10 @@
 #include "Engine/World.h"
 #include "Engine/LocalPlayer.h"
 #include "Kismet/GameplayStatics.h"
+#include "CRAudioSettingsSubsystem.h"
+#include "Components/AudioComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "Materials/MaterialInterface.h"
 
 ACRCharacter::ACRCharacter(const FObjectInitializer& ObjectInitializer)
  : Super(ObjectInitializer.SetDefaultSubobjectClass<UCRCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
@@ -79,6 +83,7 @@ void ACRCharacter::InstallInputContext()
 
 void ACRCharacter::EndPlay(const EEndPlayReason::Type Reason)
 {
+	StopSlideAudio(false);
 	Weapon->OnChanged.RemoveDynamic(this, &ACRCharacter::MovementWeaponChanged);
 	GetWorldTimerManager().ClearTimer(PromptTimer);
 	if (InputSubsystem.IsValid() && MappingContext) InputSubsystem->RemoveMappingContext(MappingContext);
@@ -146,11 +151,11 @@ void ACRCharacter::StartCrouch()
 {
     if(Health->IsDead() || Weapon->IsPresentationLocked()) return;
     bCrouchHeld=true;
-    if(auto* M=Cast<UCRCharacterMovementComponent>(GetCharacterMovement())) M->TryStartSlide();
+    if(auto* M=Cast<UCRCharacterMovementComponent>(GetCharacterMovement());M && M->TryStartSlide()) StartSlideAudio();
     Crouch(); RefreshSprint();
 }
 void ACRCharacter::StopCrouch() { bCrouchHeld=false; if(!IsSliding()) UnCrouch(); RefreshSprint(); }
-void ACRCharacter::SlideEnded() { if(!bCrouchHeld) UnCrouch(); RefreshSprint(); }
+void ACRCharacter::SlideEnded() { StopSlideAudio(true); if(!bCrouchHeld) UnCrouch(); RefreshSprint(); }
 void ACRCharacter::CancelSlide(FName Reason) { if(auto* M=Cast<UCRCharacterMovementComponent>(GetCharacterMovement())) M->EndSlide(Reason); }
 void ACRCharacter::MovementWeaponChanged()
 {
@@ -209,7 +214,19 @@ void ACRCharacter::UpdatePrompt()
 	if(!Health->IsDead() && !Weapon->IsPresentationLocked() && GetCharacterMovement()->IsMovingOnGround() && !IsSliding() && Travel<150)
 	{
 		FootDistance+=Travel;
-		if(FootDistance>145) { FootDistance=0; UGameplayStatics::PlaySoundAtLocation(this,Here.X<1600?YardFootstep:InteriorFootstep,Here,.12f,bIsCrouched?.85f:1.f); }
+		if(FootDistance>145)
+		{
+			FootDistance=0;
+			if(auto* Audio=UCRAudioSettingsSubsystem::Get(this);Audio && Audio->IsReady())
+			{
+				const FHitResult& Floor=GetCharacterMovement()->CurrentFloor.HitResult;
+				FString SurfaceName=GetNameSafe(Floor.GetComponent())+TEXT(" ")+GetNameSafe(Floor.GetActor());
+				if(const UPrimitiveComponent* Component=Floor.GetComponent()) SurfaceName+=TEXT(" ")+GetNameSafe(Component->GetMaterial(0));
+				const FName Surface=UCRAudioSettingsSubsystem::ChooseFootSurface(Floor.PhysMaterial.IsValid()?Floor.PhysMaterial->GetFName():NAME_None,FName(*SurfaceName),Audio->GetEnvironmentZone(Here));
+				Audio->PlayEvent(Surface,this,Here,true);
+			}
+			else UGameplayStatics::PlaySoundAtLocation(this,Here.X<1600?YardFootstep:InteriorFootstep,Here,.12f,bIsCrouched?.85f:1.f);
+		}
 	}
 	else FootDistance=0;
 	AActor* Target = TraceTarget();
@@ -219,6 +236,28 @@ void ACRCharacter::UpdatePrompt()
 		CurrentPrompt = Next;
 		OnPromptChanged.Broadcast(CurrentPrompt);
 	}
+}
+
+void ACRCharacter::StartSlideAudio()
+{
+	StopSlideAudio(false);
+	if(auto* Audio=UCRAudioSettingsSubsystem::Get(this);Audio && Audio->IsReady())
+	{
+		Audio->PlayEvent(TEXT("SlideStart"),this,GetActorLocation(),false);
+		if(USoundBase* Sound=Audio->GetResidentSound(TEXT("SlideLoop")))
+		{
+			SlideAudio=UGameplayStatics::SpawnSoundAttached(Sound,GetRootComponent(),NAME_None,FVector::ZeroVector,EAttachLocation::KeepRelativeOffset,true,1.f,1.f,0.f,nullptr,nullptr,false);
+			if(SlideAudio) SlideAudio->bIsUISound=false;
+		}
+	}
+}
+void ACRCharacter::StopSlideAudio(bool PlayEnd)
+{
+	const bool WasActive=IsValid(SlideAudio);
+	if(IsValid(SlideAudio)) {SlideAudio->Stop();SlideAudio->DestroyComponent();}
+	SlideAudio=nullptr;
+	if(PlayEnd && WasActive && Health && !Health->IsDead())
+		if(auto* Audio=UCRAudioSettingsSubsystem::Get(this)) Audio->PlayEvent(TEXT("SlideEnd"),this,GetActorLocation(),false);
 }
 
 void ACRCharacter::TryInteract()
