@@ -380,3 +380,45 @@ $crEvidence = Join-Path 'D:\Projects\FPS Game\.environment-local\phase-05' $crRu
 `-LowOverhead` omits requested Insights tracing and preserves1080p/Epic/native100% rendering, CSV counters and1Hz memory; default Phase04 tracing remains available. The three-process route uses fresh CR04_TEST slots, never player saves. Native/bootstrap exit, AutomationTool exit and gameplay receipts must be reported separately. Do not clear caches, force GC at transitions or repackage to improve statistics. The actual Phase05 results and unresolved limits are in MILESTONES/PERFORMANCE_BUDGET.
 
 Phase05 interactive follow-up: the owner dismissed the Windows firewall prompt, then actual packaged menus/HUD were checked at1920x1080 windowed and2560x1600 fullscreen on the150%-scaled desktop. Native console `r.SetRes 2560x1600f` changed only the running display mode; no gameplay state was assigned through console. RHI logs confirm the2560x1600 backbuffer. Real New Game, Pause, Continue toCP02, Restart and Exit Game succeeded; visible process exit0. Bottom control/health/ammo layout and menus fit both modes; opening subtitles fit1600p. See MILESTONES for screenshot paths and remaining variants. No rebuild/repackage was needed for this check.
+## Phase05.1 asset quality
+
+Use the existing project and persistent map. The local final package is `.environment-local/phase-05-1/package/Windows/CinderRelay.exe`. Launch without Development test flags for owner play:
+
+```powershell
+Set-Location 'D:\Projects\FPS Game'
+Start-Process -FilePath '.\.environment-local\phase-05-1\package\Windows\CinderRelay.exe' -ArgumentList '-ResX=1920 -ResY=1080 -fullscreen'
+```
+
+Editable source files in `CinderRelay/ArtSource/Blender/Phase051/`: `CR051_Rook5.blend`, `CR051_IndustrialDepth.blend`, `CR051_RookRestoration.blend`. Native imports live under `/Game/Generated/Phase051/`. The workbench uses `Animation/SK_CR051_Restoration`, `Animation/AN_CR051_RookRestoration`, and `Sequences/LS_CR051_RookRestoration` (22s). Review it by collecting either Survey Optic and interacting with the Workshop calibration bench; Tab skips, Esc pauses. The old Phase03/05 assets remain intact.
+
+Source/export scripts use real Blender4.5.11 APIs. Do not run all authoring steps for a minor pose or material change. `create_rook.py` authors the hero source; `create_depth.py` authors the decorative kit; `rework_restoration.py` creates the derivative rig; `tune_quality_contact.py` edits its contact poses without rebuilding the kit. FBX export intermediates remain in ignored `.environment-local/phase-05-1/exports/`.
+
+Example native import and read-only validation (close other Editors for this project first):
+
+```powershell
+$crEditor = 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
+$crProject = 'D:\Projects\FPS Game\CinderRelay\CinderRelay.uproject'
+# Import only when corresponding FBX files have intentionally changed.
+& $crEditor $crProject -unattended '-ExecutePythonScript=D:\Projects\FPS Game\CinderRelay\Scripts\import_quality.py'
+& $crEditor $crProject -unattended '-ExecutePythonScript=D:\Projects\FPS Game\CinderRelay\Scripts\import_quality_animation.py' -CR051ReimportAnimation
+# This audit compares with this machine's ignored pre-mutation receipt.
+& $crEditor $crProject -unattended '-ExecutePythonScript=D:\Projects\FPS Game\CinderRelay\Scripts\validate_quality.py'
+```
+
+`place_quality.py` owns only actors tagged `CR_Phase051_Generated`; it checks the original actor inventory before saving. `import_quality_animation.py -CR051Activate` intentionally switches the existing bench to the new soft references; old source/sequence assets are not overwritten. Do not invoke legacy greybox/migration generators. `review_quality_animation.py` and `audit_quality.py -CR051After` require the rendered `UnrealEditor.exe`, not NullRHI; they capture actual native frames and quit without saving temporary review poses/cameras. `-CR051PerimeterPair` compares new decoration hidden/visible from one fixed camera.
+
+Focused native verification after C++ changes:
+
+```powershell
+& 'D:\Engines\Unreal\UE_5.8\Engine\Build\BatchFiles\Build.bat' CinderRelayEditor Win64 Development "-Project=$crProject" -WaitMutex -NoHotReloadFromIDE
+& $crEditor $crProject -unattended -nullrhi '-ExecCmds=Automation RunTests CinderRelay.Presentation' '-TestExit=Automation Test Queue Empty'
+```
+
+Final Windows package and bounded cross-process acceptance:
+
+```powershell
+& 'D:\Engines\Unreal\UE_5.8\Engine\Build\BatchFiles\RunUAT.bat' BuildCookRun "-project=$crProject" -noP4 -platform=Win64 -clientconfig=Development -target=CinderRelay -build -cook -stage -pak -archive '-archivedirectory=D:\Projects\FPS Game\.environment-local\phase-05-1\package' -nocompileeditor -installed -unattended -utf8output
+& '.\CinderRelay\Scripts\run_checkpoint_acceptance.ps1' -PackageRoot '.environment-local\phase-05-1\package\Windows' -EvidenceRoot '.environment-local\phase-05-1\retest' -TestPrefix Phase051OwnerRetest -LowOverhead -Fullscreen
+```
+
+Use a fresh test prefix; the runner refuses to overwrite existing test saves. Do not run this during an owner playtest. Three process launches use only `CR04_TEST_` slots. `-Fullscreen` explicitly verifies1920x1080, avoiding desktop DPI/window-size clamping. Diagnostic sight fixture flags are `-CRCombatCheck -CRSightReview -CRSightLabel=review1080`; it includes nine poses, ending with close-wall lowering and realigned ADS. It directly uses the existing upgrade API and is **not** evidence of normal chapter completion. Add `-CRSightNoCapture` for a separate lower-overhead timing sample. Native chapter acceptance remains the actual-input checkpoint route.

@@ -70,3 +70,19 @@ All Phase05 additions are original project-authored geometry, keyframes, procedu
 | Cinder Relay original synthesized audio | `create_audio.py` (seed211805) |11 `S_CR05_*` SoundWaves | Original equations/noise; no external samples. No voice acting. |32kHz mono16-bit, normalized peak0.7 before mix, native import. Windows cook and native runtime playback passed; human spatial listening/mix acceptance pending. |
 
 Audio provenance: YardWind(8s), WorkshopHum(8s), BunkerHum(8s), RookShot(.65s), Impact(.35s), Reload(2.4s), FootYard(.24s), FootMetal(.28s), PowerRise(4s), SignalEnding(8s), Calibration(.8s). First three loop through native zone-owned AmbientSound components with attenuation/occlusion; weapon events remain authoritative for gun cues, existing movement cadence drives footsteps, and native Sequencer tracks own relay sounds. Raw exported FBX/WAV files are reproducible ignored intermediates, not source-control payloads.
+
+## Phase05.1 authored assets and limited CC0 inputs
+
+Selection rationale and all owner candidate URLs: [ASSET_SELECTION_05_1.md](ASSET_SELECTION_05_1.md). Fab candidates remain research-only; no purchase, protected download, or marketplace source is included in this public repository.
+
+| Source | Author / exact license | Included content | Public repository / attribution |
+|---|---|---|---|
+| https://polyhaven.com/a/wood_table_001 | Dimitrios Savva (photography), Rico Cilliers (processing); CC0-1.0 | Only 2K JPEG Diffuse, ARM, DirectX normal | Redistribution allowed by https://polyhaven.com/license; attribution voluntary, retained here |
+| https://polyhaven.com/a/rusty_metal_02 | Rob Tuytel; CC0-1.0 | Only 2K JPEG Diffuse, ARM, DirectX normal | Same CC0 treatment; no whole library or unrelated files |
+| `ArtSource/Blender/Phase051/CR051_Rook5.blend` | Original project-authored fictional exterior | Contoured stock/receiver, thin-wall optic, lens-bound reticle, native sight anchors | Project-owned source; no functional firearm internals or copied commercial model |
+| `ArtSource/Blender/Phase051/CR051_IndustrialDepth.blend` | Original project-authored | Curved/sawtooth roofs, damaged perimeter, silo/water tower/chimney, exterior-only distant district | Project-owned; no high-rise interiors or third-party packs |
+| `ArtSource/Blender/Phase051/CR051_RookRestoration.blend` | Original derivative of retained Phase03/05 project source | Connected glove surfaces, two-bone IK, prop-relative contact targets, baked skeletal action | Project-owned; uses the separately registered CC0 hero materials |
+
+`CinderRelay/ArtSource/Textures/Phase051/provenance.json` records each exact publisher download URL, file size, publisher MD5 and independently checked SHA256. Source images total approximately6.1MB. Material texture import is real UE5.8.4 import, with DX normal compression and non-sRGB ARM. Final cook/runtime status is recorded in MILESTONES, not inferred from license or format compatibility.
+
+Local recording tool only: imageio-ffmpeg0.7.0 Windows wheel from the publisher's PyPI metadata, SHA256 checked; wrapper BSD-2-Clause and bundled FFmpeg's own reported build license are separate. Ignored `.environment-local/phase-05-1/tools/provenance.json` retains the download record. No recording executable/wheel is shipped, committed, or treated as a game asset.

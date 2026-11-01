@@ -2,7 +2,7 @@
 
 A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 5.8, C++ and Unreal Blueprints.
 
-**Active milestone: Phase05 — The Dead Station vertical-slice presentation.** Original Blender environment, Warden and first-person assets, spatial audio, native relay sequences and HUD refinements extend the existing playable chapter. Native streaming, schema1 checkpoints, combat and the optional22s restoration remain authoritative. See MILESTONES for actual acceptance and remaining visual/pacing limits; Phase06 is not authorized.
+**Active milestone: Phase05.1 — Asset Quality Overhaul.** A separate original ROOK-5 hero source, native socket-aligned sights, CC0 2K surface maps, curved industrial roofs/perimeter/skyline and an editable IK/contact restoration derivative extend the existing chapter. Native streaming, schema1 checkpoints, combat and the optional22s restoration remain authoritative. See [asset selection](docs/ASSET_SELECTION_05_1.md), [validation and visual limits](docs/MILESTONES.md#phase051-asset-quality-overhaul--active-plan-and-ledger), and [reproduction commands](docs/WINDOWS_SETUP.md#phase051-asset-quality). Human artistic acceptance remains open; Phase06 is not authorized.
 
 - 游戏名：CINDER RELAY。
 - 仓库：[Leosteeeve/cinder-relay](https://github.com/Leosteeeve/cinder-relay)，当前 **Public**（2026-10-31 远端查询；Phase 01A 未修改可见性）。
@@ -23,7 +23,7 @@ Phase03: recover the amber/teal Survey Optic from the cache near the Rail Yard s
 
 Phase03 historical delivery: Windows Development package and bounded functional acceptance passed after one documented test-harness readiness correction. Human animation/pacing acceptance remains pending; segmented hands are prototype art, and the Phase03 assembly p95=22.108ms was not a clean60FPS result. See [historical validation and limits](docs/MILESTONES.md#phase03-final-local-delivery-evidence). Phase05 uses an editable derivative, preserving the original source.
 
-Editable source: `CinderRelay/ArtSource/Blender/Phase03/CR03_RookRestoration.blend`. Unreal sequence: `/Game/Generated/Phase03/Sequences/LS_CR03_RookRestoration`. Use the existing persistent map; do not rerun older level generators. See [Phase03 setup](docs/WINDOWS_SETUP.md#phase03-restoration) for exact authoring, build and test commands.
+Preserved original source: `CinderRelay/ArtSource/Blender/Phase03/CR03_RookRestoration.blend`. Active derivative: `ArtSource/Blender/Phase051/CR051_RookRestoration.blend`, using `/Game/Generated/Phase051/Sequences/LS_CR051_RookRestoration`. The Phase03/05 sequences and source remain available for rollback. Use the existing persistent map; do not rerun older level generators. See [Phase05.1 setup](docs/WINDOWS_SETUP.md#phase051-asset-quality).
 
 Phase04: New Game starts in the Rail Yard; Continue resumes the latest validated checkpoint. CP00 is created for a genuinely new save, CP01 activates inside the Workshop, and CP02 activates on the relay ramp after collecting the original power module. Saves contain health/ammo, objectives, enemy/pickup IDs, salvage/upgrade and one-time story flags. Progress after the latest successful checkpoint rolls back when recovered. Restart Chapter resets the session and preserves the stored checkpoint until a later natural checkpoint succeeds. A damaged/incompatible newer slot can fall back to the earlier valid generation; files are retained on failure. See [checkpoint setup](docs/WINDOWS_SETUP.md#phase04-persistent-checkpoints) and [validation ledger](docs/MILESTONES.md#phase04-persistent-world--implementation-plan-and-ledger).
 
