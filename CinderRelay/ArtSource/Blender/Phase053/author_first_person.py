@@ -205,7 +205,9 @@ def pose(frame,weapon=None,right=None,left=None,feed=None,cycle=0,curl=(.9,.85))
     prop('cycle_handle',wm@Matrix.Translation((-cycle,0,0)),frame)
     prop('optic',wm,frame)
     for side,position,direction,normal,amount in [
-        ('R',right or (-20,-5,1),(.3,0,-1),(0,1,0),curl[0]),
+        # Anatomical right wrist approaches the stock from behind/below. The
+        # old downward palm axis (.3,0,-1) forced a >100-degree wrist fold.
+        ('R',right or (-27,-5,-7),(1,0,.2),(0,1,0),curl[0]),
         ('L',left or (18,7,-10),(.2,-1,.55),(0,.5,1),curl[1])]:
         hand(side,wm@Vector(position),wm.to_3x3()@Vector(direction),wm.to_3x3()@Vector(normal),amount,frame)
     bpy.context.view_layer.update()
@@ -229,22 +231,27 @@ for name,length in [('Idle',240),('Walk',60),('Sprint',48),('ADS',60),('FireCycl
     elif name=='FireCycle':
         for f,recoil,handpos,travel,c in [
             (0,0,None,0,.9),(3,-2.2,None,0,.9),(7,-.7,None,0,.9),
-            (14,0,(-17,-7,3),0,.55),(20,0,(-22,-7,3),5,.65),
-            (25,0,(-22,-7,3),5,.65),(35,0,(-17,-7,3),0,.6),
+            (14,0,(-24,-8,-1),0,.55),(20,0,(-29,-8,-1),5,.65),
+            (25,0,(-29,-8,-1),5,.65),(35,0,(-24,-8,-1),0,.6),
             (44,0,None,0,.9),(54,0,None,0,.9)]:
             pose(f,Matrix.Translation((recoil,0,0)),right=handpos,cycle=travel,curl=(c,.85))
         a['Cue.EjectCase']=20/60
     elif name=='Reload':
         # The original unit leaves the image below; replacement enters visibly,
         # with five decorative round indicators. No ammo value changes here.
-        for f,feedpos,leftpos,angle in [
-            (0,(0,0,0),None,0),(18,(0,0,0),(5,5,-11),-14),
-            (30,(0,0,-1),(5,5,-12),-18),(46,(0,3,-16),(5,8,-27),-18),
-            (57,(0,8,-35),(5,13,-46),-18),(66,(0,8,-35),(5,13,-46),-18),
-            (82,(1,4,-17),(6,9,-28),-18),(98,(0,1,-5),(5,6,-16),-18),
-            (111,(0,0,0),(5,5,-11),-14),(127,(0,0,0),None,-5),(144,(0,0,0),None,0)]:
-            wm=Matrix.Translation((-2 if angle else 0,0,-1 if angle else 0))@Matrix.Rotation(math.radians(angle),4,'X')
-            pose(f,wm,left=leftpos,feed=Matrix.Translation(feedpos))
+        # Same corrected contact contract as the non-destructive refinement.
+        # A deliberate full rebuild must not regenerate the old wrist grip.
+        for f,feedpos,yaw,weight in [
+            (0,(0,0,0),0,0),(18,(0,0,0),0,1),(30,(0,0,-1),0,1),
+            (46,(0,12,-6),-35,1),(57,(0,12,-35),-55,1),(66,(0,12,-35),-55,1),
+            (82,(0,17,2),-65,1),(94,(0,17,2),-65,1),(103,(0,8,0),-30,1),
+            (111,(0,0,0),0,1),(127,(0,0,0),0,.4),(144,(0,0,0),0,0)]:
+            wm=Matrix.Translation((3*weight,5*weight,5*weight))@Matrix.Rotation(math.radians(-15*weight),4,'X')
+            fm=Matrix.Translation(feedpos)@Matrix.Rotation(math.radians(yaw),4,'Z')
+            pose(f,wm,feed=fm)
+            if 18<=f<=111:
+                grip=wm@fm
+                hand('L',grip@Vector((-3,6,-14)),grip.to_3x3()@Vector((1,-.2,.25)),grip.to_3x3()@Vector((0,-1,0)),.85,f)
         a['Cue.FeedOut']=30/60;a['Cue.FeedIn']=111/60
     else:
         for f,x in [(0,0),(3,-.25),(8,0),(15,0)]:pose(f,Matrix.Translation((x,0,0)))

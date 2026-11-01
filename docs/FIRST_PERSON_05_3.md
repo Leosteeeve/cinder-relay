@@ -202,3 +202,42 @@ Remaining observed defects: sleeve/cuff bands and glove edges are conspicuous wh
 Same-session assembly frame p50/p95/p99 changed15.844/17.057/17.639ms to16.592/17.678/18.138ms. GT/RT/GPU p95=1.854/17.647/16.218ms after integration. Peak private commit across primary routes4,435,148,800 bytes; this is not VRAM. Nine recorded>50ms rows and one previous-GT2214.954ms observation remain unresolved. Bounded warm Insights did not reproduce the initial stall; named animation/presentation scopes are small but cannot establish the missing cause. Diagnostic native exit777003 recurred although its gameplay receipt passed; primary route exits all0. No claim of performance stabilization to60FPS.
 
 See [performance conditions and actual evidence](PERFORMANCE_BUDGET.md#phase053-integrated-packaged-comparison-2026-11-01). The final Reload-only framing correction was validated in the recorded packaged route; primary performance is the immediately prior candidate, identified by executable hash. Recording overhead is excluded from performance comparisons. No whole-route repeat followed the isolated visual edit. Further aesthetic refinement and one reproducible first-use hitch investigation are appropriate within05.3; Phase06 remains unauthorized.
+
+## Reload rig correction — 2026-11-01
+
+Owner-reported reversed reload arms were traced to authored contact frames, not swapped anatomical bones or an export mirror. The original anatomy has left shoulder Y=+18.448cm and right Y=-18.448cm. Wrist-weighted mesh centroids have matching signs (+47.26/-47.29cm). Source-to-Unreal conversion maps (X,Y,Z) to (X,-Y,Z), so anatomical right remains screen-right. Object determinants are positive, NLA is empty, and each active action uses its matching rig slot. The separate workbench action is `AN_CR053_RookRestoration`; unrelated slots in that file are not evidence of gameplay action evaluation.
+
+**Proven cause:** `author_first_person.py::pose` keyed `CTRL_Hand.R` at (-20,-5,1), palm longitudinal direction (.3,0,-1). The world-space Copy Rotation on `wrist.R` correctly followed that incorrect downward frame, folding the wrist approximately104 degrees at rest and109 degrees in Reload. `refine_reload_framing.py` then placed the left wrist at feed-local (5,5,-11) with a support-hand/upward orientation, putting the visible shell by the wrist rather than inside a grasp. Its raised -28-degree roll exposed both defects. The source already contains the defect; native before-import positions reproduce it within0.000032cm at matched samples.
+
+Rest matrix/roll investigation: wrist.L=-0.226688rad, wrist.R=-1.285083rad; forearm helper rolls L=-0.526522/R=-1.476257rad. These asymmetric rest rolls are preserved. Both gameplay IK constraints retain two-bone chains, no stretch and -180-degree pole angles; evaluated pole-angle sweeps changed elbows normally. No solver failure or negative determinant was found. Bone names, skin weights, rest pose and `rig_contact.py` were not changed.
+
+**Correction:** a new `CR053_FirstPerson_ReloadCorrected.blend` preserves all seven original actions under `_Rollback_PreReloadFix`. The right wrist approaches the primary grip from behind/below at (-27,-5,-7), with longitudinal direction (1,0,.2). Because the bad ready frame was shared, the other six clips receive the same right-grip correction, with adjusted existing cycle-handle contact targets; their left-hand and prop curves remain unchanged. Reload uses a feed-local left grip at (-3,6,-14), direction (1,-.2,.25), inward normal (0,-1,0), and a less raised -15-degree presentation roll. Duration remains144frames/60Hz=2.4s. Gameplay ammo timers and cosmetic cue times were not changed.
+
+Evaluated wrist bend is the angle between elbow-to-wrist and wrist-to-middle-MCP vectors, a diagnostic rather than a medical joint-limit model. Full anatomical positions and quaternion orientations for both hands at every requested frame are stored in `PHASE053_VALIDATION.json` under `reload_rig_correction`.
+
+| Frame | Right bend before / after | Left bend before / after |
+|---|---:|---:|
+| 0 | 103.97 / 35.61 | 41.53 / 41.53 |
+| 18 | 108.68 / 32.06 | 8.77 / 61.73 |
+| 30 | 108.68 / 32.06 | 9.39 / 60.15 |
+| 46 | 108.68 / 32.06 | 51.41 / 17.78 |
+| 57 | 108.68 / 32.06 | 107.47 / 57.83 |
+| 66 | 108.68 / 32.06 | 107.47 / 57.83 |
+| 82 | 108.68 / 32.06 | 71.87 / 39.18 |
+| 94 | 108.68 / 32.06 | 71.87 / 39.18 |
+| 111 | 108.68 / 32.06 | 8.77 / 61.73 |
+| 127 | 101.52 / 33.23 | 39.76 / 41.84 |
+| 144 | 103.97 / 35.61 | 41.53 / 41.53 |
+
+**Executed evidence:**
+
+- Blender4.5.11 derivative/export exit0. Six matched before/after source renders: hold0, release18, removed46, replacement82, seated111, ready144; additional right-grip side render confirms anatomical grip/forearm. Mesh topology hash and every rest matrix match the original. Original EliasArms, FirstPerson and RookRestoration files retain their pre-fix SHA256 hashes.
+- FBX round-trip maximum sampled position difference0.000063cm. The first verification incorrectly used Blender's default one-frame import offset; explicitly setting `anim_offset=0` fixed the **test**, without another asset edit/export. Native all-seven pose audit exits0, same56 imported bones and same Skeleton, no new root or scale/mirror. Matched native/source samples differ by at most0.000030cm after correction. Dry midpoint was sampled at7 vs rounded8 by the two probes and excluded from that matched-frame metric; its endpoints were included. No retargeted replacement Skeleton was introduced.
+- Native animation-only reimport exit0. All221 non-target Content files, including mesh, Skeleton, workbench assets and maps, remain hash-identical. C++ was unchanged, so no compilation was run. One incremental Windows Development cook/stage/archive took25.67s, AutomationTool0.
+- Fresh packaged native recording, `CR04_TEST_Phase053ReloadFix`, PID61372/game exit0/capture exit0, no forced stop. CP01 disk bootstrap restores safe Workshop spawn and state; three actual Enhanced Input shots each consume one round, then visible reload. Stop aborts the unchanged workbench without upgrade, pause freezes playback, natural22s completion restores input/optic, upgraded fire/reload works and CP02 is confirmed saved. This is a fresh-process load of the existing dedicated test checkpoint; no player save was used.
+- One packaged `-CRWeaponCheck` fixture, PID49792/exit0: partial/empty/limited/zero-reserve reload, exactly-once transfer, nine accepted shots/eight normal cases plus deliberately suppressed cue, ADS FOV, native montage pause, death without transfer, Restart initial state. The fixture uses explicit isolated setup and is not an ordinary full chapter route. Its final receipt overwrites pre-Restart checks, so the complete checks are preserved in `weapon-check.log`.
+- Genuine first-person recording reviewed through a sequential6fps handling sheet and full-resolution replacement frame. The right hand maintains the primary grip and left performs the component handling, then returns to two-handed ready. Local10.13s review extract decoded301frames successfully; stream copy only, no synthetic/interpolated action. Continuous footage is available for owner review; sampled images do not establish natural continuous motion acceptance.
+
+Evidence root: `.environment-local/phase-05-3/reload-fix/`; source renders `before-*.png`/`after-*.png`, `evaluated-comparison.json`, `rest-roll.json`, native before/after pose JSON, `reimport.log`, `cook.log`, `recorded-game.log`, `weapon-check.log`, `native-reload-sheet.png`, `native-replacement.png`, `CR053_Reload_Corrected_Review.mp4`. FBX exports remain under `handling-exports/`, including corrected `AN_CR053_Reload.fbx`; the original FBX is retained in `reload-fix/AN_CR053_Reload_Before.fbx`.
+
+Remaining defects: local fingertips intersect the feeding shell; cuff/glove edges and near-camera stock clipping are still visible. This fixes the reversed/folded contact pose, not final skin deformation or cinematic art acceptance. No new lower-overhead frame-time benchmark was run: seven native animation files total1,913,339bytes versus1,891,704bytes before (+21,635bytes on disk), with unchanged mesh/material/bone counts. File size is not runtime memory or FPS evidence. No performance improvement claim and no Phase06 work.

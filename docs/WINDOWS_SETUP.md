@@ -508,11 +508,12 @@ Start-Process '.\.environment-local\phase-05-3\CR053_Gameplay_Review.mp4'
 The new action-only source correction is reproducible without regenerating mesh/atlas/skeleton:
 
 ```powershell
-& 'D:\Dev\Toolchains\Blender\blender-4.5.11-windows-x64\blender.exe' -b --python '.\CinderRelay\ArtSource\Blender\Phase053\refine_reload_framing.py' -- --export-dir 'D:\Projects\FPS Game\.environment-local\phase-05-3\handling-exports'
-& 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\Win64\UnrealEditor-Cmd.exe' 'D:\Projects\FPS Game\CinderRelay\CinderRelay.uproject' '-ExecutePythonScript=D:/Projects/FPS Game/CinderRelay/Scripts/import_first_person.py' -CR053ReimportReload -unattended -nullrhi
+& 'D:\Dev\Toolchains\Blender\blender-4.5.11-windows-x64\blender.exe' -b --python '.\CinderRelay\ArtSource\Blender\Phase053\refine_reload_framing.py' -- --replace-owned-derivative --export-dir 'D:\Projects\FPS Game\.environment-local\phase-05-3\handling-exports'
+& 'D:\Dev\Toolchains\Blender\blender-4.5.11-windows-x64\blender.exe' -b --python '.\CinderRelay\ArtSource\Blender\Phase053\verify_reload_correction.py' -- --evidence-dir 'D:\Projects\FPS Game\.environment-local\phase-05-3\reload-fix' --export-dir 'D:\Projects\FPS Game\.environment-local\phase-05-3\handling-exports'
+& 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\Win64\UnrealEditor-Cmd.exe' 'D:\Projects\FPS Game\CinderRelay\CinderRelay.uproject' '-ExecutePythonScript=D:/Projects/FPS Game/CinderRelay/Scripts/import_first_person.py' -CR053ReimportHandling -unattended -nullrhi
 ```
 
-Only run the above when intentionally updating the owned derivative. Other clips, old source files and maps are not regenerated. `restoration_orientation.py` defines smooth contact orientation; `smooth_restoration_release.py` is a guarded one-time correction already applied to the saved workbench derivative. Do not reapply that correction to already-corrected fingers.
+Only run the above when intentionally updating the owned `CR053_FirstPerson_ReloadCorrected.blend` derivative. The correction starts from the preserved original and creates seven rollback actions; it updates the shared right grip in all seven clips plus Reload left-hand contact. It does not regenerate meshes, textures, rest poses, original Blender files or maps. The reimport flag updates animations only, not the skeletal mesh. Verification supports `--skip-renders` for a focused data-only rerun. `restoration_orientation.py` defines smooth contact orientation; `smooth_restoration_release.py` is a guarded one-time correction already applied to the saved workbench derivative. Do not reapply that correction to already-corrected fingers.
 
 Full build/reproduction after a clean clone with LFS assets (not needed for a simple playtest):
 
