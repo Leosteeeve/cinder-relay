@@ -2,7 +2,7 @@
 
 A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 5.8, C++ and Unreal Blueprints.
 
-**Active milestone: Phase03 — The Mechanic's Hands.** Optional Survey Optic salvage and a 22-second Workshop calibration presentation extend the existing ROOK-5. Editable Blender source, imported skeletal animation and a native Level Sequence live under Phase03. Segmented gloves and industrial geometry remain prototype art. Actual validation and unresolved issues are recorded in MILESTONES; Phase04 is not authorized.
+**Active milestone: Phase04 — Persistent World.** Native versioned checkpoints preserve Chapter01 state across process restarts. New Game, Continue, death Retry and explicit Restart Chapter use the existing controller/UMG and native streamed map. Phase03 combat, Survey Optic and editable22s assembly assets remain intact. Actual build/runtime evidence and unresolved issues are recorded in MILESTONES; Phase05 is not authorized.
 
 - 游戏名：CINDER RELAY。
 - 仓库：[Leosteeeve/cinder-relay](https://github.com/Leosteeeve/cinder-relay)，当前 **Public**（2026-10-31 远端查询；Phase 01A 未修改可见性）。
@@ -21,9 +21,13 @@ Phase02 的精确生成、编译、打包和验收命令见 [WINDOWS_SETUP](docs
 
 Phase03: recover the amber/teal Survey Optic from the cache near the Rail Yard starting area, or from the backup on the Workshop calibration bench. Press E at that bench, positioned separately from the original power module. Tab skips and applies the upgrade; Esc pauses. Completing or skipping adds the visible optic and changes ADS from65 to60degrees. The weapon works before the optional upgrade. Main objectives and `MERIDIAN NETWORK / CONNECTION RESTORED` are unchanged. Restart clears the upgrade and salvage session state.
 
-Phase03 local delivery: Windows Development package and bounded functional acceptance passed after one documented test-harness readiness correction. Human animation/pacing acceptance remains pending; segmented hands are prototype art, and assembly p95=22.108ms does not meet the60FPS target. Play the local package at `.environment-local/phase-03/package/Windows/CinderRelay.exe`; omit all test flags for normal play. See [validation and limits](docs/MILESTONES.md#phase03-final-local-delivery-evidence).
+Phase03 historical delivery: Windows Development package and bounded functional acceptance passed after one documented test-harness readiness correction. Human animation/pacing acceptance remains pending; segmented hands are prototype art, and the Phase03 assembly p95=22.108ms was not a clean60FPS result. See [historical validation and limits](docs/MILESTONES.md#phase03-final-local-delivery-evidence). Use the current Phase04 package below.
 
 Editable source: `CinderRelay/ArtSource/Blender/Phase03/CR03_RookRestoration.blend`. Unreal sequence: `/Game/Generated/Phase03/Sequences/LS_CR03_RookRestoration`. Use the existing persistent map; do not rerun older level generators. See [Phase03 setup](docs/WINDOWS_SETUP.md#phase03-restoration) for exact authoring, build and test commands.
+
+Phase04: New Game starts in the Rail Yard; Continue resumes the latest validated checkpoint. CP00 is created for a genuinely new save, CP01 activates inside the Workshop, and CP02 activates on the relay ramp after collecting the original power module. Saves contain health/ammo, objectives, enemy/pickup IDs, salvage/upgrade and one-time story flags. Progress after the latest successful checkpoint rolls back when recovered. Restart Chapter resets the session and preserves the stored checkpoint until a later natural checkpoint succeeds. A damaged/incompatible newer slot can fall back to the earlier valid generation; files are retained on failure. See [checkpoint setup](docs/WINDOWS_SETUP.md#phase04-persistent-checkpoints) and [validation ledger](docs/MILESTONES.md#phase04-persistent-world--implementation-plan-and-ledger).
+
+Current local package: `.environment-local/phase-04/package/Windows/CinderRelay.exe`; omit test flags for normal play. One Windows Development BuildCookRun and three separate packaged processes passed the bounded checkpoint acceptance route. Native Automation schema and disk-fallback groups passed. All three game processes closed themselves, but Windows returned777003 even when launching the native executable directly; engine exit logs requested0. This unresolved automated-run exit status is separate from gameplay receipts. A separate interactive native run exited0 through Exit Game. Actual New Game/pause/Continue clicks and current-window HUD fit were visually checked after the owner dismissed the firewall prompt; broader human playtest acceptance remains pending. Startup/recovery hitches remain; see [measured results](docs/PERFORMANCE_BUDGET.md#phase04-packaged-checkpoint-observations--2026-10-31).
 
 ## 游戏方向
 
@@ -57,4 +61,4 @@ Phase 01A 已由用户接受。01B 的 Editor 路线已验证三轮回访、门�
 
 保留 CinderRelay 模块、EngineAssociation GUID 和模板渲染设置；未改引擎源码。01B 在功能验证后将默认地图改到 persistent，Packaging 明确包含四图。Python/EditorScriptingUtilities 仍仅 Editor target；AndroidFileServer 继续停用。
 
-Phase02 的武器、AI、资产生成与验证记录见现有 TECHNICAL_DESIGN / MILESTONES。用户短试玩负责枪感、瞄准遮挡和遭遇节奏；自动路线与截图不能代替这些判断。不会自动开始 Phase03。
+Phase02 的武器、AI、资产生成与验证记录见现有 TECHNICAL_DESIGN / MILESTONES。用户短试玩负责枪感、瞄准遮挡和遭遇节奏；自动路线与截图不能代替这些判断。Phase04 delivery stops before Phase05.

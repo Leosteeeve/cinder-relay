@@ -31,6 +31,14 @@ float UCRWeaponComponent::GetAimFOV() const
 }
 void UCRWeaponComponent::SetPresentationLocked(bool Locked)
 { bPresentationLocked=Locked; if(Locked) { bAiming=false; bSprinting=false; } OnChanged.Broadcast(); }
+bool UCRWeaponComponent::RestoreCheckpointAmmo(int32 SavedMagazine, int32 SavedReserve)
+{
+    if (!Data || SavedMagazine < 0 || SavedMagazine > Data->MagazineCapacity || SavedReserve < 0 || SavedReserve > 100) return false;
+    GetWorld()->GetTimerManager().ClearTimer(CycleTimer); GetWorld()->GetTimerManager().ClearTimer(ReloadTimer);
+    Magazine = SavedMagazine; Reserve = SavedReserve; State = ECRWeaponState::Ready;
+    NextShot = 0; LastDry = -1; bAiming = false; bSprinting = false; bPresentationLocked = false;
+    OnChanged.Broadcast(); return true;
+}
 bool UCRWeaponComponent::TryFire()
 {
     TRACE_CPUPROFILER_EVENT_SCOPE(CR_WeaponShot);

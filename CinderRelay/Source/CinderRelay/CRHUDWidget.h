@@ -16,6 +16,8 @@ public:
 	void SetPrompt(const FText& Text);
 	void SetStreamingStatus(const FText& Text);
 	void SetMenu(bool bVisible, bool bEnded, bool bDefeated=false);
+	void SetRecoveryMenu(bool Startup, bool Defeated, bool CanResume, bool CanContinue, const FString& Status);
+	void SetCheckpointStatus(const FText& Text);
 	void SetCombat(float Health, int32 Magazine, int32 Reserve, bool Reloading);
 	void ShotFeedback(bool Hit);
 	void DamageFeedback();
@@ -31,6 +33,11 @@ private:
 	UFUNCTION() void ResumeClicked();
 	UFUNCTION() void RestartClicked();
 	UFUNCTION() void ExitClicked();
+	UFUNCTION() void ContinueClicked();
+	UPROPERTY(Transient) TObjectPtr<UButton> ContinueButton;
+	UPROPERTY(Transient) TObjectPtr<UButton> RestartButton;
+	UPROPERTY(Transient) TObjectPtr<UTextBlock> SaveStatusText;
+	UPROPERTY(Transient) TObjectPtr<UTextBlock> CheckpointText;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> ObjectiveText;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> PromptText;
 	UPROPERTY(Transient) TObjectPtr<UTextBlock> StreamingText;

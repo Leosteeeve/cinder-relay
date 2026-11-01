@@ -13,6 +13,16 @@
 #include "EngineUtils.h"
 #include "CRWorkbench.h"
 #include "TimerManager.h"
+#include "CRChapterSaveSubsystem.h"
+#include "Engine/GameInstance.h"
+
+ASpectatorPawn* ACRPlayerController::SpawnSpectatorPawn()
+{
+	// Native GetPlayerPawn includes spectator pawns. A menu/loading spectator must not
+	// fly through unloaded space or override the checkpoint's required initial zone.
+	if (const auto* G = GetWorld()->GetAuthGameMode<ACRGameMode>(); G && !G->IsCheckpointReady()) return nullptr;
+	return Super::SpawnSpectatorPawn();
+}
 
 void ACRPlayerController::BeginPlay()
 {
@@ -23,11 +33,16 @@ void ACRPlayerController::BeginPlay()
 	HUD = CreateWidget<UCRHUDWidget>(this, UCRHUDWidget::StaticClass());
 	if (HUD) HUD->AddToViewport();
 	if (auto* Mode = GetWorld()->GetAuthGameMode<ACRGameMode>())
+	{
 		Mode->OnObjectiveChanged.AddDynamic(this, &ACRPlayerController::ObjectiveChanged);
+		bStartupMenu = Mode->IsStartupMenu();
+	}
+	if (auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>()) Store->OnAvailabilityChanged.AddUObject(this, &ACRPlayerController::SaveAvailabilityChanged);
 	BindPawn();
 	SetInputMode(FInputModeGameOnly());
 	bShowMouseCursor = false;
 	RefreshHUD();
+	if (bStartupMenu) ApplyPause(true);
 }
 
 void ACRPlayerController::SetupInputComponent()
@@ -108,6 +123,8 @@ void ACRPlayerController::RefreshHUD()
 	if (const auto* Mode = GetWorld()->GetAuthGameMode<ACRGameMode>()) HUD->SetObjective(Mode->GetObjectiveText());
 	HUD->SetPrompt(!bPrototypePaused && ObservedPawn.IsValid() ? ObservedPawn->GetCurrentPrompt() : FText::GetEmpty());
 	HUD->SetMenu(bPrototypePaused, bPrototypeEnded, bPrototypeDefeated);
+	if (auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>())
+		HUD->SetRecoveryMenu(bStartupMenu, bPrototypeDefeated, GetPawn() != nullptr && !bPrototypeEnded && !bPrototypeDefeated, Store->HasCheckpoint() && !Store->IsBusy(), Store->GetStatus());
 	RefreshCombat();
 }
 
@@ -130,13 +147,41 @@ void ACRPlayerController::ApplyPause(bool bPause)
 	else SetInputMode(FInputModeGameOnly());
 }
 
-void ACRPlayerController::TogglePrototypePause() { if (!bPrototypeEnded && !bPrototypeDefeated) ApplyPause(!bPrototypePaused); }
-void ACRPlayerController::ResumePrototype() { if (!bPrototypeEnded && !bPrototypeDefeated) ApplyPause(false); }
+void ACRPlayerController::TogglePrototypePause() { if (!bStartupMenu && !bPrototypeEnded && !bPrototypeDefeated) ApplyPause(!bPrototypePaused); }
+void ACRPlayerController::ResumePrototype() { if (!bStartupMenu && GetPawn() && !bPrototypeEnded && !bPrototypeDefeated) ApplyPause(false); }
 void ACRPlayerController::RestartPrototype()
 {
+	if (auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>()) Store->PrepareNewChapter();
+	TravelToChapter();
+}
+void ACRPlayerController::TravelToChapter()
+{
+	bPendingContinue = false;
 	AbortAssembly();
 	ApplyPause(false);
 	UGameplayStatics::OpenLevel(this, FName(*UGameplayStatics::GetCurrentLevelName(this, true)));
+}
+void ACRPlayerController::ContinueCheckpoint()
+{
+	auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>();
+	if (!Store || Store->IsBusy() || bPendingContinue) return;
+	bPendingContinue = true;
+	if (!Store->ScanSlots()) { bPendingContinue = false; ShowCheckpointFeedback(TEXT("CHECKPOINT UNAVAILABLE — try again after the current write.")); }
+}
+void ACRPlayerController::SaveAvailabilityChanged()
+{
+	auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>();
+	RefreshHUD();
+	if (!Store || Store->IsBusy() || !bPendingContinue) return;
+	bPendingContinue = false;
+	if (Store->PrepareContinue()) TravelToChapter();
+	else ShowCheckpointFeedback(TEXT("CHECKPOINT UNAVAILABLE — files retained. New Game is available."));
+}
+void ACRPlayerController::ShowCheckpointFeedback(const FString& Text)
+{
+	if (!HUD) return;
+	HUD->SetCheckpointStatus(FText::FromString(Text));
+	GetWorldTimerManager().SetTimer(CheckpointMessageTimer, FTimerDelegate::CreateWeakLambda(this, [this](){ if (HUD) HUD->SetCheckpointStatus(FText::GetEmpty()); }), 5.f, false);
 }
 void ACRPlayerController::ExitPrototype() { AbortAssembly(); UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit, false); }
 void ACRPlayerController::SetAssembly(ACRWorkbench* Workbench)
@@ -151,4 +196,7 @@ void ACRPlayerController::ShowSubtitle(const FText& Text,float Seconds)
 	GetWorldTimerManager().SetTimer(SubtitleTimer,FTimerDelegate::CreateWeakLambda(this,[this](){ if(HUD) HUD->SetSubtitle(FText::GetEmpty()); }),Seconds,false);
 }
 void ACRPlayerController::EndPlay(const EEndPlayReason::Type Reason)
-{ AbortAssembly(); GetWorldTimerManager().ClearTimer(SubtitleTimer); Super::EndPlay(Reason); }
+{
+	if (auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>()) Store->OnAvailabilityChanged.RemoveAll(this);
+	AbortAssembly(); GetWorldTimerManager().ClearTimer(SubtitleTimer); GetWorldTimerManager().ClearTimer(CheckpointMessageTimer); Super::EndPlay(Reason);
+}

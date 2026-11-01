@@ -298,3 +298,45 @@ Get-Content -LiteralPath "$phase03\package\Windows\CinderRelay\Saved\Phase03\acc
 ```
 
 Inspect the fresh receipt, engine RequestExitWithStatus and runtime log together; this machine's bootstrap has returned777003 independently of the engine's result. The route uses actual movement, trace interactions, damage and native state. It is bounded at600s total/65s per stage. `-CRRestorationStart=1` is a Development-only corrective resume after scenario0 was separately proven; it is not a normal play option or a substitute for documenting omitted scenarios. PNG captures, pause and detailed tracing affect performance. Never treat this route as human animation/weapon-feel acceptance.
+
+## Phase04 persistent checkpoints
+
+Normal play opens the existing persistent map and displays New Game / Continue from Checkpoint. Esc exposes Continue and Restart Chapter; death exposes Retry from Last Checkpoint. Restart Chapter always resets session progress and preserves the stored checkpoint until a later natural checkpoint succeeds. Assembly remains optional; Tab skips it, Esc pauses it. A successful async callback displays CHECKPOINT SAVED; failed/incompatible saves remain on disk and show a recoverable message. No key is repurposed.
+
+```powershell
+Set-Location 'D:\Projects\FPS Game'
+$crProject = 'D:\Projects\FPS Game\CinderRelay\CinderRelay.uproject'
+$crEngine = 'D:\Engines\Unreal\UE_5.8'
+# Close Editor before compiling changed C++.
+& "$crEngine\Engine\Build\BatchFiles\Build.bat" CinderRelayEditor Win64 Development "-Project=$crProject" -WaitMutex -NoHotReloadFromIDE
+# Only needed to deliberately recreate/update the three owned checkpoint markers.
+& "$crEngine\Engine\Binaries\Win64\UnrealEditor.exe" $crProject '-ExecutePythonScript=D:/Projects/FPS Game/CinderRelay/Scripts/generate_checkpoints.py' -unattended
+# Dedicated CR04_TEST_Automation slots only; never the player slots.
+& "$crEngine\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" $crProject -unattended -nullrhi '-ExecCmds=Automation RunTests CinderRelay.Checkpoints' '-TestExit=Automation Test Queue Empty'
+# One final Windows Development build/cook/package after integration.
+& "$crEngine\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$crProject" -noP4 -platform=Win64 -clientconfig=Development -target=CinderRelay -build -cook -stage -pak -archive '-archivedirectory=D:\Projects\FPS Game\.environment-local\phase-04\package' -nocompileeditor -installed -unattended -utf8output
+# Normal play: no acceptance/test flags.
+& '.\.environment-local\phase-04\package\Windows\CinderRelay.exe' -windowed -ResX=1920 -ResY=1080
+```
+
+`-CRCheckpointRoute=1/2/3` is a bounded Development harness using existing Enhanced Input movement/fire/interaction and the same menu handlers. It refuses player slots: supply `-CRCheckpointTest=<unique alphanumeric suffix>`. Route1 requires a fresh test prefix, fights, collects ammo and saves CP01; exit the process. Route2 uses that same prefix to restore CP01, collect salvage/module, validate Stop/pause/natural assembly, reload and save CP02; exit again. Route3 restores CP02, backtracks, checks consumed actors/story, restarts, dies to real enemies, retries/reloads three times, and reaches both upgraded and optional-bypass endings. Route2 `-CRCheckpointLifecycle` additionally exercises Skip, injected lethal damage during assembly, presentation actor destruction, Restart/world EndPlay and controller destruction. These deliberate faults are distinct from normal gameplay input. Receipt/CSV files live under native Saved/Phase04/<route>; inspect fresh timestamps, process IDs and logs, not only exit codes. Do not rerun completed acceptance routes to chase frame times.
+
+For manual anchor repair: open L_CH01_Persistent, select CP00/01/02 in the persistent level, keep its exact checkpoint ID, position its marker inside the corridor above the floor, then click Snap To Safe Floor. It refuses penetration, a wrong CP02 ramp owner, or blocked capsule clearance. Save only that level. Runtime validates readiness and clearance again. Never move recovery onto a sublevel-owned actor or rerun Phase01 generators.
+
+The completed acceptance used one packaged archive and three separate native processes. To reproduce only when a new change or investigation justifies it, use a fresh test prefix and evidence directory; the runner refuses existing test slots and never deletes saves:
+
+```powershell
+Set-Location 'D:\Projects\FPS Game'
+$crPackage = 'D:\Projects\FPS Game\.environment-local\phase-04\package\Windows'
+$crRunId = 'Review04_' + (Get-Date -Format 'yyyyMMdd_HHmmss')
+$crEvidence = Join-Path 'D:\Projects\FPS Game\.environment-local\phase-04' $crRunId
+& '.\CinderRelay\Scripts\run_checkpoint_acceptance.ps1' -PackageRoot $crPackage -EvidenceRoot $crEvidence -TestPrefix $crRunId
+Get-Content -LiteralPath (Join-Path $crEvidence 'process-results.json')
+& 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\ThirdParty\Python3\Win64\python.exe' '.\CinderRelay\Scripts\summarize_checkpoints.py' (Join-Path $crPackage 'CinderRelay\Saved') $crEvidence
+```
+
+The runner captures actual process handles/IDs and separates gameplay receipts, native exit, bootstrap exit and forced-stop status. It has a540s process bound and30s post-receipt shutdown allowance. Route1 uses the bootstrap executable, routes2/3 the native executable; this also provides a bounded exit-code comparison. The final accepted runs self-exited with777003 even for direct native launch, despite engine RequestExitWithStatus(0). A separate later interactive native UI run exited0 through the real Exit Game button without the route/unattended/trace flags. The automated-run discrepancy remains unresolved; those nonzero codes are not clean OS exits. AutomationTool packaging exited0. Do not hide the discrepancy or repeatedly repackage to investigate it.
+
+Normal packaged saves are native CinderRelay_CH01_A.sav/B.sav. In this tested Development archive they are under package/Windows/CinderRelay/Saved/SaveGames; other build/platform configurations can redirect ProjectSavedDir. Test flags use CR04_TEST_<suffix>_A/B instead. Never delete/corrupt the owner's slots for testing. Restart/New Game preserves them until a subsequent natural checkpoint successfully replaces one generation. CP00 writes only if both slots are missing. Continue is unavailable while scanning/writing or when neither slot validates; recoverable error text retains existing files.
+
+Interactive menu/HUD inspection was completed after the owner dismissed the Windows firewall prompt. Real clicks verified New Game, Esc/pause, Continue and Exit Game in the separate Visual04 process; Continue was disabled with no save, CP00 restored visibly, and bottom control/health/ammo text fit the observed window. Local actual captures are ui-restored.jpg and ui-paused.jpg. No network permission was changed by automation. Death-menu layout, other display configurations and full human playtest acceptance remain pending. This short UI check is not a repeated performance run.

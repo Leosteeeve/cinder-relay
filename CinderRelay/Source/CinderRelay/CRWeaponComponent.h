@@ -33,6 +33,7 @@ public:
     UFUNCTION(BlueprintPure) float GetAimFOV() const;
     bool IsPresentationLocked() const { return bPresentationLocked; }
     void SetPresentationLocked(bool Locked);
+    bool RestoreCheckpointAmmo(int32 SavedMagazine, int32 SavedReserve);
 protected:
     virtual void BeginPlay() override;
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
