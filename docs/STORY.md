@@ -40,3 +40,13 @@ These temporary English lines are inspectable in CRPlayerController/CRWorkbench.
 | CR03_RelayEcho | Original relay advances to InvestigateSignal | [A broken carrier tone returns.] ELIAS: Something on the other end is still listening. |
 
 Flags live in the chapter GameMode and suppress replay after streamed-area returns. A reflection already heard before cancellation stays heard until Restart. Subtitles use the existing HUD, remain understandable without voice acting and clear after a bounded game-time duration. The final text remains exactly `MERIDIAN NETWORK` / `CONNECTION RESTORED`.
+# Phase05 provisional environmental writing
+
+No additional canon is established. The cause of The Quieting and MERIDIAN's motives remain unknown. The following temporary English presentation lines/records await narrative approval:
+
+- Opening: "THE DEAD STATION / 2118" and Elias: "Workshop lights. There may be a way to bring the relay back."
+- Workshop record: "MAINTENANCE / OPEN WORK ORDER — Relay Nine: power unit removed. Return replacement to access terminal."
+- Bunker record: "LOCAL CONTROL / RELAY NINE — CARRIER TEST INCOMPLETE — Awaiting acknowledgement."
+- Ending subtitle: "RELAY NINE / LOCAL POWER STABLE" and "[The returned signal breaks into an irregular carrier tone.]"
+
+Existing Phase03 discovery/reflection/echo lines retain their existing stable session flags. New wall records and the opening/ending presentation do not add IDs to schema1. Restoration settles the relay's steady light from the existing objective without replaying an old sequence. There is no new radio operator, voice performance or confirmed explanation of the catastrophe. The final on-screen text remains MERIDIAN NETWORK / CONNECTION RESTORED.

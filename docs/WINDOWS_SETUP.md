@@ -340,3 +340,41 @@ The runner captures actual process handles/IDs and separates gameplay receipts, 
 Normal packaged saves are native CinderRelay_CH01_A.sav/B.sav. In this tested Development archive they are under package/Windows/CinderRelay/Saved/SaveGames; other build/platform configurations can redirect ProjectSavedDir. Test flags use CR04_TEST_<suffix>_A/B instead. Never delete/corrupt the owner's slots for testing. Restart/New Game preserves them until a subsequent natural checkpoint successfully replaces one generation. CP00 writes only if both slots are missing. Continue is unavailable while scanning/writing or when neither slot validates; recoverable error text retains existing files.
 
 Interactive menu/HUD inspection was completed after the owner dismissed the Windows firewall prompt. Real clicks verified New Game, Esc/pause, Continue and Exit Game in the separate Visual04 process; Continue was disabled with no save, CP00 restored visibly, and bottom control/health/ammo text fit the observed window. Local actual captures are ui-restored.jpg and ui-paused.jpg. No network permission was changed by automation. Death-menu layout, other display configurations and full human playtest acceptance remain pending. This short UI check is not a repeated performance run.
+
+## Phase05 vertical-slice presentation
+
+Current source is the existing project and persistent map. Do not rerun Phase01A/01B/Phase03 generators. All new art is original project-authored content under ArtSource/Blender/Phase05; the old Phase03 source and Phase01A map remain rollback references. Blender4.5.11 and installed UE5.8.4 bindings were used.
+
+Normal launch after the verified package exists:
+
+```powershell
+Set-Location 'D:\Projects\FPS Game'
+& '.\.environment-local\phase-05\package\Windows\CinderRelay.exe' -windowed -ResX=1920 -ResY=1080
+```
+
+Use New Game or Continue, normal input, E interaction, Tab assembly/ending Skip, Esc pause, R reload and F5 streaming retry. Restart Chapter resets the session while retaining the stored checkpoint until a later natural successful save. No test flags are needed for play.
+
+The authoring scripts are intentionally bounded to owned Phase05 assets; they are not required to play. `create_environment.py` writes the original kit; `refine_environment.py` adds the gantry/roof correction; `create_terminals.py` adds the two interactive visual shells. `create_warden.py` writes the six-clip enemy rig. `refine_restoration.py` creates the protected Phase03 derivative; `refine_rook.py` adds matching sight references; `tune_restoration_contact.py` changes only that derivative's hand/arm keys. FBX exports are temporary under ignored `.environment-local/phase-05/exports`. Source .blend files, scripts and the two512px textures are versioned. `create_audio.py` generates eleven original WAVs; `--only-loops` updates only the three ambient loops.
+
+Native import/placement is in `generate_polish.py` and `import_polish_presentation.py`; `refine_polish_visuals.py` applies the final facing/task-light/contact adjustments and renders unsaved review poses. Preserve the order: base environment, presentation import, final refinements. Each writes only tagged/owned assets or explicitly audited visual settings. Do not casually rerun production generators over later hand edits. Read-only `validate_polish_assets.py` compares the local Phase04 baseline receipt; it requires that ignored pre-edit evidence, and correctly refuses to claim preservation without it. `audit_polish.py` can inventory a fresh checkout but must not relabel a post-edit inventory as the original baseline.
+
+Reproduce validation only for a new relevant change, not as a repeated acceptance loop:
+
+```powershell
+$crEngine = 'D:\Engines\Unreal\UE_5.8'
+$crProject = 'D:\Projects\FPS Game\CinderRelay\CinderRelay.uproject'
+# Only if C++ changed; close Editor first.
+& "$crEngine\Engine\Build\BatchFiles\Build.bat" CinderRelayEditor Win64 Development "-Project=$crProject" -WaitMutex -NoHotReloadFromIDE
+& "$crEngine\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" $crProject -unattended -nullrhi '-ExecCmds=Automation RunTests CinderRelay.Checkpoints+CinderRelay.Restoration' '-TestExit=Automation Test Queue Empty'
+# Real Editor route, not a replacement for packaged/visual acceptance.
+& "$crEngine\Engine\Binaries\Win64\UnrealEditor.exe" $crProject '-ExecutePythonScript=D:/Projects/FPS Game/CinderRelay/Scripts/smoke_polish.py' -CRRestorationCheck -unattended
+# Forward slashes in ExecutePythonScript avoid accidental Python escape sequences.
+& "$crEngine\Engine\Build\BatchFiles\RunUAT.bat" BuildCookRun "-project=$crProject" -noP4 -platform=Win64 -clientconfig=Development -target=CinderRelay -build -cook -stage -pak -archive '-archivedirectory=D:\Projects\FPS Game\.environment-local\phase-05\package' -nocompileeditor -installed -unattended -utf8output
+$crPackage = 'D:\Projects\FPS Game\.environment-local\phase-05\package\Windows'
+$crRunId = 'Review05_' + (Get-Date -Format 'yyyyMMdd_HHmmss')
+$crEvidence = Join-Path 'D:\Projects\FPS Game\.environment-local\phase-05' $crRunId
+& '.\CinderRelay\Scripts\run_checkpoint_acceptance.ps1' -PackageRoot $crPackage -EvidenceRoot $crEvidence -TestPrefix $crRunId -LowOverhead
+& "$crEngine\Engine\Binaries\ThirdParty\Python3\Win64\python.exe" '.\CinderRelay\Scripts\summarize_polish.py' (Join-Path $crPackage 'CinderRelay\Saved') $crEvidence
+```
+
+`-LowOverhead` omits requested Insights tracing and preserves1080p/Epic/native100% rendering, CSV counters and1Hz memory; default Phase04 tracing remains available. The three-process route uses fresh CR04_TEST slots, never player saves. Native/bootstrap exit, AutomationTool exit and gameplay receipts must be reported separately. Do not clear caches, force GC at transitions or repackage to improve statistics. The actual Phase05 results and unresolved limits are in MILESTONES/PERFORMANCE_BUDGET.

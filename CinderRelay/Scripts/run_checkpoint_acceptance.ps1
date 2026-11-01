@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory=$true)][string]$PackageRoot,
     [Parameter(Mandatory=$true)][string]$EvidenceRoot,
-    [Parameter(Mandatory=$true)][ValidatePattern('^[A-Za-z0-9_]{1,40}$')][string]$TestPrefix
+    [Parameter(Mandatory=$true)][ValidatePattern('^[A-Za-z0-9_]{1,40}$')][string]$TestPrefix,
+    [switch]$LowOverhead
 )
 $ErrorActionPreference = 'Stop'
 $crPackage = (Resolve-Path -LiteralPath $PackageRoot).Path
@@ -22,7 +23,8 @@ foreach ($crRoute in 1..3) {
     $crLog = Join-Path $crEvidence "packaged-route$crRoute.log"
     $crTrace = Join-Path $crEvidence "route$crRoute.utrace"
     $crReceiptPath = Join-Path $crSaved "Phase04\$crRoute\acceptance.json"
-    $crArgs = "-CRCheckpointTest=$TestPrefix -CRCheckpointRoute=$crRoute -windowed -ResX=1920 -ResY=1080 -ForceRes -NoVSync -unattended -ExecCmds=`"$crQuality`" -trace=cpu,gpu,frame,bookmark,loadtime -tracefile=`"$crTrace`" -abslog=`"$crLog`""
+    $crArgs = "-CRCheckpointTest=$TestPrefix -CRCheckpointRoute=$crRoute -windowed -ResX=1920 -ResY=1080 -ForceRes -NoVSync -unattended -ExecCmds=`"$crQuality`" -abslog=`"$crLog`""
+    if (!$LowOverhead) { $crArgs += " -trace=cpu,gpu,frame,bookmark,loadtime -tracefile=`"$crTrace`"" }
     if ($crRoute -eq 2) { $crArgs += ' -CRCheckpointLifecycle' }
     $crStarted = [DateTime]::UtcNow
     $crRootProcess = Start-Process -FilePath $crExecutable -ArgumentList $crArgs -WindowStyle Hidden -PassThru

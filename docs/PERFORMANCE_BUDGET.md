@@ -206,3 +206,33 @@ Route3 working/private at the earlier death stage=1769803776/4261679104B; first1
 Analyzer limits:30675 MemAllocTagTracker errors from the partial-channel trace,4LoadTime warnings, GPU ordering warnings (up to0.099ms) and one pending RHI command list at close. Memory-allocation reconstruction and affected GPU event timing are not used. GPU values above are native RHI frame counters; maximum route3 GPU counter68.0282ms. Runtime packaged logs have no Error/Fatal/Ensure matches; expected abort/teardown warnings remain. Automated OS process exit777003 is unresolved even for direct native launch, independently of successful gameplay receipts and AutomationTool exit0. A separate interactive UI run without route/unattended/trace flags exited0; it is outside these measurements and does not identify which condition caused the discrepancy.
 
 Evidence: .environment-local/phase-04/{packaged-summary.json,process-results.json,packaged-route1.log,packaged-route2.log,packaged-route3.log,route3.utrace,insights-game-thread.csv,insights-frames.csv}; native Saved/Phase04/{1,2,3}/{frames.csv,memory.csv,settings.txt,acceptance.json}. Keep raw traces/packages ignored. Reanalyze existing traces before considering another run; a future same-quality performance experiment requires a concrete question.
+
+## Phase05 packaged observations — 2026-10-31
+
+One Windows Development BuildCookRun141.84s, AutomationTool0. One bounded three-process acceptance at1920x1080, all ten quality groups3/Epic, ScreenPercentage100, DynamicRes0, VSync0, t.MaxFPS0; RTX5070Laptop,32GB RAM, NVIDIA616.92. Existing TSR/Lumen/ray-tracing settings retained; no frame generation or silent quality reduction. No Editor/Blender render ran concurrently. Power/temperature/background desktop applications were not controlled.
+
+`-LowOverhead` omitted requested Insights/allocation tracing. Existing native route counters and1Hz process memory remain; input automation, lifecycle fault injection and pause are overhead. Only one final screenshot per process, after receipt creation. Median p50 and nearest-rank p95/p99 are reported. Engine GT/RT/GPU counters refer to previous frames and are not additive.
+
+| Sample | Frames | Frame p50 ms | p95 ms | p99 ms | GT p95 ms | RT p95 ms | GPU p95 ms |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Rail Yard combat/approach | 945 | 11.585 | 15.625 | 17.372 | 2.352 | 15.622 | 14.469 |
+| Workshop full assembly | 1544 | 14.884 | 15.896 | 16.311 | 1.839 | 15.886 | 14.588 |
+| Relay Bunker | 2493 | 14.979 | 17.988 | 21.579 | 3.808 | 17.962 | 15.328 |
+| Streaming/backtracking traversal | 2905 | 14.473 | 18.242 | 22.377 | 4.114 | 18.117 | 15.475 |
+| Route3 all recorded | 5426 | 14.206 | 17.701 | 20.758 | 3.970 | 17.621 | 14.841 |
+
+Route3 p95=17.694ms exceeds the16.667ms goal by1.027ms (~6.2%). This is not a clean60FPS guarantee. Assembly p95=15.891ms is a useful observed sample, but cannot establish an art-only improvement over Phase03's traced22.108ms because trace overhead/content/test conditions differ. No clean same-content A/B or per-feature mesh/material/audio cost isolation was performed. RT/GPU dominate the assembly sample; traversal also has higher GT tails. These observations do not justify a renderer/streaming rewrite.
+
+There were0 recorded gameplay-frame deltas above50ms across11,020 CSV rows; maximum29.782ms. This excludes menu, held bootstrap and controlled map reload. Native LoadMap logs show38.685–99.894ms synchronous travel work; most travel samples exceed50ms and remain visible hitch risk. A bounded log investigation locates this outside the normal streamed traversal CSV, in intentional persistent-map reload during recovery/restart. First safe-control reconstruction: fresh CP00=198.777ms, cross-process CP01=157.211ms, CP02=127.043ms; warm CP02 recoveries79.775/49.619/41.320ms. These timings start at native bootstrap, not OS launch or first rendered input frame; do not add them blindly to LoadMap. Full end-to-end visible hitch attribution remains unverified without a focused trace. No cache clearing or repeated benchmark was used.
+
+Native save dispatch0.126–0.316ms; successful callbacks8.247–16.242ms (five writes). These small samples are not population percentiles. Actual separate processes restored CP01 health68/magazine1/reserve35 and CP02 health68/magazine5/reserve30/upgrade1. Native readiness and collision gating held the pawn before release.
+
+| Process route | Peak working set MiB | Peak private commit MiB | Actual native unloaded events |
+|---|---:|---:|---|
+| 1 | 1744.6 | 4160.4 | {'A': 0, 'B': 0, 'C': 0} |
+| 2 | 1781.1 | 4310.7 | {'A': 11, 'B': 0, 'C': 6} |
+| 3 | 1728.7 | 4124.8 | {'A': 1, 'B': 5, 'C': 1} |
+
+One-Hz memory sampling is too coarse to separate the three rapid CP02 recovery cycles; bounded peak residency is reported without a no-leak claim. Native unload status, saved actor reconciliation and absence of persistent strong streamed-actor references support residency behavior; unchanged process/GPU allocation would not disprove unload. Dedicated VRAM residency, detailed texture use and long-run growth were not measured. Logs show native texture pool1000MB after initialization; no pool-over-budget warning was found. The8GB hardware target remains a budget, not proof of all future final-art fit.
+
+Evidence (ignored locally): `.environment-local/phase-05/package.log`, `packaged-acceptance/{process-results.json,polish-summary.json,load-latencies.json,packaged-route1.log,packaged-route2.log,packaged-route3.log}`, and `package/Windows/CinderRelay/Saved/Phase04/{1,2,3}/{frames.csv,memory.csv,settings.txt,route.txt,acceptance.json}`. All three native processes exited0; route1 bootstrap also0, no forced stops. Prior777003 was not reproduced without requested traces in this run, but that is correlation, not a proven root-cause fix.

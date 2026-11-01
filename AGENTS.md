@@ -2,7 +2,7 @@
 
 - Communicate with the owner in Chinese; write implementation prompts in English.
 - Read `README.md`, `docs/MILESTONES.md`, and `docs/TECHNICAL_DESIGN.md` first.
-- Current authorization: Phase04 versioned native SaveGame, two checkpoint generations, safe streaming bootstrap, minimal recovery UI, dedicated test slots, bounded cross-process validation and PR. Preserve combat, Phase03 animation and rollback assets. Stop before Phase05.
+- Current authorization: Phase05 vertical-slice art, animation, audio, native cinematic presentation and bounded packaged validation. Preserve Phase00–04 gameplay, schema1 IDs, checkpoint transforms, collision/navigation and native streaming. Retain Phase03 source/Phase01A rollback. Stop before Phase06.
 - Canon lives in `docs/GAME_DESIGN.md` and `docs/STORY.md`; mark new creative proposals, never silently invent canon.
 - Priorities: reliability, gameplay quality, maintainability, performance, then visual fidelity.
 - Preserve existing work. Audit before edits; never upgrade the engine or rewrite working architecture without authorization.
@@ -18,6 +18,6 @@
 - Profile before optimizing. Never equate C++, a successful build, or screenshots with performance or gameplay acceptance.
 - Report commands, exit codes, evidence paths, and unverified work. Keep raw local logs under ignored `.environment-local/`; summarize durable findings in the milestone.
 - Inspect explicit staging paths and staged diff for secrets, generated files, and unlicensed raw packs before commits. Never overwrite or force-push remote history.
-- Work on `phase-04-persistent-world`; target `main` with a PR, never auto-merge or force-push. Never rerun old map generators/migration destructively. Keep R reload/F5 streaming retry. Session salvage/upgrades are separate from ECRObjective; DA_Rook5 is immutable at runtime. Preserve editable .blend sources and verify real imported bones/animation.
+- Work on `phase-05-vertical-slice-polish`; target `main` with a PR, never auto-merge or force-push. Never rerun old map generators/migration destructively. Keep R reload/F5 streaming retry. Session salvage/upgrades are separate from ECRObjective; DA_Rook5 is immutable at runtime. Preserve editable .blend sources and verify real imported bones/animation.
 
 - Checkpoints use stable IDs and narrow GameMode snapshots. Never serialize Actor references or cinematic/timer state. Restore session flags before streamed actors BeginPlay; release the player only after native readiness and a validated checkpoint floor. Report success only from the native save callback. Tests must use CR04_TEST_ slots; never corrupt or delete player saves.
