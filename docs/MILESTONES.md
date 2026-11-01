@@ -12,6 +12,8 @@ One final Windows Development BuildCookRun completed in169.31s, exit0. Three fre
 
 Performance remains open: primary combat p95 changed15.063→28.762ms; a bounded quiet repeat changed20.427→16.877ms. These variable samples do not isolate a causal regression, prove no first-use hitch or establish60FPS. Slide/movement tails remain. Human artistic, continuous gameplay-feel and stereo-headphone acceptance are pending. No Phase06 work or automatic merge.
 
+Review delivery: implementation commit `149beca`; [Draft PR11](https://github.com/Leosteeeve/cinder-relay/pull/11), feature branch `phase-05-5-ui-audio-inventory` to `main`. LFS upload succeeded; raw local evidence, saves and packages are excluded. Draft status preserves the explicit open acceptance items.
+
 ## Phase05.4 — combat feel, slide and curated environment (integrated candidate)
 
 Base PR9 merge811aaa5; scope excludes Phase06 and weapon/arm remodeling. Implementation and exact slide contract are in [COMBAT_ENVIRONMENT_05_4.md](COMBAT_ENVIRONMENT_05_4.md). Initial native Editor compilation72.16s succeeded; focused slide decay automation succeeded; real input route reached CP01 with a0.751s slide, one accepted hip-fire round and conserved reload. A standalone Editor-game shutdown stalled after its successful receipt and requested exit0; the owned process was stopped and is not counted as a successful process exit. The Windows package passed three independent native processes: CP01 acquisition, CP01-to-CP02 restoration/assembly lifecycle, and CP02 recovery/backtracking/death/restart/optional ending. Launcher/native exits were all0. Additional six slide physics/input edge fixtures passed; they used NullRHI and are not visual or performance evidence.
