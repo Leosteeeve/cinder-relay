@@ -105,3 +105,10 @@ No new external acquisition, paid provider or marketplace package. Existing Phas
 | `ArtSource/Audio/Phase052/S_CR052_Seat.wav`, `S_CR052_Secure.wav`, `provenance.json`; generator `create_contact_audio.py` | Two SoundWaves and native sequence sections | Original deterministic additive/noise synthesis,48kHz monoPCM,0.26s/0.38s. No samples, music, voice acting or third-party attribution requirements. Quiet fictional calibration sounds, not authentic recorded machinery. |
 
 The29 Phase052 Unreal assets were included in the successful Windows Development cook. Editable .blend sources and intentional tiny original WAV sources use LFS; exported FBX, build outputs and raw local capture directories remain ignored. Selected review media is published separately with provenance and no claim of final artistic acceptance.
+
+
+### Phase05.3 integrated derivatives
+
+CR053_FirstPerson.blend and CR053_RookRestoration.blend derive from the registered CC0 MakeHuman graphical anatomy and original project clothing/rig/action work, not MakeHuman AGPL program code. No Fab pack or paid service was acquired. Existing Phase051 CC0 wood/metal and original Phase052 sound cues retain their registered provenance. Editable sources pack their available image dependencies; FirstPersonTextures contains two original2K baked atlases. Source-side IK/keyframes and seven native handling clips are original project authoring.
+
+Gameplay meshes/animations/materials/textures live under /Game/Generated/Phase053/Gameplay; the separate22s workbench derivative under Phase053/Assembly. Actual Blender4.5.11 exports and UE5.8.4 imports/bone checks passed. Gameplay arm source33,121tri/3materials; joined workbench92,165tri. Public distribution is limited to these project-owned/CC0 inputs; imported engine runtime code/tools and optional recording executable are not redistributed. No standalone commercial asset license is implied for original project additions.

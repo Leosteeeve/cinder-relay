@@ -486,3 +486,39 @@ Final package / bounded regression commands used:
 ```
 
 For a later rerun choose a new TestPrefix and evidence directory. Never overwrite player saves. Archive `Saved/Phase04` alongside process receipts before running any diagnostic video route, because the route-number output paths are reused. Do not record video or render Editor screenshots during performance sampling.
+
+
+## Phase05.3 first-person handling
+
+Active project/map and controls are unchanged. Gameplay arms and all seven handling clips load asynchronously from /Game/Generated/Phase053/Gameplay. The Workshop references the separate Phase05322s assembly sequence. Preserve Phase01A and earlier Blender sources; never rerun old greybox generators.
+
+Editable sources: ArtSource/Blender/Phase053/CR053_FirstPerson.blend and CR053_RookRestoration.blend. author_first_person.py and author_restoration.py write only owned derivatives (explicit --rebuild-owned); rig_contact.py calibrates authoring poles. refine_hand_surfaces.py performs a guarded one-time covered-skin correction. Exports remain ignored under .environment-local/phase-05-3/handling-exports. Do not regenerate all actions for a small mesh correction.
+
+Native import_first_person.py imports missing owned assets; explicit -CR053ReimportHandling reimports clips and -CR053ReimportHandlingMesh reimports the mesh. import_human_restoration.py uses -CR053ReimportAssembly/-CR053ReimportAssemblyMesh for the respective assets; -CR053ActivateAssembly switches only the existing bench's soft references. validate_contact_tracks.py -CR053Human checks actual sequence camera evaluation/Stop restoration without saving maps. review_human_restoration.py captures12 real poses; -CR053ContactOnly limits a targeted check to two contact moments. These captures do not replace continuous playback review.
+
+Current locally packaged candidate and real recording (no test flags for ordinary play):
+
+```powershell
+Set-Location 'D:\Projects\FPS Game'
+Start-Process '.\.environment-local\phase-05-3\package\Windows\CinderRelay.exe' -WindowStyle Normal
+# Actual recorded gameplay, silent; not an animation render or benchmark.
+Start-Process '.\.environment-local\phase-05-3\CR053_Gameplay_Review.mp4'
+```
+
+The new action-only source correction is reproducible without regenerating mesh/atlas/skeleton:
+
+```powershell
+& 'D:\Dev\Toolchains\Blender\blender-4.5.11-windows-x64\blender.exe' -b --python '.\CinderRelay\ArtSource\Blender\Phase053\refine_reload_framing.py' -- --export-dir 'D:\Projects\FPS Game\.environment-local\phase-05-3\handling-exports'
+& 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\Win64\UnrealEditor-Cmd.exe' 'D:\Projects\FPS Game\CinderRelay\CinderRelay.uproject' '-ExecutePythonScript=D:/Projects/FPS Game/CinderRelay/Scripts/import_first_person.py' -CR053ReimportReload -unattended -nullrhi
+```
+
+Only run the above when intentionally updating the owned derivative. Other clips, old source files and maps are not regenerated. `restoration_orientation.py` defines smooth contact orientation; `smooth_restoration_release.py` is a guarded one-time correction already applied to the saved workbench derivative. Do not reapply that correction to already-corrected fingers.
+
+Full build/reproduction after a clean clone with LFS assets (not needed for a simple playtest):
+
+```powershell
+& 'D:/Engines/Unreal/UE_5.8/Engine/Build/BatchFiles/RunUAT.bat' BuildCookRun '-project=D:/Projects/FPS Game/CinderRelay/CinderRelay.uproject' -noP4 -platform=Win64 -clientconfig=Development -target=CinderRelay -build -cook -stage -pak -archive '-archivedirectory=D:/Projects/FPS Game/.environment-local/phase-05-3/package' -nocompileeditor -installed -unattended -utf8output
+& './CinderRelay/Scripts/run_checkpoint_acceptance.ps1' -PackageRoot '.environment-local/phase-05-3/package/Windows' -EvidenceRoot '.environment-local/phase-05-3/owner-retest' -TestPrefix Phase053OwnerRetest -LowOverhead -Fullscreen
+```
+
+The runner refuses existing test-prefix slots; choose a new prefix for an intentional later check. Preserve/inspect user save files independently. Do not run automation while the owner is playing. Archive Saved/Phase04 before a diagnostic route overwrites route-number receipts. The delivered low-overhead measurements precede the final single-clip framing edit; the latter has focused recorded package validation, not a repeated whole-route benchmark. Raw video/frames/trace/build files stay ignored locally; `docs/PHASE053_VALIDATION.json` records selected hashes/results.

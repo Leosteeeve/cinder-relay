@@ -2,11 +2,11 @@
 
 A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 5.8, C++ and Unreal Blueprints.
 
-**Active milestone: Phase05.3 — First-Person Arms and Weapon Handling.** Research and an isolated anatomical review candidate are implemented; gameplay animation integration and final packaging remain pending the arm-model review. See the [research, actual progress and review limitations](docs/FIRST_PERSON_05_3.md). The candidate has an editable Blender source and a native Unreal review map; it has **not** replaced the working Phase05.2 gameplay/workbench assets. Phase06 is not authorized.
+**Active milestone: Phase05.3 — First-Person Arms and Weapon Handling.** Owner-approved anatomy is integrated into seven native weapon clips and the separate22s workbench derivative. Gameplay authority, schema1, native streaming and earlier rollback sources are retained. See [implementation, verification and art-review limits](docs/FIRST_PERSON_05_3.md). Final human continuous-motion acceptance remains pending. Phase06 is not authorized.
 
 [View the Phase 05.1 screenshots and actual assembly recording](docs/media/phase-05-1/README.md).
 
-[View the Phase05.2 matched environment/contact review](docs/media/phase-05-2/README.md). Latest validated local package: `.environment-local/phase-05-2/package/Windows/CinderRelay.exe`; launch without test flags for normal play. One Development package and three independent checkpoint/combat/restoration processes passed, all exits0. Assembly p95=19.538ms at1080p/Epic remains above the60FPS budget; this is a focused prototype art revision, pending owner visual acceptance.
+[View the earlier Phase05.2 matched environment/contact review](docs/media/phase-05-2/README.md). Current Phase05.3 local package: `.environment-local/phase-05-3/package/Windows/CinderRelay.exe`; launch without test flags for normal play. Three independent checkpoint/combat/restoration processes passed, all native/bootstrap exits0. Assembly p95=17.678ms at1080p/Epic versus17.057ms in the same-session unchanged Phase052 baseline; this does not meet a clean60FPS budget. First-use/recovery hitches and human motion-quality acceptance remain open. [Actual results and limitations](docs/PERFORMANCE_BUDGET.md#phase053-integrated-packaged-comparison-2026-11-01).
 
 - 游戏名：CINDER RELAY。
 - 仓库：[Leosteeeve/cinder-relay](https://github.com/Leosteeeve/cinder-relay)，当前 **Public**（2026-10-31 远端查询；Phase 01A 未修改可见性）。
@@ -79,3 +79,8 @@ Phase05 is an original prototype art pass. Segmented hands, coarse cloth/metal s
 Historical Phase05 package: `.environment-local/phase-05/package/Windows/CinderRelay.exe`. One BuildCookRun passed; all three independent checkpoint/combat/restoration routes passed and exited0. Run without test flags for normal play.70 original Unreal assets and107 cosmetic/presentation actors supplement the173 preserved original actors. No claim of final human art acceptance or a measured12–16minute route. Assembly p95=15.891ms, route3 p95=17.694ms at1080p/Epic in the low-overhead sample; controlled recovery travel still takes38.685–99.894ms outside the gameplay frame table. See PERFORMANCE_BUDGET for exact conditions and measurement limits.
 
 Packaged HUD follow-up passed at1920x1080 windowed and2560x1600 fullscreen: bottom controls, health/ammo, objectives and menus fit; actual New Game, Continue, Restart and normal Exit were inspected. Native exit0. Full human art/animation/audio and natural pacing acceptance remain pending.
+
+
+## Phase05.3 candidate
+
+Human first-person hands now accompany the existing ROOK-5: authored idle/walk/sprint/ADS/fire-cycle/reload/dry clips, a bounded once-per-shot cosmetic case effect and a22-second workbench derivative using the same anatomy. Combat balance, SaveGame schema1 and checkpoint/streaming architecture are unchanged. Current controls remain LMB fire, RMB aim, R reload, Tab assembly Skip and Esc pause. See [Phase05.3 implementation and evidence](docs/FIRST_PERSON_05_3.md); final human animation-quality acceptance remains pending.

@@ -1,0 +1,79 @@
+{
+  "status": "Playable candidate; final human art acceptance and 60FPS stabilization remain open",
+  "baseline": "6f9dd59100222ecab6e2bdeeaed60c937389ea60",
+  "protected_hashes": 224,
+  "source_exceptions": [
+    "CRCharacter.cpp",
+    "CRCheckpointRoute.cpp",
+    "CRCombatAcceptance.cpp",
+    "CRCombatAcceptance.h",
+    "CRWeaponViewComponent.cpp",
+    "CRWeaponViewComponent.h",
+    "CinderRelay.Build.cs"
+  ],
+  "actors": {
+    "historical_baseline": 302,
+    "prior_Phase052_additions": 36,
+    "new_Phase053_actors": 0
+  },
+  "primary_routes": [
+    {
+      "route": 1,
+      "native_exit": 0,
+      "launcher_exit": 0,
+      "acceptance": {
+        "passed": true,
+        "route": 1,
+        "journey": 0,
+        "message": "CP01 saved; exit process before next route"
+      }
+    },
+    {
+      "route": 2,
+      "native_exit": 0,
+      "launcher_exit": 0,
+      "acceptance": {
+        "passed": true,
+        "route": 2,
+        "journey": 0,
+        "message": "CP02 saved; exit process before next route"
+      }
+    },
+    {
+      "route": 3,
+      "native_exit": 0,
+      "launcher_exit": 0,
+      "acceptance": {
+        "passed": true,
+        "route": 3,
+        "journey": 4,
+        "message": "Checkpoint recovery, backtracking, death retry, restart and optional ending passed"
+      }
+    }
+  ],
+  "primary_exe_sha256": "A3348A46175046EC76E5FFB1D91016794E1B76FFEEC7227469D3732534F35111",
+  "final_exe_sha256": "1469f611f6201e13a82022c4fd12271bf133257935d359112149d19c48b7c905",
+  "final_package": {
+    "exit": 0,
+    "scope": "Incremental cook after native reload framing correction; existing compiled Game target, no full engine build"
+  },
+  "video": {
+    "path": "CR053_Gameplay_Review.mp4",
+    "sha256": "46fbd1009bb622703c0ecd7b60fd6b6ce4f732d1f00f636e30f3328efb9e8bd8",
+    "seconds": 46.03,
+    "frames": 1238,
+    "resolution": [
+      1920,
+      1080
+    ],
+    "requested_fps": 30,
+    "actual_average_fps": 26.89,
+    "silent": true,
+    "continuous": true,
+    "only_trim": "trailing shutdown/desktop; original action timestamps retained",
+    "capture_exit": 0,
+    "native_exit": 0,
+    "human_motion_acceptance": false
+  },
+  "diagnostic_native_exit": 777003
+}
