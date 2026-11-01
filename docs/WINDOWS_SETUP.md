@@ -1,5 +1,32 @@
 # Windows Setup and Reproduction
 
+## Phase05.4 combat / slide / environment
+
+Normal owner playtest (no test flags; actual player saves remain separate from test slots):
+
+```powershell
+Set-Location 'D:\Projects\FPS Game'
+Start-Process -FilePath '.\.environment-local\phase-05-4\package\Windows\CinderRelay.exe' -WindowStyle Normal
+```
+
+Shift+movement then Ctrl starts a grounded slide above430cm/s. Hold Ctrl to remain crouched; release requests standing with native ceiling clearance. Hip fire is allowed; ADS waits until slide ends. R can end a slide and start the unchanged reload. Esc clears held movement and pauses.
+
+Native reproducible asset production, only for intentional edits to Phase054-owned content:
+
+```powershell
+$cr54Blender = 'D:\Dev\Toolchains\Blender\blender-4.5.11-windows-x64\blender.exe'
+$cr54Editor = 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\Win64\UnrealEditor-Cmd.exe'
+$cr54Project = 'D:/Projects/FPS Game/CinderRelay/CinderRelay.uproject'
+& $cr54Blender --background --factory-startup --python-exit-code 1 --python './CinderRelay/ArtSource/Blender/Phase054/author_utility_kit.py' -- --export-dir '.environment-local/phase-05-4/exports'
+& $cr54Editor $cr54Project -run=pythonscript '-script=D:/Projects/FPS Game/CinderRelay/Scripts/polish_combat_environment.py' -unattended -nosplash -NoLiveCoding
+```
+
+The Blender author overwrites only its Phase054 source; preserve any manual edits before intentionally regenerating. The importer creates missing owned meshes, does not silently reimport existing ones, and refuses foreign name collisions. Use native Reimport for intentional mesh changes. Its338-actor baseline, post-save comparison and `CR054_ENVIRONMENT_PASS` receipt are required; exit0 alone is insufficient. Never invoke old greybox/streaming/arm generators.
+
+Existing `run_checkpoint_acceptance.ps1` accepts optional `-SlideCheck` for the route1 native input extension. `-CRSlideEdges` adds six bounded native physics/input fixtures to route1 under dedicated `-CRCheckpointTest=<fresh prefix>` slots; fixture geometry is transient, never saved. NullRHI evidence does not establish visual quality. `record_combat_environment.ps1` waits for an observed foreground handshake before recording real game pixels; it is an operator-assisted capture, not an unattended benchmark. Do not enable any test/recording flags for ordinary play.
+
+Before/after views use `capture_combat_environment.py` and `-cr054after`; the script does not save assets. Output is local `.environment-local/phase-05-4/{before,after}`. Original sources: `ArtSource/Blender/Phase054/CR054_IndustrialUtilities.blend`; imported meshes: `/Game/Generated/Phase054/Meshes`. Existing native persistent map remains the entry map.
+
 ## Phase053 anatomy review — no gameplay activation
 
 Open `CinderRelay/ArtSource/Blender/Phase053/CR053_EliasArms.blend` for editable anatomy/garments, fingers and disabled IK edit controls. The source contains packed texture images. For native Unreal review, open `/Game/Generated/Phase053/Review/Maps/L_CR053_ArmsReview` and inspect `AN_CR053_AnatomyReview` in the Animation Editor. This separate3s articulation sample is not a new playable build or weapon animation. Default game remains the existing persistent chapter map.

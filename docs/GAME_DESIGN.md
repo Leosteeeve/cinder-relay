@@ -71,3 +71,8 @@ Chapter01 retains its accepted route and mechanics. The art direction is **Ruine
 The opening is a player-controlled reveal of the railcars, industrial gantries and lit workshop entrance with a short subtitle. It does not take away locomotion. The power module/relay/signal now receive original instrument housings over their unchanged interaction collision. Optional calibration keeps the22s duration and all existing completion/Skip/Abort rules. Relay power restoration triggers a4s native light/audio sequence; final signal triggers an8s native light/audio ending followed by the original MERIDIAN NETWORK / CONNECTION RESTORED screen. Tab skips the ending, Esc pauses; Restart remains a full chapter restart.
 
 The12–16 minute first-time route remains a design target, **not measured acceptance**. The present compact layout and automated route cannot establish that pacing. Do not stretch movement or insert waiting periods to manufacture the target. Human first-time exploration, combat and optional-workbench timing is required before calling the slice duration achieved.
+
+
+## Phase05.4 movement feel
+
+Existing crouch input doubles as a grounded slide only from active sprint above430cm/s. One0.75s momentum-decaying slide,1s cooldown, hip fire allowed, ADS disabled; wall/falling/reload/presentation/death safely end it. It is a bounded combat reposition, not a parkour or movement-chain progression system. Weapon damage, ammunition and chapter progression are unchanged. Curated maintenance bays reinforce the existing technician setting without adding story canon or saved events.

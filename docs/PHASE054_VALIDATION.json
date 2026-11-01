@@ -1,0 +1,133 @@
+{
+  "phase": "05.4",
+  "date": "2026-11-01",
+  "baseline": "811aaa5f8921fce4c9bbcc125cfaa2e039693836",
+  "protected_files": {
+    "checked": 240,
+    "unchanged": 237,
+    "changed": [
+      "CinderRelay/Content/Generated/Phase01B/Maps/L_CH01_RailYard.umap",
+      "CinderRelay/Content/Generated/Phase01B/Maps/L_CH01_RelayBunker.umap",
+      "CinderRelay/Content/Generated/Phase01B/Maps/L_CH01_Workshop.umap"
+    ],
+    "missing": []
+  },
+  "environment": {
+    "old_actors_unchanged": 338,
+    "added": {
+      "Workshop": 20,
+      "RailYard": 11,
+      "RelayBunker": 9
+    },
+    "source_triangles": 19772,
+    "cooked_new_meshes": 6,
+    "new_uasset_bytes": 923732
+  },
+  "build": {
+    "editor_seconds": [
+      72.16,
+      42.01
+    ],
+    "editor_failures": 0,
+    "initial_build_cook_run_seconds": 139.7,
+    "content_only_repair_seconds": 75.29,
+    "automation_tool_exits": [
+      0,
+      0
+    ],
+    "reason_for_content_repair": "Observed ramp pipe slope and support-contact placement only; no C++ rebuild",
+    "final_native_exe_sha256": "0a201dfc5657b92b501519c744f8027e32d9090222ca451ddfd1cac66218380d"
+  },
+  "packaged_routes": [
+    {
+      "route": 1,
+      "native_pid": 28996,
+      "native_exit": 0,
+      "launcher_exit": 0,
+      "acceptance": {
+        "passed": true,
+        "route": 1,
+        "journey": 0,
+        "message": "CP01 saved; exit process before next route"
+      }
+    },
+    {
+      "route": 2,
+      "native_pid": 64348,
+      "native_exit": 0,
+      "launcher_exit": 0,
+      "acceptance": {
+        "passed": true,
+        "route": 2,
+        "journey": 0,
+        "message": "CP02 saved; exit process before next route"
+      }
+    },
+    {
+      "route": 3,
+      "native_pid": 2216,
+      "native_exit": 0,
+      "launcher_exit": 0,
+      "acceptance": {
+        "passed": true,
+        "route": 3,
+        "journey": 4,
+        "message": "Checkpoint recovery, backtracking, death retry, restart and optional ending passed"
+      }
+    }
+  ],
+  "edge_cases": {
+    "passed": true,
+    "native_pid": 52112,
+    "exit": 0,
+    "cases": [
+      "held Ctrl",
+      "low ceiling clearance",
+      "wall sweep",
+      "airborne rejection",
+      "reload during slide",
+      "pause during slide"
+    ],
+    "mode": "NullRHI native physics/input; not visual/performance evidence"
+  },
+  "weapon_fixture": {
+    "passed": true,
+    "pid": 51624,
+    "exit": 0,
+    "scope": "Existing ammo/cycle/ADS/once-only case notify/pause/death/restart fixture; not normal full chapter route"
+  },
+  "media": {
+    "raw_video_seconds": 33.6024193,
+    "review_clip_seconds": 23.7,
+    "game_exit": 0,
+    "capture_exit": 0,
+    "format": "1920x1080 H264 silent; capture requests30fps; no audio acceptance",
+    "continuous_human_review": "pending",
+    "sampled_raw_timestamps": [
+      1.45,
+      1.95,
+      3.7,
+      5,
+      9.6,
+      19
+    ],
+    "path": ".environment-local/phase-05-4/video/CR054_Gameplay_Review.mp4",
+    "zip": {
+      "path": ".environment-local/phase-05-4/deliverables/CinderRelay_Phase054_Review.zip",
+      "bytes": 48133873,
+      "sha256": "d6e8f1ab9a2cc48a9b855e2dcb30accde5ed77c586a9f0b629cc9e99a75a7d4f",
+      "photos": 16,
+      "videos": 1,
+      "verified_media_members": 17
+    }
+  },
+  "limits": [
+    "Owner feel/art acceptance pending",
+    "Not a clean60FPS result",
+    "Primary performance sample before final noncolliding support-position fix",
+    "Editor-game exit hang after successful receipt required owned-process stop; native packaged runs exited0",
+    "Sloped decay unit tested; direct uphill/downhill player traversal not separately captured",
+    "Exact sliding-shot ejection count not isolated from ordinary native montage fixture",
+    "No incremental dedicated VRAM or audio balance measurement"
+  ]
+}

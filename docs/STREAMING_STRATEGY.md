@@ -104,3 +104,8 @@ New `ACRZonePresentation` restores steady relay light from ECRObjective on async
 
 
 Phase05 final saved ownership:173 original actors preserved;107 added (Persistent1/RailYard36/Workshop39/Bunker31). All95 new static decorations reopen with NoCollision and cannot affect navigation. Existing floor/gate/checkpoint geometry remains authoritative. The integrated Editor route actually unloaded/revisited zones and retained upgrade/objective state; packaged evidence is recorded in MILESTONES. Editor visibility alone was not accepted as streaming proof.
+
+
+## Phase05.4 cosmetic ownership
+
+The persistent map and native controller remain unchanged. Phase054 adds20 Workshop,11 RailYard and9 RelayBunker decoration/light/decal actors to the corresponding existing sublevels. New meshes are noncolliding/non-nav; no persistent actor holds zone-actor pointers.338 preexisting actor snapshots, checkpoint transforms, gate boundaries and floor collision survived the native save/reload comparison unchanged. Sliding uses the same native capsule and respects existing streaming gate collision. No new map, partition, teleport, loader or save identifier.

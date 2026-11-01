@@ -1,5 +1,12 @@
 # CINDER RELAY — Milestones
 
+## Phase05.4 — combat feel, slide and curated environment (integrated candidate)
+
+Base PR9 merge811aaa5; scope excludes Phase06 and weapon/arm remodeling. Implementation and exact slide contract are in [COMBAT_ENVIRONMENT_05_4.md](COMBAT_ENVIRONMENT_05_4.md). Initial native Editor compilation72.16s succeeded; focused slide decay automation succeeded; real input route reached CP01 with a0.751s slide, one accepted hip-fire round and conserved reload. A standalone Editor-game shutdown stalled after its successful receipt and requested exit0; the owned process was stopped and is not counted as a successful process exit. The Windows package passed three independent native processes: CP01 acquisition, CP01-to-CP02 restoration/assembly lifecycle, and CP02 recovery/backtracking/death/restart/optional ending. Launcher/native exits were all0. Additional six slide physics/input edge fixtures passed; they used NullRHI and are not visual or performance evidence.
+
+Six original utility meshes (19,772 source triangles), one editable Blender source and40 zone-owned cosmetic actors were created through Blender4.5.11 and UE5.8.4. Wrong-facing tool walls and an opposite ramp-pipe slope found in actual renders were corrected and re-inspected. The final noncolliding support-position correction passed one75.29s content-only cook, then a fresh recorded native route and focused weapon fixture (all exit0).237 of240 protected prior binary/source assets are byte-identical; only the three authorized sublevel map files changed.338 old actor snapshots remained identical after reopening. No source asset deletion, story/schema/ID changes or global quality reduction.
+
+
 ## Phase053 human arms and weapon handling — integrated candidate
 
 Base `6f9dd59100222ecab6e2bdeeaed60c937389ea60`; branch `phase-05-3-first-person-animation`. Owner approved anatomical direction and continuation. Actual CC0-derived human rig, original glove/sleeve atlas, seven handling clips, once-only cosmetic case cues and22s workbench derivative are integrated. The original combat authority, SaveGame schema1, checkpoint IDs and native streaming remain unchanged. Current scoped weapon/sight/native automation checks passed; final packaged/runtime/performance results are maintained in [FIRST_PERSON_05_3.md](FIRST_PERSON_05_3.md).
