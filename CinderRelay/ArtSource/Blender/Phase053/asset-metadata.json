@@ -1,0 +1,25 @@
+{
+  "name": "CR053 Elias Arms Anatomy Review",
+  "version": "0.1.0",
+  "license": "LicenseRef-CinderRelay-Project AND CC0-1.0",
+  "category": "character",
+  "description": "Isolated anatomical review candidate. Not integrated into gameplay, retargeted to Manny, or approved as final art.",
+  "provenance": {
+    "origin": "authored",
+    "author": "Cinder Relay project; anatomical base by MakeHuman graphical-data contributors",
+    "sourceUri": "https://github.com/makehumancommunity/makehuman/tree/a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+    "notes": "CC0 graphical geometry, weights, skeleton and six morph targets only. No MakeHuman AGPL program code or restricted marketplace resources. Original fitted garments, atlas materials, review articulation, authoring and export scripts. See upstream-manifest.json and PROVENANCE.md. Source cm; export-only GLB meter conversion; 33999 triangles, 3 material slots, 2x2048 textures. Human approval pending."
+  },
+  "policy": {
+    "maxDimensionMeters": 2,
+    "minDimensionMeters": 0.05,
+    "maxTriangles": 35000,
+    "maxMaterials": 3,
+    "minTextureSize": 2048,
+    "requireBaseColorTexture": true,
+    "requireUVs": true,
+    "requireNormals": true,
+    "requirePowerOfTwoTextures": true,
+    "requireTangentsWithNormalMap": true
+  }
+}

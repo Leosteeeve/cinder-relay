@@ -2,7 +2,7 @@
 
 A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 5.8, C++ and Unreal Blueprints.
 
-**Active milestone: Phase05.2 — Presentation and Contact Polish.** Original railcar/undercarriage and entrance details, service clusters, midground factories, restrained local fill lighting and a new editable contact-animation derivative refine the existing chapter. Native streaming, schema1 checkpoints, combat and the optional22s restoration remain authoritative. See the [focused visual report](docs/PRESENTATION_05_2.md), [milestone evidence](docs/MILESTONES.md#phase052-presentation-and-contact-polish), and [reproduction commands](docs/WINDOWS_SETUP.md#phase052-presentation-and-contact). Human artistic acceptance remains open; Phase06 is not authorized.
+**Active milestone: Phase05.3 — First-Person Arms and Weapon Handling.** Research and an isolated anatomical review candidate are implemented; gameplay animation integration and final packaging remain pending the arm-model review. See the [research, actual progress and review limitations](docs/FIRST_PERSON_05_3.md). The candidate has an editable Blender source and a native Unreal review map; it has **not** replaced the working Phase05.2 gameplay/workbench assets. Phase06 is not authorized.
 
 [View the Phase 05.1 screenshots and actual assembly recording](docs/media/phase-05-1/README.md).
 

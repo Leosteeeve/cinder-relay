@@ -1,5 +1,15 @@
 # CINDER RELAY — Milestones
 
+## Phase053 human arms and weapon handling — active, partial
+
+Base `6f9dd59100222ecab6e2bdeeaed60c937389ea60`; branch `phase-05-3-first-person-animation`. Phase05.2 PR8 was merged. Clean main fast-forwarded before work. Current checkpoint: research complete; real editable anatomy/rig candidate and isolated Unreal import/render prepared for owner review. **C/D/E are not implemented or accepted.** See [actual evidence and open work](FIRST_PERSON_05_3.md).
+
+- Delivered: marketplace/license comparison, pinned CC0 graphical-data manifest, new `.blend`, two2K atlases,49 deform bones,3s articulation clip, actual50-bone UE import, separate native review map, nine inspected1080p Editor samples. The initial overexposed batch was superseded by a neutral-stage batch.
+- Baseline only: retained Phase05.2 package ran three isolated test-save processes successfully; all launcher/native exits0. Assembly p95=17.057ms this time; no code/asset optimization caused that difference, and it still exceeds16.667ms.
+- Art blockers: crude cuff/glove boundaries, atlas patches, basic cloth/skin shading, thumb/contact calibration, uncalibrated IK and no demonstrated weapon grip. Do not treat anatomical import as a final FPS rig or retarget approval.
+- Delivery blockers: native weapon handling/ejection/reload events, workbench retarget, actual continuous gameplay video, final package/regressions and added-cost profiling remain pending. The generic GLB package builder separately fails Windows directory `fsync`; native UE assets exist, but canonical-package verification was not completed.
+- No C++/combat/SaveGame/default-map/chapter-map modifications. Existing working game remains Phase05.2. No Phase06 work.
+
 ## Phase052 presentation and contact polish
 
 Authorized focused revision of Phase05.1, not Phase06. Base merged PR7 `e5d0ef641e99a71b59012e18e5d56880988cdb4b`; branch `phase-05-2-presentation-contact`. Detailed audit/plan/visual comparison: [PRESENTATION_05_2](PRESENTATION_05_2.md). No runtime C++ changes, saved-ID/schema changes or new mechanics.

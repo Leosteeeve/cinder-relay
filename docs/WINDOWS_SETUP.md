@@ -1,5 +1,34 @@
 # Windows Setup and Reproduction
 
+## Phase053 anatomy review — no gameplay activation
+
+Open `CinderRelay/ArtSource/Blender/Phase053/CR053_EliasArms.blend` for editable anatomy/garments, fingers and disabled IK edit controls. The source contains packed texture images. For native Unreal review, open `/Game/Generated/Phase053/Review/Maps/L_CR053_ArmsReview` and inspect `AN_CR053_AnatomyReview` in the Animation Editor. This separate3s articulation sample is not a new playable build or weapon animation. Default game remains the existing persistent chapter map.
+
+```powershell
+Set-Location 'D:\Projects\FPS Game'
+$cr53Blender = 'D:\Dev\Toolchains\Blender\blender-4.5.11-windows-x64\blender.exe'
+$cr53Editor = 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\Win64\UnrealEditor.exe'
+$cr53Project = 'D:/Projects/FPS Game/CinderRelay/CinderRelay.uproject'
+# Export the existing source, preserving centimeter FBX and meter GLB conventions.
+& $cr53Blender --background --factory-startup --python-exit-code 1 --python './CinderRelay/ArtSource/Blender/Phase053/export_elias_review.py' -- --export-dir '.environment-local/phase-05-3/exports'
+# First import or complete only this owned review map; existing imported mesh is preserved.
+$cr53Args = '"{0}" -ExecutePythonScript="D:/Projects/FPS Game/CinderRelay/Scripts/import_arms_review.py" -CR053CaptureReview -unattended -nosplash -NoLiveCoding' -f $cr53Project
+Start-Process -FilePath $cr53Editor -ArgumentList $cr53Args -WindowStyle Hidden -Wait
+# Visible human inspection; no game-input automation.
+Start-Process -FilePath $cr53Editor -ArgumentList ('"{0}" /Game/Generated/Phase053/Review/Maps/L_CR053_ArmsReview' -f $cr53Project)
+```
+
+The importer is idempotent and does not reimport existing geometry automatically. After an intentional saved Blender edit, export then use Unreal's **Reimport** on the owned review Skeletal Mesh/AnimSequence; inspect the actual Interchange result before acceptance. Do not expect exporting alone to update an existing `.uasset`. Do not invoke Phase01A/01B generators or overwrite previous hands. `create_elias_review.py` refuses existing source; `finish_elias_review.py` is one-time only.
+
+For pinned authoring inputs, use the bundled engine Python with UTF-8:
+
+```powershell
+$cr53Python = 'D:\Engines\Unreal\UE_5.8\Engine\Binaries\ThirdParty\Python3\Win64\python.exe'
+& $cr53Python -X utf8 './CinderRelay/ArtSource/Blender/Phase053/acquire_reference.py' --output-dir '.environment-local/phase-05-3/evaluation/makehuman'
+```
+
+Actual review captures/logs and baseline receipts live under `.environment-local/phase-05-3/`. Check `CR053_ARMS_IMPORT_PASS`, the import JSON, `CR053_ARMS_REVIEW PASS`, capture JSON and real files; Unreal can exit0 after Python errors. Initial import diagnostics and successful focused fixes are preserved. No new C++ build/package is necessary for this isolated art review. Final weapon/workbench integration and packaged performance remain pending.
+
 ## Phase 01A：打开与游玩
 
 工程默认启动地图已设为 `/Game/Generated/Phase01A/Maps/L_CH01_Greybox`。打开 `CinderRelay.uproject` 后可在 Content Browser 找到 Generated → Phase01A → Maps。Play 下拉选择 **Standalone Game**，以便 Esc 交给游戏暂停菜单；普通 PIE 的 Esc 默认会被 Editor 的 StopPlaySession 快捷键截获。PIE 释放鼠标可用 Shift+F1。这是 Editor 快捷键边界，不修改用户的全局快捷键。

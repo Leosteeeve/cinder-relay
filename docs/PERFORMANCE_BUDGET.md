@@ -1,5 +1,20 @@
 # CINDER RELAY — Performance Budget
 
+## Phase053 pre-integration baseline, 2026-11-01
+
+One baseline suite used the unchanged Phase05.2 Development package,1080p/Epic/native, ScreenPercentage100, DynamicRes0, VSync0, MaxFPS0 and dedicated `CR04_TEST_Phase053Baseline` saves. No Editor/Blender/capture ran concurrently; existing input-route and frame-counter instrumentation remain overhead. No requested allocation/Insights trace; one final receipt screenshot per process. Three route acceptances and all launcher/native exits passed0. This is **not** a Phase05.3 arm-runtime benchmark.
+
+| Recorded sample | Frames | Frame p50/p95/p99 ms | GT p95 ms | RT p95 ms | GPU p95 ms |
+|---|---:|---|---:|---:|---:|
+| Route1 |915|12.991 /16.733 /19.368|5.878|16.681|15.415|
+| Route2 |4405|15.248 /17.660 /19.879|2.730|17.544|16.343|
+| Route2 assembly subset |1452|15.844 /17.057 /17.639|2.689|17.041|15.591|
+| Route3 |5303|14.337 /16.445 /21.343|3.148|16.406|14.890|
+
+Assembly p95 remains0.391ms above16.667ms. Historical Phase05.2 p95 was19.538ms, but identical assets in a later uncontrolled thermal/desktop session cannot prove an optimization. Route1 maximum71.052ms and route3 maximum55.141ms show remaining spikes; route2 maximum39.192ms. CSV excludes menu/held bootstrap/controlled map travel; counters are not additive. Peak process working set/private commit bytes respectively: route1 1,830,137,856/4,332,101,632; route2 1,897,676,800/4,525,187,072; route3 1,861,795,840/4,422,926,336. These are not dedicated VRAM or proof of leak freedom.
+
+New review-only arms:33,999 source triangles,3 material slots,49 deform bones,2×2048 atlases. **Incremental runtime cost remains unmeasured** because the candidate is not active in gameplay. Preserve the baseline for C/D/E comparison; do not substitute Editor capture timing. Evidence: `.environment-local/phase-05-3/baseline/{process-results.json,polish-summary.json,SavedPhase04/}`. Full conditions/known failures are recorded in [the active report](FIRST_PERSON_05_3.md).
+
 **预算表是项目目标，不是 Epic 或 GPU 厂商的性能保证。** 文末记录 Phase 01B 的真实 packaged 诊断测量；功能已通过，但本次数据没有达到 60 FPS 帧耗时目标。灰盒结果不代表最终美术性能。
 
 ## 测试档与预算提案

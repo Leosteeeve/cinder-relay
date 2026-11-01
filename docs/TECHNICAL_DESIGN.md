@@ -1,5 +1,13 @@
 # CINDER RELAY — Technical Design
 
+## Phase053 isolated anatomical candidate
+
+`/Game/Generated/Phase053/Review/` contains only an inspection mesh, skeleton,3s/60fps articulation animation, two textures, three character materials and a neutral review-stage material/map. `import_arms_review.py` writes only assets tagged `CinderRelay.Phase053.Review.v1`; existing-name collisions without ownership are rejected. `review_arms.py` captures real Editor poses without saving camera/pose changes. The map has no chapter bootstrap, gameplay collision or checkpoint authority and is **not a playable replacement** for `L_CH01_Persistent`.
+
+No runtime presentation adapter or weapon animation notifies have been added yet. Existing `UCRWeaponComponent` remains authoritative for accepted shots,0.9s cycle,2.4s reload and ammo. Future cosmetic events follow [the proposed contract](FIRST_PERSON_05_3.md), with acceptance still pending. Native sight anchors, ADS65/60, atomic appearance fallback, schema1 flags and workbench OnFinished/Skip versus Abort remain intact.
+
+The current anatomical rig has49 deform bones plus a wrapper in Unreal (50 total); it uses MakeHuman finger/metacarpal/wrist and split-arm chains, not Manny's rest hierarchy. Blender IK edit controls are currently disabled. Actual retargeting and hand/weapon attachment must be tested before activation; no names-only skeleton compatibility claim is made. Imported geometry dimensions were verified in centimeters.
+
 ## 确认基线与实施边界
 
 用户确定 UE 5.8、Windows／Visual Studio、C++ 核心和 Blueprint 支持层。本机安装 UE **5.8.4 / CL 58902052**。Phase 00 初始审计没有任何 `.uproject` 或旧 `ThresholdFPS` C++ 模块；工程采用 `CinderRelay`，通过 Unreal Editor 原生 Blank C++ 流程创建，具体结果见 [Phase 00 验证记录](PHASE00_VALIDATION.md)。Phase 01A 审计确认该工程、clean main 和既有 origin，并在其上增量实施，没有进行模块重命名。

@@ -1,5 +1,12 @@
 # CINDER RELAY — Asset Sources and Licensing
 
+## Phase053 anatomical review kit
+
+- **Used:** [MakeHuman graphical data](https://github.com/makehumancommunity/makehuman/tree/a8bc2d54ff0ac92e78ff71431b1023eda42bf482), **CC0-1.0**, zero purchase cost. Base geometry, default rig/weights and six morphological targets only. Headers credit Data Collection AB, Joel Palmius, Jonas Hauquier and Manuel Bastioni/MakeHuman contributors. Attribution is not required by CC0; credits are retained. CC0 permits derivative/public-source redistribution. No MakeHuman AGPL application code is copied or executed; no external skin textures are used. Exact pinned URLs/hashes and license references: `CinderRelay/ArtSource/Blender/Phase053/{upstream-manifest.json,PROVENANCE.md}`.
+- **Original project edits:** fitted fingerless gloves/sleeves, procedural materials and2K atlas baking, independent authoring/export scripts,3-second anatomical keyframes, native review materials/map. Stored as `CR053_EliasArms.blend`, PNG sources and `/Game/Generated/Phase053/Review/` assets. Project ownership is not a new public reuse license; upstream CC0 rights remain intact. Native UE5.8.4 skeletal/animation import and rendered pose checks succeeded; **cooking, gameplay integration and final artistic acceptance remain unverified**.
+- **Not acquired:** Davlet FPS Arms01/02 and KINEMATION Pro/Lite. Price/selected license were hidden in listings; no free status, actual retarget compatibility or purchase is assumed. Fab source is not admitted to this public repository. **Rejected:** CC0 WRAD ARMS retro aesthetic does not meet the intended close-up direction. See [candidate comparison and private-integration proposal](FIRST_PERSON_05_3.md).
+- Raw pinned CC0 evaluation inputs and export intermediates stay ignored. The native assets and editable derivative are intentional source assets. No marketplace library, account receipt, paid provider job or credential is included. Standalone GLB validation passed; optional canonical packaging remains blocked by a documented Windows `fsync` tool issue, with no false vendoring receipt.
+
 Phase 00 不下载大型第三方资源包、不购买资产，也不将本机引擎复制进仓库。新游戏素材导入前必须登记来源、作者、license、署名和再分发限制。
 
 ## 当前来源登记
