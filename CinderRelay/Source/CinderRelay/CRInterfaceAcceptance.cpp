@@ -45,8 +45,8 @@ namespace
         Text.ReplaceInline(TEXT("\r"),TEXT("\\r")); Text.ReplaceInline(TEXT("\n"),TEXT("\\n"));
         return TEXT("\"")+Text+TEXT("\"");
     }
-    const FName Groups[]={TEXT("Master"),TEXT("SFX"),TEXT("Ambience"),TEXT("UI"),TEXT("Voice")};
-    const float Expected[]={.65f,.85f,.50f,.65f,.85f};
+    const FName InterfaceAudioGroups[]={TEXT("Master"),TEXT("SFX"),TEXT("Ambience"),TEXT("UI"),TEXT("Voice")};
+    const float InterfaceAudioExpected[]={.65f,.85f,.50f,.65f,.85f};
     bool Visible(UCRHUDWidget* HUD,FName Name)
     {
         const UWidget* W=HUD?HUD->GetWidgetFromName(Name):nullptr;
@@ -228,12 +228,12 @@ void ACRInterfaceAcceptance::Tick(float DeltaSeconds)
             const auto Defaults=UCRAudioSettingsSubsystem::DefaultVolumes();
             for(int32 I=0;I<5;++I)
             {
-                if(!Check(FMath::IsNearlyEqual(Audio->GetVolume(Groups[I]),Defaults.FindChecked(Groups[I]),.001f),TEXT("Fresh private preference default: ")+Groups[I].ToString())) return;
+                if(!Check(FMath::IsNearlyEqual(Audio->GetVolume(InterfaceAudioGroups[I]),Defaults.FindChecked(InterfaceAudioGroups[I]),.001f),TEXT("Fresh private preference default: ")+InterfaceAudioGroups[I].ToString())) return;
                 for(int32 N=0;N<3;++N) Key(EKeys::Left);
                 if(I<4) Key(EKeys::Down);
             }
         }
-        for(int32 I=0;I<5;++I) if(!Check(FMath::IsNearlyEqual(Audio->GetVolume(Groups[I]),Expected[I],.001f),TEXT("UI or cross-process audio value: ")+Groups[I].ToString())) return;
+        for(int32 I=0;I<5;++I) if(!Check(FMath::IsNearlyEqual(Audio->GetVolume(InterfaceAudioGroups[I]),InterfaceAudioExpected[I],.001f),TEXT("UI or cross-process audio value: ")+InterfaceAudioGroups[I].ToString())) return;
         Capture(TEXT("02_Settings"),TEXT("settings_back")); return;
     }
     if(Run.Stage==TEXT("settings_back"))
@@ -241,7 +241,7 @@ void ACRInterfaceAcceptance::Tick(float DeltaSeconds)
         Key(EKeys::Escape);
         if(!Check(!Visible(HUD,TEXT("ModalPanel")),TEXT("Slate Escape returns from Settings"))) return;
         TMap<FName,float> Saved; if(!Check(UCRAudioSettingsSubsystem::ReadPreferences(Audio->GetPreferencesPath(),Saved),TEXT("Independent audio config persisted"))) return;
-        for(int32 I=0;I<5;++I) if(!Check(FMath::IsNearlyEqual(Saved.FindChecked(Groups[I]),Expected[I],.001f),TEXT("Persisted slider value: ")+Groups[I].ToString())) return;
+        for(int32 I=0;I<5;++I) if(!Check(FMath::IsNearlyEqual(Saved.FindChecked(InterfaceAudioGroups[I]),InterfaceAudioExpected[I],.001f),TEXT("Persisted slider value: ")+InterfaceAudioGroups[I].ToString())) return;
         if(Run.Mode==TEXT("Write")) { Key(EKeys::Enter); Next(TEXT("confirm_new")); }
         else { Run.Travel=true; bHandedOff=true; Key(EKeys::Enter); }
         return;

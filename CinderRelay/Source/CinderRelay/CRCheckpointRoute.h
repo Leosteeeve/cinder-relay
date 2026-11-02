@@ -25,6 +25,12 @@ private:
     TArray<FVector2D> Waypoints;
     int32 Route = 0, SlideEdgeCase=0;
     bool bSlideEdges=false;
+    bool bGateCheck=false;
+    int32 GateCheckStep=0;
+    double GateCheckAt=0;
+    float GatePausedWorldTime=0;
+    FTransform GatePausedPose;
+    void TickGateCheck();
     FVector SlideEdgeOrigin=FVector::ZeroVector;
     TWeakObjectPtr<AActor> SlideObstacle;
     AActor* SlideBlock(FVector Position,FVector Size);

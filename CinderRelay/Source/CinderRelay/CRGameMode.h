@@ -34,6 +34,15 @@ public:
 	UFUNCTION(BlueprintPure) ECRObjective GetObjective() const { return Objective; }
 	UFUNCTION(BlueprintPure) FText GetObjectiveText() const;
 	bool TryAdvance(ECRObjective Expected);
+	// Session-only mechanical progress: derived from original objectives on checkpoint restore.
+	void RegisterWorkshopDiagnostic() { bWorkshopDiagnostic = true; }
+	void RegisterAccessMachinery() { bAccessMachinery = true; }
+	int32 GetDiagnosticStep() const { return Objective >= ECRObjective::RestorePower ? 3 : DiagnosticStep; }
+	bool TryDiagnosticStep(int32 Step);
+	bool IsModuleReleased() const { return !bWorkshopDiagnostic || GetDiagnosticStep() == 3; }
+	bool IsAccessStopped() const { return !bAccessMachinery || bAccessStopped || Objective >= ECRObjective::InvestigateSignal; }
+	void StopAccessMachinery();
+	UPROPERTY(BlueprintAssignable) FCRRestorationChanged OnMaintenanceChanged;
 	void CaptureSession(UCRChapterSaveGame& Snapshot) const;
 	bool RestoreSession(const UCRChapterSaveGame& Snapshot);
 	bool ReleaseStartingPlayer();
@@ -55,6 +64,8 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 private:
+	int32 DiagnosticStep = 0;
+	bool bWorkshopDiagnostic = false, bAccessMachinery = false, bAccessStopped = false;
 	void CheckpointWritten(const UCRChapterSaveGame* Save, bool Success, uint64 Epoch);
 	UPROPERTY(Transient) TObjectPtr<UCRChapterSaveGame> RestoreSnapshot;
 	FName StartingCheckpoint = TEXT("CP00_START_YARD");

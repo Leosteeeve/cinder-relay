@@ -22,6 +22,9 @@ public:
     static bool BuildDesignerLayout(UObject* Blueprint, UObject* BodyFont, UObject* TitleFont, FName Panel);
 
     UFUNCTION(BlueprintCallable, Category="Cinder Relay|Interface|Authoring")
+    static bool UpgradeDesignerArtworkAspect(UObject* Blueprint);
+
+    UFUNCTION(BlueprintCallable, Category="Cinder Relay|Interface|Authoring")
     static bool ConfigureCompositeFont(UObject* Font, UObject* FontFace);
 
     UFUNCTION(BlueprintCallable, Category="Cinder Relay|Interface|Authoring")

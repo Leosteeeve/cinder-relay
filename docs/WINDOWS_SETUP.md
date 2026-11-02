@@ -1,5 +1,22 @@
 # Windows Setup and Reproduction
 
+## Phase06 candidate
+
+Normal local launch: `.environment-local/phase-06/package/Windows/CinderRelay.exe`. Use actual New Game/Continue and Exit Game; no console commands are required. E opens/closes mechanical boundary doors, I toggles Field Pack, Tab retains assembly/ending Skip, R reloads and F5 retries streaming. The candidate is not pacing/performance accepted; see CHAPTER_06 before private testing.
+
+The installed5.8.4 engine is `D:/Engines/Unreal/UE_5.8`. One final Development BuildCookRun was executed with `-project=D:/Projects/FPS Game/CinderRelay/CinderRelay.uproject -noP4 -platform=Win64 -clientconfig=Development -target=CinderRelay -build -cook -stage -pak -archive -archivedirectory=D:/Projects/FPS Game/.environment-local/phase-06/package -nocompileeditor -installed -unattended -utf8output` (quote paths containing spaces). Exit0;141.38s. Do not rebuild merely to repeat playtests.
+
+Reproduction tools, only when new evidence justifies a run:
+
+```powershell
+./CinderRelay/Scripts/run_checkpoint_acceptance.ps1 -PackageRoot .environment-local/phase-06/package/Windows -EvidenceRoot .environment-local/phase-06/repro-checkpoints -TestPrefix Phase06Repro01 -LowOverhead -SlideCheck
+./CinderRelay/Scripts/run_interface_acceptance.ps1 -PackageRoot .environment-local/phase-06/package/Windows -EvidenceRoot .environment-local/phase-06/repro-ui -TestPrefix Phase055Phase06Repro01
+```
+
+Use fresh prefixes/directories; never delete owner saves. `-CR06GateCheck` may be added to an isolated route1 command for mechanical-door edge checks. Historical `-CRStreamAcceptance` assumes proximity-opening gates and is not the current chapter fixture. All automated route timings are functional evidence, not first-time playtime.
+
+`author_chapter06.py` owns only tagged Phase06 additions and explicit gate changes; `-CR06Artwork` opt-in performs the targeted existing-Designer migration. Requires original Blender exports in ignored phase-06/exports; never run old generators. `review_chapter06.py` renders temporary Editor cameras without saving them. Use forward-slash Python script arguments to avoid escape interpretation. Serialize Editor asset writes/builds; do not run parallel Editors against these maps.
+
 ## Phase05.5 interface, audio and Field Pack
 
 Normal owner playtest (real player save namespace; no automation flags):

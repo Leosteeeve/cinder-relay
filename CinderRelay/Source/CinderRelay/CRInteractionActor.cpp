@@ -30,7 +30,9 @@ ACRInteractionActor::ACRInteractionActor()
 bool ACRInteractionActor::CanInteract_Implementation(ACRCharacter* Player) const
 {
 	const auto* Mode = GetWorld()->GetAuthGameMode<ACRGameMode>();
-	return IsValid(Player) && !bUsed && Mode && Mode->GetObjective() == RequiredObjective(Kind) && Player->CanInteractWith(this);
+	return IsValid(Player) && !bUsed && Mode && Mode->GetObjective() == RequiredObjective(Kind) && Player->CanInteractWith(this)
+		&& (Kind != ECRInteractionKind::PowerModule || Mode->IsModuleReleased())
+		&& (Kind != ECRInteractionKind::Relay || Mode->IsAccessStopped());
 }
 
 void ACRInteractionActor::BeginPlay()
@@ -51,6 +53,11 @@ void ACRInteractionActor::BeginPlay()
 FText ACRInteractionActor::GetInteractionPrompt_Implementation(ACRCharacter* Player) const
 {
 	if (bUsed) return FText::GetEmpty();
+	const auto* Mode=GetWorld()->GetAuthGameMode<ACRGameMode>();
+	if(Mode && Kind==ECRInteractionKind::PowerModule && !Mode->IsModuleReleased())
+		return NSLOCTEXT("Cinder","ModuleDiagnostic","Module cradle locked. Follow the amber diagnostic labels: ROUTE / VERIFY / RELEASE.");
+	if(Mode && Kind==ECRInteractionKind::Relay && Mode->GetObjective()==ECRObjective::RestorePower && !Mode->IsAccessStopped())
+		return NSLOCTEXT("Cinder","RelayMachinery","Stop the cycling access machinery at the marked local control first.");
 	if (!CanInteract_Implementation(Player))
 		return Kind == ECRInteractionKind::Relay
 			? NSLOCTEXT("Cinder", "NeedModule", "Relay Nine requires a functional power module.")
