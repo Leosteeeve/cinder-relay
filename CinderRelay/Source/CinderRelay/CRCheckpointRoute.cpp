@@ -16,6 +16,9 @@
 #include "CRSalvagePickup.h"
 #include "CRWorkbench.h"
 #include "CRInteractionActor.h"
+#include "CRStreamingGate.h"
+#include "CRMaintenanceStation.h"
+#include "CRAccessMachinery.h"
 #include "Camera/CameraComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -56,6 +59,7 @@ void ACRCheckpointRoute::BeginPlay()
     FParse::Value(FCommandLine::Get(), TEXT("CRCheckpointRoute="), Route);
     bSlideEdges=FParse::Param(FCommandLine::Get(),TEXT("CRSlideEdges"));
     bSlideCheck=FParse::Param(FCommandLine::Get(),TEXT("CRSlideCheck"));
+    bGateCheck=FParse::Param(FCommandLine::Get(),TEXT("CR06GateCheck"));
     bSlideVideo=FParse::Param(FCommandLine::Get(),TEXT("CR054Video"));
     bLifecycle = FParse::Param(FCommandLine::Get(), TEXT("CRCheckpointLifecycle"));
     bHandlingVideo = FParse::Param(FCommandLine::Get(), TEXT("CRHandlingVideo"));
@@ -133,9 +137,18 @@ void ACRCheckpointRoute::Tick(float Delta)
     Record(Delta);
     auto* W = Player->Weapon.Get();
     if (Player->Health->IsDead() && Stage != TEXT("die") && Stage!=TEXT("bench_dead")) { Finish(false,TEXT("Unexpected death in ")+Stage); return; }
+    if(Stage.StartsWith(TEXT("gate_"))) { TickGateCheck(); return; }
     if (Stage == TEXT("walk"))
     {
         if (Waypoints.IsEmpty()) { Next(AfterWalk); return; }
+        // Exercise the same E interaction as the player; never open native gates via state setters.
+        for(TActorIterator<ACRStreamingGate> It(GetWorld());It;++It)
+        {
+            const FVector P=Player->GetActorLocation(), Door=It->GetActorLocation();
+            const bool Crosses=(P.X-Door.X)*(Waypoints[0].X-Door.X)<0;
+            if(Crosses && !It->bOpen && FMath::Abs(P.X-Door.X)<210 && FMath::Abs(P.Y-Door.Y)<180)
+            { Interact(*It,Door+FVector(0,0,145)); return; }
+        }
         const FVector2D D = Waypoints[0] - FVector2D(Player->GetActorLocation().X,Player->GetActorLocation().Y);
         if (D.Size()<45) { Waypoints.RemoveAt(0); return; }
         PC->SetControlRotation(FRotator(0,FMath::RadiansToDegrees(FMath::Atan2(D.Y,D.X)),0)); Inject(Player->ForwardAction); Inject(Player->SprintAction); return;
@@ -244,7 +257,8 @@ void ACRCheckpointRoute::Tick(float Delta)
     }
     else if (Stage == TEXT("ammo"))
     {
-        if (G->IsPickupCollected(TEXT("CR02_YardAmmo"))) { Walk({{1500,0},{2050,0}},TEXT("wait_cp01")); return; }
+        if (G->IsPickupCollected(TEXT("CR02_YardAmmo")))
+        { if(bGateCheck) Walk({{1370,-200}},TEXT("gate_check")); else Walk({{1500,0},{2050,0}},TEXT("wait_cp01")); return; }
         for (TActorIterator<ACRAmmoPickup> It(GetWorld()); It; ++It) { Interact(*It,It->GetActorLocation()); break; }
     }
     else if (Stage == TEXT("wait_cp01"))
@@ -274,8 +288,25 @@ void ACRCheckpointRoute::Tick(float Delta)
     }
     else if(Stage==TEXT("video_reload") && Age>2.6 && W->State==ECRWeaponState::Ready)
     { bHandlingVideoDone=true;Walk({{2800,-170}},TEXT("module")); }
+    else if(Stage==TEXT("diagnostic"))
+    {
+        if(G->IsModuleReleased()) { Walk({{2800,-170}},TEXT("module")); return; }
+        for(TActorIterator<ACRMaintenanceStation> It(GetWorld());It;++It) if(It->Step==G->GetDiagnosticStep())
+        {
+            const FVector Stand=It->GetActorLocation()+It->GetActorForwardVector()*170;
+            if(FVector::Dist2D(Player->GetActorLocation(),Stand)>50) Walk({FVector2D(Stand.X,Stand.Y)},TEXT("diagnostic"));
+            else Interact(*It,It->GetActorLocation());
+            break;
+        }
+    }
+    else if(Stage==TEXT("access_stop"))
+    {
+        if(G->IsAccessStopped()) { Walk({{6000,-320}},TEXT("relay")); return; }
+        for(TActorIterator<ACRAccessMachinery> It(GetWorld());It;++It) { Interact(*It,It->GetActorLocation()+FVector(400,390,125)); break; }
+    }
     else if (Stage == TEXT("module"))
     {
+        if(!G->IsModuleReleased()) { Next(TEXT("diagnostic")); return; }
         if (G->GetObjective()==ECRObjective::RestorePower)
         { if (Route==2) Walk({{2400,-170},{2130,-350}},TEXT("salvage")); else Walk({{3300,0},{4050,0},{5450,0},{6000,-320}},TEXT("relay")); return; }
         for (TActorIterator<ACRInteractionActor> It(GetWorld()); It; ++It) if (It->Kind==ECRInteractionKind::PowerModule) { Interact(*It,It->GetActorLocation()); break; }
@@ -355,6 +386,7 @@ void ACRCheckpointRoute::Tick(float Delta)
     { Check(PC->bPrototypeDefeated&&W->State==ECRWeaponState::Disabled,TEXT("Actual enemy damage reaches death recovery menu")); Travel(true,3); }
     else if(Stage==TEXT("relay"))
     {
+        if(!G->IsAccessStopped()) { Walk({{5950,450}},TEXT("access_stop")); return; }
         if(G->GetObjective()==ECRObjective::InvestigateSignal) { Walk({{6500,-250},{6700,0}},TEXT("signal")); return; }
         for(TActorIterator<ACRInteractionActor> It(GetWorld());It;++It)if(It->Kind==ECRInteractionKind::Relay){Interact(*It,It->GetActorLocation());break;}
     }

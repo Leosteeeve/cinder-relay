@@ -1,4 +1,5 @@
 #include "CRGameMode.h"
+#include "CRChapterMechanics.h"
 #include "CRCharacter.h"
 #include "CRPlayerController.h"
 #include "CRChapterStreamingController.h"
@@ -83,6 +84,7 @@ void ACRGameMode::CaptureSession(UCRChapterSaveGame& S) const
 bool ACRGameMode::RestoreSession(const UCRChapterSaveGame& S)
 {
 	FString Reason; if (!S.Validate(Reason)) return false;
+	DiagnosticStep=0; bAccessStopped=false;
 	Objective = S.CurrentObjective; DefeatedEnemies.Reset(); CollectedPickups.Reset(); StoryBeats.Reset();
 	for (FName Id : S.DefeatedEnemyIds) DefeatedEnemies.Add(Id);
 	for (FName Id : S.CollectedPickupIds) CollectedPickups.Add(Id);
@@ -111,6 +113,22 @@ ACRGameMode::ACRGameMode()
 {
 	DefaultPawnClass = ACRCharacter::StaticClass();
 	PlayerControllerClass = ACRPlayerController::StaticClass();
+}
+
+bool ACRGameMode::TryDiagnosticStep(int32 Step)
+{
+	if(Objective != ECRObjective::FindModule || !bWorkshopDiagnostic) return false;
+	const int32 Next = CRChapterMechanics::DiagnosticStep(DiagnosticStep, Step);
+	if(Next == DiagnosticStep) return false;
+	DiagnosticStep=Next; OnMaintenanceChanged.Broadcast();
+	UE_LOG(LogTemp, Display, TEXT("CR06_MAINTENANCE Diagnostic=%d"), DiagnosticStep);
+	return true;
+}
+void ACRGameMode::StopAccessMachinery()
+{
+	if(!bAccessMachinery || bAccessStopped || Objective != ECRObjective::RestorePower) return;
+	bAccessStopped=true; OnMaintenanceChanged.Broadcast();
+	UE_LOG(LogTemp, Display, TEXT("CR06_MAINTENANCE AccessStopped"));
 }
 
 void ACRGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer)
@@ -179,7 +197,9 @@ FText ACRGameMode::GetObjectiveText() const
 	switch (Objective)
 	{
 	case ECRObjective::ReachWorkshop: return NSLOCTEXT("Cinder", "Reach", "Reach the maintenance workshop.");
-	case ECRObjective::FindModule: return NSLOCTEXT("Cinder", "Module", "Find a functional power module.");
+	case ECRObjective::FindModule: return bWorkshopDiagnostic
+		? NSLOCTEXT("Cinder", "ModuleTest", "Workshop: test and release a replacement power module.")
+		: NSLOCTEXT("Cinder", "Module", "Find a functional power module.");
 	case ECRObjective::RestorePower: return NSLOCTEXT("Cinder", "Power", "Restore power to Relay Nine.");
 	case ECRObjective::InvestigateSignal: return NSLOCTEXT("Cinder", "Signal", "Investigate the restored signal.");
 	default: return NSLOCTEXT("Cinder", "Complete", "Connection restored.");
