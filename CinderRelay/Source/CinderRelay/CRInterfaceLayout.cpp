@@ -10,12 +10,16 @@
 #include "Components/ProgressBar.h"
 #include "Components/ScrollBox.h"
 #include "Components/SizeBox.h"
+#include "Components/ScaleBox.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
 #include "Engine/Font.h"
 #include "Engine/FontFace.h"
 #include "UObject/UnrealType.h"
+#if WITH_EDITOR
+#include "WidgetBlueprint.h"
+#endif
 
 namespace
 {
@@ -167,7 +171,9 @@ namespace
         {
             UCanvasPanel* M = Make<UCanvasPanel>(TEXT("MenuBackdrop")); Stretch(Root, M, 10);
             UBorder* Base = Panel(TEXT("MenuBase"), Deep); Stretch(M, Base);
-            UImage* Background = Make<UImage>(TEXT("TitleBackground")); Background->SetVisibility(ESlateVisibility::Collapsed); Stretch(M, Background, 1);
+            UScaleBox* ArtFit = Make<UScaleBox>(TEXT("TitleArtworkFit")); ArtFit->SetStretch(EStretch::ScaleToFill); ArtFit->SetClipping(EWidgetClipping::ClipToBounds); Stretch(M, ArtFit, 1);
+            USizeBox* ArtSize = Make<USizeBox>(TEXT("TitleArtworkSize")); ArtSize->SetWidthOverride(1920); ArtSize->SetHeightOverride(1080); ArtFit->AddChild(ArtSize);
+            UImage* Background = Make<UImage>(TEXT("TitleBackground")); Background->SetVisibility(ESlateVisibility::Collapsed); ArtSize->AddChild(Background);
             UBorder* Shade = Panel(TEXT("MenuShade"), FLinearColor(Deep.R, Deep.G, Deep.B, .90f));
             UCanvasPanelSlot* ShadeSlot = M->AddChildToCanvas(Shade); ShadeSlot->SetAnchors(FAnchors(0, 0, 0, 1)); ShadeSlot->SetOffsets(FMargin(0, 0, 760, 0)); ShadeSlot->SetZOrder(2);
             UCanvasPanel* Content = Make<UCanvasPanel>(TEXT("MenuContent")); Stretch(M, Content, 3);
@@ -258,6 +264,35 @@ bool UCRInterfaceLibrary::BuildDesignerLayout(UObject* Blueprint, UObject* BodyF
     if (!Tree || Tree->RootWidget) return false; // Never rebuild over authored Designer changes.
     Blueprint->Modify(); Tree->Modify();
     if (!CRInterfaceLayout::Build(Tree, BodyFont, TitleFont, Panel)) return false;
+    Blueprint->MarkPackageDirty(); return true;
+#else
+    return false;
+#endif
+}
+
+bool UCRInterfaceLibrary::UpgradeDesignerArtworkAspect(UObject* Blueprint)
+{
+#if WITH_EDITOR
+    UWidgetTree* Tree=DesignerTree(Blueprint);
+    auto* WidgetBP=Cast<UWidgetBlueprint>(Blueprint);
+    if(!Tree || !WidgetBP) return false;
+    auto Register=[WidgetBP](FName Name)
+    { if(!WidgetBP->WidgetVariableNameToGuidMap.Contains(Name)) WidgetBP->OnVariableAdded(Name); };
+    if(Tree->FindWidget(TEXT("TitleArtworkFit")))
+    { Register(TEXT("TitleArtworkFit")); Register(TEXT("TitleArtworkSize")); return true; }
+    auto* Art=Cast<UImage>(Tree->FindWidget(TEXT("TitleBackground")));
+    auto* Parent=Art?Cast<UCanvasPanel>(Art->GetParent()):nullptr;
+    auto* OldSlot=Art?Cast<UCanvasPanelSlot>(Art->Slot):nullptr;
+    if(!Parent || !OldSlot) return false;
+    const FAnchorData Layout=OldSlot->GetLayout(); const int32 Z=OldSlot->GetZOrder();
+    Blueprint->Modify(); Tree->Modify(); Parent->Modify(); Art->Modify();
+    Art->RemoveFromParent();
+    auto* Fit=Tree->ConstructWidget<UScaleBox>(UScaleBox::StaticClass(),TEXT("TitleArtworkFit"));
+    Fit->SetStretch(EStretch::ScaleToFill); Fit->SetClipping(EWidgetClipping::ClipToBounds);
+    auto* Slot=Parent->AddChildToCanvas(Fit); Slot->SetLayout(Layout); Slot->SetZOrder(Z);
+    auto* Size=Tree->ConstructWidget<USizeBox>(USizeBox::StaticClass(),TEXT("TitleArtworkSize"));
+    Size->SetWidthOverride(1920); Size->SetHeightOverride(1080); Fit->AddChild(Size); Size->AddChild(Art);
+    Register(Fit->GetFName()); Register(Size->GetFName());
     Blueprint->MarkPackageDirty(); return true;
 #else
     return false;
