@@ -50,3 +50,7 @@ No additional canon is established. The cause of The Quieting and MERIDIAN's mot
 - Ending subtitle: "RELAY NINE / LOCAL POWER STABLE" and "[The returned signal breaks into an irregular carrier tone.]"
 
 Existing Phase03 discovery/reflection/echo lines retain their existing stable session flags. New wall records and the opening/ending presentation do not add IDs to schema1. Restoration settles the relay's steady light from the existing objective without replaying an old sequence. There is no new radio operator, voice performance or confirmed explanation of the catastrophe. The final on-screen text remains MERIDIAN NETWORK / CONNECTION RESTORED.
+
+## Phase06 provisional environmental instruction
+
+The Workshop's `01 ROUTE / BENCH SUPPLY`, `02 VERIFY / TEST LOAD`, and `03 RELEASE / MODULE CRADLE` labels describe a fictional diagnostic sequence. The yard work order directs the player to the replacement module; underground labels identify a cycling shuttle, always-open service walk and machinery-stop control. These are provisional equipment instructions, not new historical facts, character biography or realistic electrical procedures. They establish no cause of The Quieting, identity for a radio speaker or interpretation of MERIDIAN. The original mission objectives, existing one-time story IDs and final **MERIDIAN NETWORK / CONNECTION RESTORED** remain authoritative. No new voice recording is added.

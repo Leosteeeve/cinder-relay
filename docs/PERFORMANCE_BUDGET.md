@@ -1,5 +1,56 @@
 # CINDER RELAY — Performance Budget
 
+## Phase06 controlled candidate observations (2026-11-01 local)
+
+**Not accepted as stable native60FPS.** UE5.8.4, RTX5070Laptop8GB/32GB, driver616.92; actual1920x1080, all Epic groups3, ScreenPercentage100, DynamicRes0, VSync0, MaxFPS0. No frame generation, quality reduction or cache clearing. One unchanged Phase055 packaged route1 baseline and one final Phase06 package's three-process suite used the same input fixture/settings. No Editor, recording, offline analysis or heavy trace ran during the primary samples. Existing desktop applications remained open; instantaneous background CPU load/power/thermal state were not controlled. First launch of each comparison build used existing caches, **not a cold shader cache**. The separate warm traced run is diagnostic only.
+
+Mechanical doors change total traversal, and added cover changes visibility. Combat/slide are the closest paired segments, not identical rendered content. Native frame counters,1Hz process memory and the existing automated route add common overhead; a receipt screenshot is requested only after frame recording ends. Median p50 and nearest-rank p95/p99. Thread/GPU counters refer to the previous frame and cannot be summed. Raw data and exact flags: `.environment-local/phase-06/perf/{baseline,candidate}`, `packaged-acceptance/process-results.json`. Reproduce tables from sealed inputs with `Scripts/summarize_chapter06.py`.
+
+| Segment | Baseline frames / p95 ms | Candidate frames / p50 / p95 / p99 ms | Candidate GT / RT / GPU p95 ms | Candidate >50ms |
+|---|---|---|---|---|
+| all_active | 1166 / 17.360 | 1155 / 13.995 / 18.361 / 21.547 | 2.763 / 18.302 / 16.982 | 0 |
+| combat | 251 / 14.461 | 232 / 13.657 / 16.085 / 16.790 | 2.539 / 16.073 / 14.692 | 0 |
+| slide_all | 345 / 19.336 | 318 / 13.238 / 20.721 / 23.065 | 2.527 / 20.715 / 19.285 | 0 |
+| slide_active | 63 / 20.303 | 58 / 13.104 / 21.547 / 22.090 | 2.283 / 21.595 / 20.572 | 0 |
+| first_combat_second | 76 / 14.824 | 70 / 14.298 / 16.553 / 17.218 | 2.623 / 16.565 / 15.321 | 0 |
+| walk | 504 / 17.444 | 542 / 14.565 / 18.259 / 19.236 | 2.765 / 18.269 / 16.966 | 0 |
+
+Baseline all-active p50/p95/p99=13.075/17.360/20.122ms; combat12.657/14.461/14.839ms; slide-related12.077/19.336/20.645ms. Neither the old nor new all-active/slide p95 meets16.67ms. The first-combat-second row includes the first combat shot but is not exact input-to-display latency; an earlier accepted shot occurs during the slide fixture.
+
+Final candidate complete functional samples (route2/3 have no matched old-build baseline in this phase):
+
+| Route | Active frames | Frame p50 / p95 / p99 ms | GT / RT / GPU p95 ms | >50ms |
+|---|---:|---|---|---:|
+| 1 | 1155 | 13.995 / 18.361 / 21.547 | 2.763 / 18.302 / 16.982 | 0 |
+| 2 | 6987 | 16.113 / 18.487 / 20.683 | 2.667 / 18.486 / 17.050 | 0 |
+| 3 | 6389 | 15.348 / 18.270 / 21.712 | 3.305 / 18.245 / 16.703 | 0 |
+
+All14,531 recorded active-pawn rows are below50ms. **This excludes process startup and gaps when travel has no possessed pawn.** No claim of zero cold-start hitches follows. World delta can cap at400ms; frame maxima are not guaranteed wall-clock stalls. Native first reconstruction: CP00 114.811ms, cross-process CP01 156.671ms, CP02 100.168ms. Three immediate CP02 warm recoveries:32.129/31.823/26.642ms. First-process launch-to-CP00 safe-control interval was about5.519s, including startup and menu automation. CP01 native write16.009ms; CP02 write16.412ms. These are logged reconstruction/write latencies, not subjective loading estimates.
+
+Route1 working-set sampled range: baseline1640.97–1844.96MiB, candidate1548.38–1919.99MiB. Private commit3946.00–4193.53 vs4034.86–4155.57MiB. Small1Hz process samples do not isolate new asset cost. Idle total-GPU memory before/after suite2174/2169MiB and50/56C are **not in-game VRAM/power measurements**. Actual native geometry residency was validated by loaded/visible/unloaded assertions and retaining both sides until a door seals. No per-asset GPU-residency budget is claimed.
+
+### One focused warm Insights diagnostic
+
+The measured slide tail justified one warm route1 trace with CPU/GPU/frame/bookmark/loadtime, named events and per-process `r.PSOPrecache.Validation=2` ini override. Existing caches were retained. Raw54,141,642B trace: `perf/diagnostic/route1.utrace`. Functional CP01 receipt passed, but OS exit was **777003**, after native requested0 and complete shutdown logging. Installed `GenericPlatformCrashContext.h` names this `CrashReporterCrashed`; root cause remains unresolved, as in earlier phases. Do not count it as a successful process exit or assume a game renderer/audio defect from this code alone.
+
+Offline Unreal Insights exited0 and exported timing statistics over trace3–23s, which includes initialization/teardown portions of a21.75s session. Its initial filename parser truncated a space-containing export path; the resulting CSV's exact timestamp/header were verified and moved into the intended local evidence directory. No game rerun occurred. Allocation-tag analysis errors make memory attribution from this trace unusable. Selected inclusive CPU scopes (per invocation, not per frame; nested scopes must not be summed):
+
+| Scope | Count | Average / maximum ms |
+|---|---:|---:|
+| Active WBP_CR_HUDRoot Tick |1218|0.004 /0.283|
+| Active WBP_CR_HUDRoot Paint |1218|0.051 /0.279|
+| SlatePrepass |1219|0.051 /1.058|
+| Slate::DrawWindows |1218|0.237 /2.412|
+| CR_WeaponShot |5|0.226 /0.311|
+| CR_WeaponPresentation |1213|0.008 /0.210|
+| CRWeaponAnimInstance |2426|0.020 /0.153|
+| WaitForVisibilityTasks |1221|8.958 /22.354|
+| Sync_RenderingThread |1245|12.053 /114.530|
+| FCompilePipelineStateTask |329|0.719 /26.753|
+
+The RHI log contains49 `PSOPrecacheState: Missed` records, from00:10:21.475 to00:10:22.283UTC; slide-active begins22.583 and combat27.975. No later miss was logged during those active intervals. This does **not** prove complete PSO coverage or attribute the primary slide tail to PSO compilation. Async compilation and waits can overlap. The sampled UI/accepted-shot scopes are small compared with render synchronization/visibility waits: an inference supporting further render/visibility investigation, not proof of the root cause. No speculative renderer rewrite, PSO-default change or optimization credit is made. Incremental UI/audio/GPU cost remains unisolated; the Phase055 audio architecture is unchanged.
+
+
 ## Phase055 packaged observations, 2026-11-01
 
 Performance acceptance is open. Unchanged Phase054 and Phase055 Windows Development packages ran the same three native checkpoint routes at1920x1080/Epic3, native ScreenPercentage100, DynamicRes0, VSync0, MaxFPS0, on the RTX5070 Laptop8GB/32GB machine. All six processes passed their native receipts and exited0 without forced stop. These primary runs requested no trace or recording. Desktop/tool workload, thermal/power state and caches were not controlled; small previous-frame counter samples do not identify causes. No global quality reduction was made. Raw input and settings receipts are sealed under ignored `.environment-local/phase-05-5/performance-{baseline,candidate}/`.
