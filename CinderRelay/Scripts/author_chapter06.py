@@ -1,7 +1,7 @@
 """Bounded Phase06 import and placement. Never executes previous generators.
 Only owns CR06-tagged additions and explicit door/HUD changes. CP anchors/IDs remain fixed.
 """
-import unreal, json
+import unreal, json, runpy
 from pathlib import Path
 p=Path(unreal.Paths.project_dir()); out=p.parent/'.environment-local/phase-06'; exp=out/'exports'
 assets=unreal.EditorAssetLibrary;tools=unreal.AssetToolsHelpers.get_asset_tools()
@@ -78,6 +78,7 @@ text('OpticGuide','Workshop',(2070,-470,235),'OPTIONAL / SURVEY OPTIC\nCalibrati
 machine=actor('AccessMachinery',unreal.CRAccessMachinery,'RelayBunker',(5650,0,-600))
 machine.shuttle.set_static_mesh(meshes['AccessShuttle']);machine.shuttle.set_relative_scale3d(unreal.Vector(1,1,1))
 machine.control.set_static_mesh(meshes['DiagnosticPanel']);machine.control.set_relative_scale3d(unreal.Vector(1,1,1));machine.control.set_editor_property('relative_rotation',unreal.Rotator(yaw=180))
+runpy.run_path(str(Path(__file__).with_name('chapter06_access_frame.py')))['author_access_frame'](levels,actors)
 text('MachineStop','RelayBunker',(6050,390,-390),'LOCAL MACHINERY STOP\nE / LATCH',yaw=180,size=16)
 text('ServiceWalk','RelayBunker',(5510,-430,-550),'SERVICE WALK',yaw=180,size=15)
 for i,x in enumerate((5475,5650,5825,6000)):

@@ -70,7 +70,7 @@ All new equipment text is **provisional environmental instruction**, not additio
 - [x] Inspect native1080p/1600p UI captures and actual-input door/mission/ending routes. Human flow/bypass/art inspection remains open.
 - [x] One final Windows Development package; limited independent CP01/CP02 processes and actual menu route.
 - [x] Controlled unchanged Phase055 vs candidate Epic1080p runs, with changed-route limitations documented; one separate justified warm Insights diagnostic. No cache-clearing or silent quality reduction. Performance acceptance remains open.
-- [ ] Source/license and staged-file review, coherent commits, push and PR to main (no merge).
+- [x] Source/license and staged-file review, coherent commits, push and draft [PR12](https://github.com/Leosteeeve/cinder-relay/pull/12) to main (no merge).
 
 ## Performance research
 
@@ -131,3 +131,15 @@ Six Editor frames under `visuals-integrated/` inspect original meshes, cover, Wo
 - **Presentation/evidence:** no usable continuous video or human stereo-headphone acceptance; original synthetic mechanical cues are reused, not new bespoke door recordings. The shuttle has pure-policy safety checks and actual completion coverage, but no separate native occupancy fixture. Native gate edge coverage specifically exercises AB; BC is exercised by forward/backtracking routes.
 
 The PR is a **draft candidate**, not a Phase06 acceptance declaration. Do not start Chapter02/Phase07. Recommended next milestone only after these gates close: consolidate private-playtest fixes, reproducible performance and presentation polish for a small closed demo; avoid expanding systems or chapter count.
+
+### Owner follow-up: unsupported bunker shuttle
+
+The owner identified the wide moving plate inside the final room, not the BC streaming door. The original six-metre plate had no stationary guides or enclosure in the thirteen-metre room. Native Editor inspection reproduced its disconnected appearance. `chapter06_access_frame.py` adds a wall-connected stationary frame, floor-to-ceiling guide posts and a head housing for the existing ceiling retraction pocket. The south service opening remains260cm wide; central and south routes retain a checked84x192cm player envelope. The existing status text moves in front of the housing.
+
+Only RelayBunker is saved. The shuttle, barrier and stop-control transforms/collision profiles, original actor transforms, checkpoint anchors, timing, streaming and SaveGame code remain unchanged. The script defaults to read-only validation, refuses unowned name collisions, and requires `-CR06RepairAccessFrame` to author. The normal Phase06 authoring entry point calls the same bounded function. Ten native static pieces reuse Engine Cube and registered Phase052 materials; no new external assets, runtime C++ or ticks.
+
+Evidence is local under `.environment-local/phase-06/door-seam`: the pre-fix native check failed specifically for missing frame actors; the repair saved/reloaded through UE5.8.4 and passed wall-contact, connected-frame, route-envelope and preservation checks, process exit0. Four Editor views inspect the matching before/after angle, closed/open enclosure and service walk; `after/editor-frames.json` reports no capture error. The open preview changes only a transient Editor component and never saves that pose. These are visual inspection frames, not a recorded gameplay sequence or a new performance benchmark.
+
+One content-only incremental cook/stage/archive updated the existing Development package, exit0 in57.10s (10 packages cooked,790 incrementally skipped); no C++ rebuild. All11 pre-existing save files, including both owner slots, retained their SHA256 hashes. The first focused route attempt correctly rejected an unsuitable old fixture: its latest CP02 had been updated by the previous no-optic ending, while route3 requires the optic installed. This failed attempt is retained in `process-result.json`, not counted as a pass. A fresh CR04_TEST_ copy of the earlier CP01 then completed the real diagnostic, restoration and CP02-save input route successfully, exit0 (`seed-process-result.json`); its upgraded CP02 bytes were archived locally before the next route could update them. No save payload was edited and no developer objective setter was used.
+
+The corrected packaged route3 passed CP02 restoration, return streaming, recovery, death/Retry, Restart Chapter, machinery crossing/stop and both ending variants; OS exit0, no forced stop (`retest-process-result.json`). All11 original saves remained byte-identical after this run as well. This focused functional regression does not replace the open chapter-duration, human presentation or performance gates above. The updated playable package retains its existing path.
