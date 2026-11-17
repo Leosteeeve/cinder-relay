@@ -33,12 +33,13 @@ ACRWorkbench::ACRWorkbench()
     Hands->VisibilityBasedAnimTickOption=EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
     Camera=CreateDefaultSubobject<UCameraComponent>(TEXT("AssemblyCamera")); Camera->SetupAttachment(Surface);
     Camera->SetRelativeLocation(FVector(-62,0,166)); Camera->SetRelativeRotation(FRotator(-48,0,0)); Camera->FieldOfView=66;
+    IronSequence = TSoftObjectPtr<ULevelSequence>(FSoftObjectPath(TEXT("/Game/Generated/Phase06/Sequences/LS_CR06_IronService.LS_CR06_IronService")));
 }
 void ACRWorkbench::BeginPlay()
 {
     Super::BeginPlay(); Hands->SetVisibility(false);
     const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>(); if(G && G->HasSurveyUpgrade()) State=ECRAssemblyState::Completed;
-    AssetLoad=UAssetManager::GetStreamableManager().RequestAsyncLoad({Sequence.ToSoftObjectPath(),AssemblyMesh.ToSoftObjectPath(),ActivationSound.ToSoftObjectPath()},FStreamableDelegate::CreateUObject(this,&ACRWorkbench::AssetsLoaded));
+    AssetLoad=UAssetManager::GetStreamableManager().RequestAsyncLoad({Sequence.ToSoftObjectPath(),AssemblyMesh.ToSoftObjectPath(),ActivationSound.ToSoftObjectPath(),IronSequence.ToSoftObjectPath()},FStreamableDelegate::CreateUObject(this,&ACRWorkbench::AssetsLoaded));
 }
 void ACRWorkbench::AssetsLoaded()
 {
@@ -49,29 +50,44 @@ void ACRWorkbench::AssetsLoaded()
 bool ACRWorkbench::CanInteract_Implementation(ACRCharacter* P) const
 {
     const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();
-    return bAssetsReady && State==ECRAssemblyState::Idle && G && G->HasSurveyOptic() && !G->HasSurveyUpgrade() && P &&
-        P->CanInteractWith(this) && P->Weapon->CanUse() && P->Weapon->State==ECRWeaponState::Ready && P->GetCharacterMovement()->IsMovingOnGround();
+    return G && G->HasSurveyOptic() && !G->IsSurveyOpticActive() && CanStartService(P);
+}
+
+bool ACRWorkbench::CanStartService(ACRCharacter* P) const
+{
+    return bAssetsReady && (State == ECRAssemblyState::Idle || State == ECRAssemblyState::Completed) &&
+        P && P->CanInteractWith(this) && P->Weapon->CanUse() && P->Weapon->State == ECRWeaponState::Ready &&
+        P->GetCharacterMovement()->IsMovingOnGround();
 }
 FText ACRWorkbench::GetInteractionPrompt_Implementation(ACRCharacter*) const
 {
     const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();
-    const TCHAR* T=G && G->HasSurveyUpgrade()?TEXT("SURVEY OPTIC CALIBRATED"):
-        !G || !G->HasSurveyOptic()?TEXT("Find a Survey Optic to use this calibration bench."):
-        !bAssetsReady?TEXT("Calibration presentation unavailable / loading."):
-        State!=ECRAssemblyState::Idle?TEXT("Calibration in progress."):TEXT("E  Calibrate Survey Optic  /  Optional 22-second restoration");
+    const TCHAR* T = !bAssetsReady ? TEXT("Workbench loading") : G && G->IsSurveyOpticActive()
+        ? TEXT("SURVEY OPTIC FITTED  /  [1] Service and select iron sights") : G && G->HasSurveyOptic()
+        ? TEXT("[E] Fit Survey Optic  /  [1] Service iron sights") : TEXT("[1] Service iron sights  /  Recover a Survey Optic for another build");
     return FText::FromString(T);
 }
 void ACRWorkbench::Interact_Implementation(ACRCharacter* P)
 {
     if(!CanInteract_Implementation(P)) return;
+    StartService(P, Sequence.Get(), false);
+}
+
+void ACRWorkbench::ServiceIronSights(ACRCharacter* P)
+{
+    if (CanStartService(P) && IronSequence.IsValid()) StartService(P, IronSequence.Get(), true);
+}
+
+void ACRWorkbench::StartService(ACRCharacter* P, ULevelSequence* Selected, bool Iron)
+{
     auto* PC=Cast<ACRPlayerController>(P->GetController()); if(!PC || PC->IsAssembling()) return;
-    State=ECRAssemblyState::Preparing; Player=P; Controller=PC;
+    State=ECRAssemblyState::Preparing; Player=P; Controller=PC; bIronService=Iron;
     FActorSpawnParameters Spawn; Spawn.OverrideLevel=GetLevel();
     SequenceActor=GetWorld()->SpawnActor<ALevelSequenceActor>(Spawn);
     if(!SequenceActor) { Abort(); return; }
     // Installed 5.8.4 headers declare InitializePlayerWithSequence, but its DLL exports no implementation.
     // SetSequence is exported and initializes the native player against this actor's owning level.
-    SequenceActor->SetSequence(Sequence.Get());
+    SequenceActor->SetSequence(Selected);
     auto* Playback=SequenceActor->GetSequencePlayer();
     if(!Playback) { Abort(); return; }
     SequenceActor->SetBindingByTag(TEXT("CR03_Hands"),{this});
@@ -93,6 +109,7 @@ void ACRWorkbench::PresentationCues()
     if(State!=ECRAssemblyState::Playing) return;
     if(!Player.IsValid() || Player->Health->IsDead() || !Controller.IsValid() || !IsValid(SequenceActor) || !SequenceActor->GetSequencePlayer()) { Abort(); return; }
     if(!SequenceActor->GetSequencePlayer()->IsPlaying() && !SequenceActor->GetSequencePlayer()->IsPaused()) { Stopped(); return; }
+    if (bIronService) return;
     const float Seconds=GetPresentationSeconds();
     if(Seconds>=4 && !bReflectionPlayed)
     {
@@ -116,8 +133,11 @@ void ACRWorkbench::Finished()
     {
         if(State!=ECRAssemblyState::Finalizing) return;
         if(!Player.IsValid() || Player->Health->IsDead()) { Abort(); return; }
-        auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>(); const bool Applied=G && G->TryApplySurveyUpgrade();
-        Restore(Applied); State=Applied?ECRAssemblyState::Completed:ECRAssemblyState::Idle;
+        auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();
+        bool Applied = bIronService;
+        if (G && bIronService) G->SelectSurveyOptic(false);
+        if (G && !bIronService) Applied = G->TryApplySurveyUpgrade() || G->SelectSurveyOptic(true);
+        Restore(Applied); State=G && G->HasSurveyUpgrade()?ECRAssemblyState::Completed:ECRAssemblyState::Idle;
         UE_LOG(LogTemp,Display,TEXT("CR03_ASSEMBLY Finalized applied=%d"),Applied);
     }));
 }
@@ -131,7 +151,9 @@ void ACRWorkbench::Stopped()
 void ACRWorkbench::Abort()
 {
     if(State==ECRAssemblyState::Idle || State==ECRAssemblyState::Completed || State==ECRAssemblyState::Aborting) return;
-    State=ECRAssemblyState::Aborting; Restore(false); State=ECRAssemblyState::Idle;
+    State=ECRAssemblyState::Aborting; Restore(false);
+    const auto* G = GetWorld()->GetAuthGameMode<ACRGameMode>();
+    State = G && G->HasSurveyUpgrade() ? ECRAssemblyState::Completed : ECRAssemblyState::Idle;
     UE_LOG(LogTemp,Warning,TEXT("CR03_ASSEMBLY Aborted without upgrade"));
 }
 void ACRWorkbench::Restore(bool Successful)
@@ -154,9 +176,12 @@ void ACRWorkbench::Restore(bool Successful)
         if(Player.IsValid()) Controller->SetViewTargetWithBlend(Player.Get(),Successful?.65f:0.f,VTBlend_Cubic);
         if(bInputOwned) { Controller->SetIgnoreMoveInput(false); Controller->SetIgnoreLookInput(false); }
         Controller->FlushPressedKeys(); Controller->SetAssembly(nullptr);
-        Controller->ShowSubtitle(FText::FromString(Successful?TEXT("SURVEY OPTIC INSTALLED  /  RMB to use the tighter sight picture."):TEXT("Calibration interrupted. The component is safe; try again.")),4.f);
+        const TCHAR* Result = !Successful ? TEXT("Workbench service interrupted. Your build is unchanged.") : bIronService
+            ? TEXT("IRON SIGHTS READY / RMB to aim. Return to the bench to fit the Survey Optic.")
+            : TEXT("SURVEY OPTIC FITTED / RMB to use the tighter sight picture.");
+        Controller->ShowSubtitle(FText::FromString(Result),4.f);
     }
-    bInputOwned=false; Player.Reset(); Controller.Reset();
+    bInputOwned=false; bIronService=false; Player.Reset(); Controller.Reset();
 }
 void ACRWorkbench::EndPlay(const EEndPlayReason::Type Reason)
 { Abort(); if(AssetLoad) { AssetLoad->CancelHandle(); AssetLoad.Reset(); } Super::EndPlay(Reason); }

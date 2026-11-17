@@ -84,7 +84,7 @@ void ACRGameMode::CaptureSession(UCRChapterSaveGame& S) const
 bool ACRGameMode::RestoreSession(const UCRChapterSaveGame& S)
 {
 	FString Reason; if (!S.Validate(Reason)) return false;
-	DiagnosticStep=0; bAccessStopped=false;
+	DiagnosticStep=0; RelayServiceStep=0; bAccessStopped=false; bUseIronSights=false;
 	Objective = S.CurrentObjective; DefeatedEnemies.Reset(); CollectedPickups.Reset(); StoryBeats.Reset();
 	for (FName Id : S.DefeatedEnemyIds) DefeatedEnemies.Add(Id);
 	for (FName Id : S.CollectedPickupIds) CollectedPickups.Add(Id);
@@ -109,6 +109,14 @@ bool ACRGameMode::TryApplySurveyUpgrade()
 	OnRestorationChanged.Broadcast(); return true;
 }
 
+bool ACRGameMode::SelectSurveyOptic(bool Active)
+{
+	if (!bSurveyUpgrade || IsSurveyOpticActive() == Active) return false;
+	bUseIronSights = !Active;
+	OnRestorationChanged.Broadcast();
+	return true;
+}
+
 ACRGameMode::ACRGameMode()
 {
 	DefaultPawnClass = ACRCharacter::StaticClass();
@@ -129,6 +137,23 @@ void ACRGameMode::RegisterAccessMachinery()
 	OnMaintenanceChanged.Broadcast();
 }
 
+void ACRGameMode::RegisterRelayService()
+{
+	if (bRelayService) return;
+	bRelayService = true;
+	OnMaintenanceChanged.Broadcast();
+}
+
+bool ACRGameMode::TryRelayServiceStep(int32 Step)
+{
+	if (!bRelayService || Objective != ECRObjective::RestorePower || Step != RelayServiceStep || Step >= 2)
+		return false;
+	++RelayServiceStep;
+	OnMaintenanceChanged.Broadcast();
+	UE_LOG(LogTemp, Display, TEXT("CR06_EXPANSION RelayService=%d"), RelayServiceStep);
+	return true;
+}
+
 bool ACRGameMode::TryDiagnosticStep(int32 Step)
 {
 	if(Objective != ECRObjective::FindModule || !bWorkshopDiagnostic) return false;
@@ -140,7 +165,7 @@ bool ACRGameMode::TryDiagnosticStep(int32 Step)
 }
 void ACRGameMode::StopAccessMachinery()
 {
-	if(!bAccessMachinery || bAccessStopped || Objective != ECRObjective::RestorePower) return;
+	if(!bAccessMachinery || bAccessStopped || !IsRelayServiceReady() || Objective != ECRObjective::RestorePower) return;
 	bAccessStopped=true; OnMaintenanceChanged.Broadcast();
 	UE_LOG(LogTemp, Display, TEXT("CR06_MAINTENANCE AccessStopped"));
 }
@@ -216,14 +241,18 @@ FText ACRGameMode::GetObjectiveText() const
 		{
 			switch (GetDiagnosticStep())
 			{
-			case 0: return NSLOCTEXT("Cinder", "RouteSupply", "01 ROUTE: power the test bench.");
-			case 1: return NSLOCTEXT("Cinder", "VerifyLoad", "02 VERIFY: check the test load.");
-			case 2: return NSLOCTEXT("Cinder", "ReleaseCradle", "03 RELEASE: unlock the module cradle.");
+			case 0: return NSLOCTEXT("Cinder", "RouteSupplyBay", "Enter the test hall. Route bench supply in Bay 01.");
+			case 1: return NSLOCTEXT("Cinder", "VerifyLoadBay", "Follow the test hall to Bay 02. Verify the load.");
+			case 2: return NSLOCTEXT("Cinder", "ReleaseCradleBay", "Reach Bay 03 and release the module cradle.");
 			default: break;
 			}
 		}
 		return NSLOCTEXT("Cinder", "CollectModule", "Collect the replacement power module.");
 	case ECRObjective::RestorePower:
+		if (!IsRelayServiceReady())
+			return GetRelayServiceStep() == 0
+				? NSLOCTEXT("Cinder", "PrimeServiceBus", "Cross the shuttle. Prime the auxiliary service bus at A.")
+				: NSLOCTEXT("Cinder", "OpenServiceInterlock", "Follow the auxiliary hall to B. Release the interlock.");
 		return IsAccessStopped()
 			? NSLOCTEXT("Cinder", "InstallModule", "Install the module at Relay Nine.")
 			: NSLOCTEXT("Cinder", "StopShuttle", "Relay Access: latch the machinery stop.");

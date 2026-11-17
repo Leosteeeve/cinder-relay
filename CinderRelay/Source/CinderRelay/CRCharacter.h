@@ -61,6 +61,7 @@ public:
 	UFUNCTION(BlueprintPure) FText GetCurrentPrompt() const { return CurrentPrompt; }
 	UFUNCTION(BlueprintCallable) void ClearHeldActions();
 	UFUNCTION(BlueprintCallable) void TryInteract();
+	void TryServiceIronSights();
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	virtual void PawnClientRestart() override;
 	virtual void OnStartCrouch(float HalfHeightAdjust, float ScaledHalfHeightAdjust) override;

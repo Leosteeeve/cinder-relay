@@ -4,6 +4,7 @@
 #include "CRWeaponComponent.h"
 #include "CRWeaponViewComponent.h"
 #include "CRPlayerController.h"
+#include "CRWorkbench.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -265,6 +266,11 @@ void ACRCharacter::StopSlideAudio(bool PlayEnd)
 	SlideAudio=nullptr;
 	if(PlayEnd && WasActive && Health && !Health->IsDead())
 		if(auto* Audio=UCRAudioSettingsSubsystem::Get(this)) Audio->PlayEvent(TEXT("SlideEnd"),this,GetActorLocation(),false);
+}
+
+void ACRCharacter::TryServiceIronSights()
+{
+	if (auto* Bench = Cast<ACRWorkbench>(TraceTarget())) Bench->ServiceIronSights(this);
 }
 
 void ACRCharacter::TryInteract()

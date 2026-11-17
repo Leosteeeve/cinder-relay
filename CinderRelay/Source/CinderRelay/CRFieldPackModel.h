@@ -14,6 +14,7 @@ struct FCRFieldPackSnapshot
     ECRObjective Objective=ECRObjective::ReachWorkshop;
     int32 Magazine=0,Reserve=0;
     bool OpticCollected=false,OpticInstalled=false,AmmoCollected=false,Reloading=false;
+    bool IronSightsSelected=false;
 };
 namespace CRFieldPack
 {

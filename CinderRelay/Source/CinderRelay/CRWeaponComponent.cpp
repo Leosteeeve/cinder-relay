@@ -27,7 +27,7 @@ bool UCRWeaponComponent::CanUse() const
 float UCRWeaponComponent::GetAimFOV() const
 {
     const auto* G=GetWorld()?GetWorld()->GetAuthGameMode<ACRGameMode>():nullptr;
-    return G && G->HasSurveyUpgrade()?60.f:Data?Data->AimFOV:65.f;
+    return G && G->IsSurveyOpticActive()?60.f:Data?Data->AimFOV:65.f;
 }
 void UCRWeaponComponent::SetPresentationLocked(bool Locked)
 { bPresentationLocked=Locked; if(Locked) { bAiming=false; bSprinting=false; } OnChanged.Broadcast(); }

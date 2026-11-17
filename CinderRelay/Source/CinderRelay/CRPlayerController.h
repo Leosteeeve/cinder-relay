@@ -30,6 +30,7 @@ public:
 	void RetryStreaming();
 	void PlayerDefeated();
 	void ShowSubtitle(const FText& Text, float Seconds=5.f);
+	void OpenFieldGuide();
 	void SetAssembly(ACRWorkbench* Workbench);
 	bool IsAssembling() const { return ActiveWorkbench.IsValid(); }
 	void SkipAssembly();
@@ -54,6 +55,7 @@ private:
 	UFUNCTION() void FieldItemsChanged();
 	UFUNCTION() void MaintenanceChanged();
 	void CloseFieldPackForTravel();
+	void SelectIronSights();
 	bool bFieldPackOpen=false, bLastOptic=false, bLastUpgrade=false;
 	void BindPawn();
 	void ApplyPause(bool bPause);

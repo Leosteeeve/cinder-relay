@@ -576,6 +576,8 @@ Owner approved anatomical/skin/fingerless-glove direction and continuation. Rese
 
 ## Phase06 — candidate implementation, acceptance incomplete (2026-11-01 local)
 
+The November 17 expansion adds an optional Rail Yard signal store, a three-bay Workshop diagnostic hall, and a two-step Relay Access service route in the three original native sublevels. It includes an editable optic animation derivative, two native workbench presentations, and a Field Guide in the menu and in-game. [Reference research, route, changes and local verification](CHAPTER_06_EXPANSION.md). The 12–16 minute first-play target and human pace review remain open.
+
 Owner-authorized branch `phase-06-complete-chapter`, base `de958e134a4d8f1f86b5d3a170378856743b8693`, UE5.8.4 unchanged. The actual owner Phase055 route was about2min, reached the ending, no obvious hitch; native CP00-to-ending interval74.163s is a separate event-boundary measurement. The12–16min requirement is **unmet/unverified**, not inferred from scripted timing.
 
 Implemented real native assets/content: original five-mesh industrial kit and four saved maps, E-operated roller/isolation streaming doors, ordered module diagnostic, distinct cycling shuttle/side service path/stop, approach cover and provisional equipment signage. Existing canon, final ending text, schema1/checksum/IDs, checkpoint anchors, weapon/arms, slide, AI/bypass, Field Pack, audio classes and restoration lifecycle remain. Title art now fills without aspect distortion; Editor-only UMG registration is the owner-approved repair after the documented stop/diagnosis.

@@ -4,6 +4,8 @@ Status: implementation in progress; not a completed or pacing-accepted chapter.
 Owner authorization: Phase06 brief and manual streaming-door request, 2026-11-01.
 Baseline: `de958e134a4d8f1f86b5d3a170378856743b8693`; branch `phase-06-complete-chapter`.
 
+The November 17 Chapter 01 expansion adds the signal-store branch, enlarged Workshop and Relay Access routes, and the workbench sight choice. [Expansion design and verification](CHAPTER_06_EXPANSION.md).
+
 ## 06A director's cut audit
 
 The owner played the unchanged Phase055 Windows Development package with headphones, then explicitly released game input for verification. Their report: approximately **2 minutes**, reached the ending, no obvious hitch. This is an actual owner playtest; first-time/uncoached status and audio-quality acceptance were not reported. No claim of a 12–16 minute existing chapter is justified.

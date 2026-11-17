@@ -8,6 +8,8 @@ Door controls on both sides request the adjacent native sublevel; the door opens
 
 The November 17 visual and playability review build is at `.environment-local/phase-06/finish-pass/package/Windows/CinderRelay.exe`. It adds ROOK and Warden model detail, mounted service signage, immediate shot feedback, FOV-scaled look input, and step-specific HUD guidance. The earlier local archive remains available for comparison. See [review and evidence](docs/CHAPTER_06.md#presentation-and-playability-review--2026-11-17).
 
+The Chapter 01 expansion adds an optional rail-yard signal store, a three-bay Workshop test hall, and a two-control underground service loop. The local Windows Development archive is `.environment-local/phase-06/expanded/package/Windows/CinderRelay.exe`. Open the Field Guide with **F1** on the title screen or during play. At the workbench, **1** services the iron sights and **E** fits the recovered Survey Optic. See [expansion design, controls and validation](docs/CHAPTER_06_EXPANSION.md).
+
 ## Phase05.5 identity, interface, audio and Field Pack
 
 Previous phase branch: `phase-05-5-ui-audio-inventory`, based on Phase054 merge `09eaa5f`. The Industrial Field Interface adds an original Blender title plate, licensed Barlow typography, a real Designer-editable UMG root, separate health/weapon/objective/subtitle regions, Settings/Help/Credits and **I: Elias's Field Pack**. The pack reads existing chapter and weapon state, pauses reload/world time, and clears held aim/sprint/slide on opening. Escape closes it; Tab retains workbench/ending Skip.

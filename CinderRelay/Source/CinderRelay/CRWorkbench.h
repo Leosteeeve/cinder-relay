@@ -34,6 +34,8 @@ public:
     virtual void Interact_Implementation(ACRCharacter* Player) override;
     void Skip();
     void Abort();
+    void ServiceIronSights(ACRCharacter* Player);
+    bool IsIronService() const { return bIronService; }
     bool IsReady() const { return bAssetsReady; }
     float GetPresentationSeconds() const;
 protected:
@@ -47,6 +49,10 @@ private:
     FTimerHandle CueTimer;
     uint8 PreviousMovementMode=0;
     bool bAssetsReady=false, bInputOwned=false, bActivationPlayed=false, bReflectionPlayed=false;
+    bool bIronService = false;
+    TSoftObjectPtr<ULevelSequence> IronSequence;
+    bool CanStartService(ACRCharacter* Player) const;
+    void StartService(ACRCharacter* Player, ULevelSequence* Selected, bool Iron);
     void AssetsLoaded();
     void PresentationCues();
     void Restore(bool Successful);

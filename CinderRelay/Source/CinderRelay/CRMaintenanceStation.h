@@ -16,6 +16,7 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UStaticMeshComponent> Panel;
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UTextRenderComponent> Display;
     UPROPERTY(EditAnywhere, Category="Chapter", meta=(ClampMin="0",ClampMax="2")) int32 Step=0;
+    bool IsRelayService() const { return ActorHasTag(TEXT("CR06RelayService")); }
     virtual bool CanInteract_Implementation(ACRCharacter* Player) const override;
     virtual FText GetInteractionPrompt_Implementation(ACRCharacter* Player) const override;
     virtual void Interact_Implementation(ACRCharacter* Player) override;

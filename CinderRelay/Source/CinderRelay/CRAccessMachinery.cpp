@@ -56,13 +56,17 @@ void ACRAccessMachinery::Tick(float DeltaSeconds)
 bool ACRAccessMachinery::CanInteract_Implementation(ACRCharacter* Player) const
 {
     const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();
-    return Player && G && !G->IsAccessStopped() && G->GetObjective()==ECRObjective::RestorePower && Player->CanInteractWith(this)
+    return Player && G && !G->IsAccessStopped() && G->IsRelayServiceReady() && G->GetObjective()==ECRObjective::RestorePower && Player->CanInteractWith(this)
         && FVector::DistSquared(Player->GetActorLocation(),Control->GetComponentLocation())<FMath::Square(260.f);
 }
 FText ACRAccessMachinery::GetInteractionPrompt_Implementation(ACRCharacter* Player) const
 {
-    if(const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>(); G && G->IsAccessStopped())
-        return NSLOCTEXT("Cinder","MachineLatched","Machinery stop latched. Relay access is clear.");
+    if (const auto* G = GetWorld()->GetAuthGameMode<ACRGameMode>())
+    {
+        if (G->IsAccessStopped()) return NSLOCTEXT("Cinder","MachineLatched","Machinery stop latched. Relay access is clear.");
+        if (!G->IsRelayServiceReady() && G->GetObjective() == ECRObjective::RestorePower)
+            return NSLOCTEXT("Cinder", "MachineryInterlocked", "Use the auxiliary hall on the south side to release the stop interlock.");
+    }
     return CanInteract_Implementation(Player)?NSLOCTEXT("Cinder","StopMachinery","[E] Latch machinery stop / clear relay access"):
         NSLOCTEXT("Cinder","CrossMachinery","Cross on cyan, or follow the side service walk. Stop control is beyond the shuttle.");
 }

@@ -211,7 +211,21 @@ void ACRInterfaceAcceptance::Tick(float DeltaSeconds)
         if(!Check(Continue&&Continue->GetIsEnabled()==Store->HasCheckpoint(),TEXT("Continue matches native disk checkpoint availability"))) return;
         if(!Check(Run.Mode==TEXT("Read")?Store->HasCheckpoint():!Store->HasCheckpoint(),TEXT("Write starts fresh; Read discovers previous native checkpoint"))) return;
         if(!Check(!PC->CanOpenFieldPack(),TEXT("Field Pack unavailable at startup"))) return;
-        Capture(TEXT("01_MainMenu"),TEXT("open_settings")); return;
+        Capture(TEXT("01_MainMenu"),TEXT("open_guide")); return;
+    }
+    if (Run.Stage == TEXT("open_guide"))
+    {
+        HUD->SetKeyboardFocus();
+        Key(EKeys::F1);
+        if (!Check(Label(HUD, TEXT("ModalTitle")) == TEXT("FIELD GUIDE") && Visible(HUD, TEXT("ModalPanel")),
+                   TEXT("F1 opens the Field Guide from the real title UI"))) return;
+        Capture(TEXT("09_FieldGuide"), TEXT("close_guide")); return;
+    }
+    if (Run.Stage == TEXT("close_guide"))
+    {
+        Key(EKeys::F1);
+        if (!Check(!Visible(HUD, TEXT("ModalPanel")), TEXT("F1 returns focus to title navigation"))) return;
+        Next(TEXT("open_settings")); return;
     }
     if(Run.Stage==TEXT("open_settings"))
     {

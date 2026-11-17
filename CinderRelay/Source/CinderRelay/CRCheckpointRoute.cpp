@@ -290,12 +290,42 @@ void ACRCheckpointRoute::Tick(float Delta)
     { bHandlingVideoDone=true;Walk({{2800,-170}},TEXT("module")); }
     else if(Stage==TEXT("diagnostic"))
     {
-        if(G->IsModuleReleased()) { Walk({{2800,-170}},TEXT("module")); return; }
-        for(TActorIterator<ACRMaintenanceStation> It(GetWorld());It;++It) if(It->Step==G->GetDiagnosticStep())
+        if(G->IsModuleReleased())
+        {
+            if (Player->GetActorLocation().Y < -800) Walk({{1910,-4740},{1910,-530},{1910,-150},{2800,-170}}, TEXT("module"));
+            else Walk({{2800,-170}}, TEXT("module"));
+            return;
+        }
+        for(TActorIterator<ACRMaintenanceStation> It(GetWorld());It;++It) if(!It->IsRelayService() && It->Step==G->GetDiagnosticStep())
         {
             const FVector Stand=It->GetActorLocation()+It->GetActorForwardVector()*170;
-            if(FVector::Dist2D(Player->GetActorLocation(),Stand)>50) Walk({FVector2D(Stand.X,Stand.Y)},TEXT("diagnostic"));
+            if (FVector::Dist2D(Player->GetActorLocation(), Stand) > 50)
+            {
+                const FVector2D Goal(Stand.X, Stand.Y);
+                if (Stand.Y > -850) Walk({Goal}, TEXT("diagnostic"));
+                else if (It->Step == 0) Walk({{3160,-530},{3190,-1040},Goal}, TEXT("diagnostic"));
+                else if (It->Step == 1) Walk({{2810,-1520},{2810,-1960},{3190,-1960},{3190,-2340},Goal}, TEXT("diagnostic"));
+                else Walk({{2890,-3180},{2890,-3710},{2490,-3710},{2490,-4220},Goal}, TEXT("diagnostic"));
+            }
             else Interact(*It,It->GetActorLocation());
+            break;
+        }
+    }
+    else if (Stage == TEXT("relay_service"))
+    {
+        if (G->IsRelayServiceReady())
+        {
+            Walk({{5840,-5130},{5840,-540},{5960,-270},{5950,450}}, TEXT("access_stop"));
+            return;
+        }
+        for (TActorIterator<ACRMaintenanceStation> It(GetWorld()); It; ++It)
+        {
+            if (!It->IsRelayService() || It->Step != G->GetRelayServiceStep()) continue;
+            const FVector Stand = It->GetActorLocation() + It->GetActorForwardVector() * 170;
+            const FVector2D Goal(Stand.X, Stand.Y);
+            if (FVector::Dist2D(Player->GetActorLocation(), Stand) < 50) Interact(*It, It->GetActorLocation());
+            else if (It->Step == 0) Walk({{6000,-505},{6525,-505},{6525,-1120},Goal}, TEXT("relay_service"));
+            else Walk({{7075,-2100},{7075,-2640},Goal}, TEXT("relay_service"));
             break;
         }
     }
@@ -325,7 +355,35 @@ void ACRCheckpointRoute::Tick(float Delta)
         }
         ACRWorkbench* Bench=nullptr; for(TActorIterator<ACRWorkbench> It(GetWorld());It;++It){Bench=*It;break;}
         if (!Bench) { Finish(false,TEXT("Actual Workshop bench missing")); return; }
-        if (Stage==TEXT("bench_start") || Stage==TEXT("bench_again"))
+        if (Stage == TEXT("bench_iron_aim") && Age > .85)
+        {
+            const FVector Target = Bench->GetActorLocation() + FVector(0,0,96);
+            PC->SetControlRotation((Target - Player->Camera->GetComponentLocation()).Rotation());
+            Next(TEXT("bench_iron_input"));
+        }
+        else if (Stage == TEXT("bench_iron_input") && Age > .2)
+        {
+            Player->TryServiceIronSights();
+            Check(Bench->State == ECRAssemblyState::Playing && Bench->IsIronService(), TEXT("Trace selects alternate native iron-sight presentation"));
+            Next(TEXT("bench_iron_run"));
+        }
+        else if (Stage == TEXT("bench_iron_run") && Bench->State == ECRAssemblyState::Completed)
+        {
+            Check(!G->IsSurveyOpticActive() && G->HasSurveyUpgrade() && W->GetAimFOV() == 65 && W->CanUse(),
+                  TEXT("Iron service preserves the recovered optic and selects the 65 degree sight"));
+            Next(TEXT("bench_refit"));
+        }
+        else if (Stage == TEXT("bench_refit") && Age > .85)
+        {
+            if (G->IsSurveyOpticActive())
+            {
+                Check(W->GetAimFOV() == 60 && W->CanUse(), TEXT("Refit restores the 60 degree Survey Optic"));
+                Inject(Player->FireAction); Next(TEXT("gun_cycle"));
+            }
+            else if (Bench->State == ECRAssemblyState::Playing) PC->SkipAssembly();
+            else Interact(Bench, Bench->GetActorLocation() + FVector(0,0,96));
+        }
+        else if (Stage==TEXT("bench_start") || Stage==TEXT("bench_again"))
         {
             if (Bench->State==ECRAssemblyState::Playing) Next(bLifecycle&&LifeStep<5?TEXT("bench_fault"):Stage==TEXT("bench_start")?TEXT("bench_abort"):TEXT("bench_full"));
             else if(Bench->IsReady()) Interact(Bench,Bench->GetActorLocation()+FVector(0,0,96));
@@ -357,7 +415,7 @@ void ACRCheckpointRoute::Tick(float Delta)
             if(!bPauseChecked && Bench->GetPresentationSeconds()>6)
             { bPauseChecked=true; PausedPosition=Bench->GetPresentationSeconds(); PausedAt=Now; PC->TogglePrototypePause(); return; }
             if(Bench->State==ECRAssemblyState::Completed)
-            { Check(G->HasSurveyUpgrade()&&W->GetAimFOV()==60&&!PC->IsAssembling()&&W->CanUse(),TEXT("Natural completion restores input and applied optic")); Inject(Player->FireAction); Next(TEXT("gun_cycle")); }
+            { Check(G->HasSurveyUpgrade()&&W->GetAimFOV()==60&&!PC->IsAssembling()&&W->CanUse(),TEXT("Natural completion restores input and applied optic")); Next(TEXT("bench_iron_aim")); }
         }
     }
     else if(Stage==TEXT("gun_cycle") && Age>1 && W->State==ECRWeaponState::Ready) { Inject(Player->ReloadAction); Next(TEXT("gun_reload")); }
@@ -386,6 +444,7 @@ void ACRCheckpointRoute::Tick(float Delta)
     { Check(PC->bPrototypeDefeated&&W->State==ECRWeaponState::Disabled,TEXT("Actual enemy damage reaches death recovery menu")); Travel(true,3); }
     else if(Stage==TEXT("relay"))
     {
+        if (!G->IsRelayServiceReady()) { Next(TEXT("relay_service")); return; }
         if(!G->IsAccessStopped()) { Walk({{5950,450}},TEXT("access_stop")); return; }
         if(G->GetObjective()==ECRObjective::InvestigateSignal) { Walk({{6500,-250},{6700,0}},TEXT("signal")); return; }
         for(TActorIterator<ACRInteractionActor> It(GetWorld());It;++It)if(It->Kind==ECRInteractionKind::Relay){Interact(*It,It->GetActorLocation());break;}

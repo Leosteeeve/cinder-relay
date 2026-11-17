@@ -115,12 +115,12 @@ void UCRWeaponViewComponent::TickComponent(float Delta,ELevelTick TickType,FActo
     GaitPhase+=Delta*(Speed>0.05f?Speed*8.f:1.5f);
     const float Bob=(Aim || bHandlingReady?0.f:.38f)*Speed;
     const auto* Chapter=GetWorld()->GetAuthGameMode<ACRGameMode>();
-    const FTransform& SightRoot=Chapter && Chapter->HasSurveyUpgrade()?OpticAimRoot:IronAimRoot;
+    const FTransform& SightRoot=Chapter && Chapter->IsSurveyOpticActive()?OpticAimRoot:IronAimRoot;
     FVector Target=Aim?(bSightAnchorsValid?SightRoot.GetLocation():D->AimLocation):(bSightAnchorsValid?ImportedHipLocation:D->HipLocation);
     Target.Z-=Lower?9.f:SmoothCover*14.f;
     if(P->IsSliding()) { Target.Z-=3.5f; Target.X-=2.f; }
     Target.Y+=FMath::Sin(GaitPhase)*Bob; Target.Z+=FMath::Cos(GaitPhase*2)*Bob*.65f;
-    if(Aim && !bSightAnchorsValid && Chapter && Chapter->HasSurveyUpgrade()) Target.Z-=2.f; // Legacy rollback appearance only.
+    if(Aim && !bSightAnchorsValid && Chapter && Chapter->IsSurveyOpticActive()) Target.Z-=2.f; // Legacy rollback appearance only.
     SmoothedPoseLocation = FMath::VInterpTo(SmoothedPoseLocation, Target, Delta, 18.f);
     ViewRoot->SetRelativeLocation(SmoothedPoseLocation - FVector(AxialKick, 0, 0));
     FRotator Pose(Aim && bSightAnchorsValid?0.f:Recoil*(bHandlingReady?.35f:1.f),0,0);
@@ -227,7 +227,7 @@ void UCRWeaponViewComponent::RefreshAppearance()
     if(Flash) Flash->SetRelativeLocation(bSightAnchorsValid?FVector(67,0,2.3):FVector(44,0,2));
     const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();
     ImportedRook->SetVisibility(!bPresentationHidden && HasImportedAppearance());
-    ImportedOptic->SetVisibility(!bPresentationHidden && HasImportedAppearance() && G && G->HasSurveyUpgrade());
+    ImportedOptic->SetVisibility(!bPresentationHidden && HasImportedAppearance() && G && G->IsSurveyOpticActive());
     const bool ShowHands=!bPresentationHidden && HasImportedAppearance() && bHandlingReady;
     if(Arms) Arms->SetVisibility(ShowHands);
     if(Feed) Feed->SetVisibility(ShowHands);

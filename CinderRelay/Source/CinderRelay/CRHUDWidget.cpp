@@ -11,6 +11,7 @@
 #include "Components/ProgressBar.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
+#include "Components/CanvasPanel.h"
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "Components/SizeBox.h"
@@ -123,6 +124,22 @@ void UCRHUDWidget::NativeOnInitialized()
         W->OnClicked.AddDynamic(this, &UCRHUDWidget::ExitClicked);
     if (auto *W = B(TEXT("PackClose")))
         W->OnClicked.AddDynamic(this, &UCRHUDWidget::PackCloseClicked);
+    if (auto *Content = Cast<UCanvasPanel>(WidgetTree->FindWidget(TEXT("MenuContent"))))
+    {
+        auto *Guide = WidgetTree->ConstructWidget<UCRInterfaceAction>(UCRInterfaceAction::StaticClass(), TEXT("FieldGuide"));
+        Guide->Configure(this, 104);
+        Guide->SetStyle(Style(false));
+        auto *Label = WidgetTree->ConstructWidget<UTextBlock>();
+        Label->SetText(NSLOCTEXT("Cinder", "FieldGuideButton", "F1   Field Guide"));
+        Label->SetFont(FSlateFontInfo(BodyFont, 22));
+        Label->SetColorAndOpacity(White());
+        Guide->SetContent(Label);
+        auto *GuideSlot = Content->AddChildToCanvas(Guide);
+        GuideSlot->SetAnchors(FAnchors(1, 1));
+        GuideSlot->SetAlignment(FVector2D(1, 1));
+        GuideSlot->SetPosition(FVector2D(-48, -44));
+        GuideSlot->SetSize(FVector2D(248, 56));
+    }
     TArray<FSoftObjectPath> Icons;
     for (const TCHAR *N : {TEXT("Rook"), TEXT("Optic"), TEXT("Ammo"), TEXT("PowerModule")})
         Icons.Add(FSoftObjectPath(
@@ -209,10 +226,11 @@ void UCRHUDWidget::SetSubtitle(const FText &V)
     Put(TEXT("Subtitle"), V);
     Visibility(TEXT("SubtitlePanel"), !V.IsEmpty() && !bMenu && !bPack);
 }
-void UCRHUDWidget::SetAssembly(bool V)
+void UCRHUDWidget::SetAssembly(bool V, bool Iron)
 {
     bAssembly = V;
-    Put(TEXT("AssemblyHelp"), TEXT("SURVEY OPTIC CALIBRATION    Tab Skip & apply    Esc Pause"));
+    Put(TEXT("AssemblyHelp"), Iron ? TEXT("IRON SIGHT SERVICE    Tab Skip & select    Esc Pause")
+                                   : TEXT("SURVEY OPTIC FITTING    Tab Skip & apply    Esc Pause"));
     Visibility(TEXT("AssemblyHelp"), V);
     Visibility(TEXT("GameplayLayer"), !V && !bMenu && !bPack);
 }
@@ -236,6 +254,7 @@ void UCRHUDWidget::SetMenu(bool V, bool End, bool Dead)
                                      : TEXT("THE DEAD STATION"));
     }
     Visibility(TEXT("Resume"), V && !End && !Dead);
+    Visibility(TEXT("FieldGuide"), !End && !Dead);
     if (Changed && V && !ModalKind)
         RefreshNavigation();
 }
@@ -254,7 +273,7 @@ void UCRHUDWidget::SetRecoveryMenu(bool Startup, bool Dead, bool Resume, bool Co
     if (Startup)
     {
         Put(TEXT("MenuTitle"), TEXT("CINDER\nRELAY"));
-        Put(TEXT("MenuBody"), TEXT("THE LAST SIGNAL"));
+        Put(TEXT("MenuBody"), TEXT("CHAPTER 01  /  THE DEAD STATION"));
     }
     if (Changed)
         RefreshTitleArtwork();
@@ -391,7 +410,7 @@ void UCRHUDWidget::RefreshNavigation()
 {
     MenuNavigation.Reset();
     for (const TCHAR *N :
-         {TEXT("Resume"), TEXT("Continue"), TEXT("Restart"), TEXT("Settings"), TEXT("Credits"), TEXT("Exit")})
+         {TEXT("Resume"), TEXT("Continue"), TEXT("Restart"), TEXT("Settings"), TEXT("Credits"), TEXT("Exit"), TEXT("FieldGuide")})
         if (auto *B = Cast<UButton>(WidgetTree->FindWidget(N));
             B && B->GetIsEnabled() && B->GetVisibility() != ESlateVisibility::Collapsed)
             MenuNavigation.Add(B);
@@ -477,9 +496,29 @@ bool UCRHUDWidget::HandleBack()
     }
     return false;
 }
+
+void UCRHUDWidget::ShowFieldGuide(const FText& Objective)
+{
+    if (ModalKind == 6) { CloseModal(); return; }
+    if (ModalKind != 0) return;
+    const FString Brief = FString::Printf(TEXT("CURRENT TASK\n%s\n\nFIELD PROCEDURE\n"
+        "Rail Yard: follow the lit shutter. The north signal store holds optional salvage.\n"
+        "Workshop: visit the numbered test bays in order. Follow amber markings back to the module bench.\n"
+        "Relay: cross the shuttle or take the side walk. Prime A, release B, then latch the machinery stop.\n\n"
+        "E  Interact / fit the recovered optic       1  Service iron sights while facing the workbench\n"
+        "R  Reload       I  Field Pack       Tab  Skip a presentation       F5  Retry a streaming door"), *Objective.ToString());
+    BeginModal(TEXT("FIELD GUIDE"), Brief, 6);
+    AddAction(0, TEXT("Back"));
+    FocusIndex(0);
+}
 FReply UCRHUDWidget::NativeOnKeyDown(const FGeometry &G, const FKeyEvent &E)
 {
     FKey K = E.GetKey();
+    if (K == EKeys::F1 && !bPack && bMenu)
+    {
+        if (!E.IsRepeat()) if (auto *PC = Cast<ACRPlayerController>(GetOwningPlayer())) PC->OpenFieldGuide();
+        return FReply::Handled();
+    }
     if (E.IsRepeat() && (K == EKeys::I || K == EKeys::Escape || K == EKeys::Enter))
         return FReply::Handled();
     if (K == EKeys::Escape)
@@ -708,6 +747,8 @@ void UCRHUDWidget::HandleAction(int32 Id)
         AddAction(103, TEXT("Back to settings"));
         FocusIndex(0);
     }
+    else if (Id == 104)
+        PC->OpenFieldGuide();
     else if (Id == 103)
         SettingsClicked();
     else if (Id >= 200 && Id < 204)

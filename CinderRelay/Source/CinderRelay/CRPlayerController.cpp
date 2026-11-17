@@ -69,6 +69,25 @@ void ACRPlayerController::SetupInputComponent()
 	InputComponent->BindKey(EKeys::I,IE_Pressed,this,&ACRPlayerController::ToggleFieldPack).bExecuteWhenPaused=true;
 	InputComponent->BindKey(EKeys::F5, IE_Pressed, this, &ACRPlayerController::RetryStreaming);
 	InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ACRPlayerController::SkipAssembly);
+	InputComponent->BindKey(EKeys::F1, IE_Pressed, this, &ACRPlayerController::OpenFieldGuide);
+	InputComponent->BindKey(EKeys::One, IE_Pressed, this, &ACRPlayerController::SelectIronSights);
+}
+
+void ACRPlayerController::OpenFieldGuide()
+{
+	if (!HUD || bFieldPackOpen || IsAssembling() || ActiveEnding.IsValid() || bPrototypeEnded || bPrototypeDefeated) return;
+	if (!bStartupMenu && !bPrototypePaused)
+	{
+		if (!ObservedPawn.IsValid()) return;
+		ApplyPause(true);
+	}
+	const auto* Chapter = GetWorld()->GetAuthGameMode<ACRGameMode>();
+	HUD->ShowFieldGuide(Chapter ? Chapter->GetObjectiveText() : FText::GetEmpty());
+}
+
+void ACRPlayerController::SelectIronSights()
+{
+	if (!bPrototypePaused && !ActiveEnding.IsValid() && ObservedPawn.IsValid()) ObservedPawn->TryServiceIronSights();
 }
 
 void ACRPlayerController::SetStreamingStatus(const FText& Text) { if (HUD) HUD->SetStreamingStatus(Text); }
@@ -117,7 +136,7 @@ void ACRPlayerController::RefreshCombat()
 	if(HUD&&ObservedPawn.IsValid())
 	{
 		const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();
-		HUD->SetSightState(ObservedPawn->Weapon->bAiming&&ObservedPawn->WeaponView&&ObservedPawn->WeaponView->HasImportedAppearance(),G&&G->HasSurveyUpgrade());
+		HUD->SetSightState(ObservedPawn->Weapon->bAiming&&ObservedPawn->WeaponView&&ObservedPawn->WeaponView->HasImportedAppearance(),G&&G->IsSurveyOpticActive());
 		if(bFieldPackOpen)HUD->RefreshFieldPack();
 	}
 }
@@ -231,7 +250,7 @@ void ACRPlayerController::ShowCheckpointFeedback(const FString& Text)
 }
 void ACRPlayerController::ExitPrototype() { AbortAssembly(); if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset(); UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit, false); }
 void ACRPlayerController::SetAssembly(ACRWorkbench* Workbench)
-{ ActiveWorkbench=Workbench; if(HUD) HUD->SetAssembly(Workbench!=nullptr); }
+{ ActiveWorkbench=Workbench; if(HUD) HUD->SetAssembly(Workbench!=nullptr, Workbench && Workbench->IsIronService()); }
 void ACRPlayerController::SkipAssembly()
 { if(!bPrototypePaused) { if(ActiveWorkbench.IsValid()) ActiveWorkbench->Skip(); else if(ActiveEnding.IsValid()) ActiveEnding->SkipEnding(); } }
 void ACRPlayerController::AbortAssembly()
