@@ -115,6 +115,20 @@ ACRGameMode::ACRGameMode()
 	PlayerControllerClass = ACRPlayerController::StaticClass();
 }
 
+void ACRGameMode::RegisterWorkshopDiagnostic()
+{
+	if (bWorkshopDiagnostic) return;
+	bWorkshopDiagnostic = true;
+	OnMaintenanceChanged.Broadcast();
+}
+
+void ACRGameMode::RegisterAccessMachinery()
+{
+	if (bAccessMachinery) return;
+	bAccessMachinery = true;
+	OnMaintenanceChanged.Broadcast();
+}
+
 bool ACRGameMode::TryDiagnosticStep(int32 Step)
 {
 	if(Objective != ECRObjective::FindModule || !bWorkshopDiagnostic) return false;
@@ -196,12 +210,24 @@ FText ACRGameMode::GetObjectiveText() const
 {
 	switch (Objective)
 	{
-	case ECRObjective::ReachWorkshop: return NSLOCTEXT("Cinder", "Reach", "Reach the maintenance workshop.");
-	case ECRObjective::FindModule: return bWorkshopDiagnostic
-		? NSLOCTEXT("Cinder", "ModuleTest", "Workshop: test and release a replacement power module.")
-		: NSLOCTEXT("Cinder", "Module", "Find a functional power module.");
-	case ECRObjective::RestorePower: return NSLOCTEXT("Cinder", "Power", "Restore power to Relay Nine.");
-	case ECRObjective::InvestigateSignal: return NSLOCTEXT("Cinder", "Signal", "Investigate the restored signal.");
+	case ECRObjective::ReachWorkshop: return NSLOCTEXT("Cinder", "WorkshopLights", "Reach the lit workshop shutter.");
+	case ECRObjective::FindModule:
+		if (bWorkshopDiagnostic)
+		{
+			switch (GetDiagnosticStep())
+			{
+			case 0: return NSLOCTEXT("Cinder", "RouteSupply", "01 ROUTE: power the test bench.");
+			case 1: return NSLOCTEXT("Cinder", "VerifyLoad", "02 VERIFY: check the test load.");
+			case 2: return NSLOCTEXT("Cinder", "ReleaseCradle", "03 RELEASE: unlock the module cradle.");
+			default: break;
+			}
+		}
+		return NSLOCTEXT("Cinder", "CollectModule", "Collect the replacement power module.");
+	case ECRObjective::RestorePower:
+		return IsAccessStopped()
+			? NSLOCTEXT("Cinder", "InstallModule", "Install the module at Relay Nine.")
+			: NSLOCTEXT("Cinder", "StopShuttle", "Relay Access: latch the machinery stop.");
+	case ECRObjective::InvestigateSignal: return NSLOCTEXT("Cinder", "ReadSignal", "Read the MERIDIAN signal monitor.");
 	default: return NSLOCTEXT("Cinder", "Complete", "Connection restored.");
 	}
 }

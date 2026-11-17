@@ -48,7 +48,9 @@ void UCRWeaponViewComponent::BeginPlay()
     if (!Player || !Weapon.IsValid() || !Weapon->Data) { bAppearanceSettled=bHandlingSettled=true;SetComponentTickEnabled(false); return; }
     BaseFOV = Player->Camera->FieldOfView;
     ViewRoot = NewObject<USceneComponent>(Player,TEXT("RookViewRoot")); Player->AddInstanceComponent(ViewRoot);
-    ViewRoot->SetupAttachment(Player->Camera); ViewRoot->RegisterComponent(); ViewRoot->SetRelativeLocation(Weapon->Data->HipLocation);
+    ViewRoot->SetupAttachment(Player->Camera); ViewRoot->RegisterComponent();
+    SmoothedPoseLocation = Weapon->Data->HipLocation;
+    ViewRoot->SetRelativeLocation(SmoothedPoseLocation);
     auto Part = [this,Player](const TCHAR* Name,FVector Position,FVector Scale,bool Accent)
     {
         auto* P = NewObject<UStaticMeshComponent>(Player,FName(Name)); Player->AddInstanceComponent(P);
@@ -103,6 +105,8 @@ void UCRWeaponViewComponent::TickComponent(float Delta,ELevelTick TickType,FActo
     const bool Aim=Weapon->bAiming && Weapon->CanUse();
     P->Camera->SetFieldOfView(FMath::FInterpTo(P->Camera->FieldOfView,Aim?Weapon->GetAimFOV():BaseFOV,Delta,3.f/FMath::Max(.01f,D->AimSeconds)));
     Recoil=FMath::FInterpTo(Recoil,0,Delta,FMath::Max(1.f,D->RecoverySpeed));
+    AxialKick *= FMath::Exp(-Delta * FMath::Max(1.f, D->RecoverySpeed));
+    if (AxialKick < .005f) AxialKick = 0;
     TickCases(Delta);
     const bool Lower=(!bHandlingReady && (Weapon->State==ECRWeaponState::Reloading || Weapon->bSprinting)) || Weapon->State==ECRWeaponState::Disabled;
     SmoothCover=FMath::FInterpTo(SmoothCover,CoverFraction,Delta,9);
@@ -113,11 +117,12 @@ void UCRWeaponViewComponent::TickComponent(float Delta,ELevelTick TickType,FActo
     const auto* Chapter=GetWorld()->GetAuthGameMode<ACRGameMode>();
     const FTransform& SightRoot=Chapter && Chapter->HasSurveyUpgrade()?OpticAimRoot:IronAimRoot;
     FVector Target=Aim?(bSightAnchorsValid?SightRoot.GetLocation():D->AimLocation):(bSightAnchorsValid?ImportedHipLocation:D->HipLocation);
-    Target.Z-=Lower?9.f:SmoothCover*14.f; Target.X-=Recoil*(bHandlingReady?.55f:1.f);
+    Target.Z-=Lower?9.f:SmoothCover*14.f;
     if(P->IsSliding()) { Target.Z-=3.5f; Target.X-=2.f; }
     Target.Y+=FMath::Sin(GaitPhase)*Bob; Target.Z+=FMath::Cos(GaitPhase*2)*Bob*.65f;
     if(Aim && !bSightAnchorsValid && Chapter && Chapter->HasSurveyUpgrade()) Target.Z-=2.f; // Legacy rollback appearance only.
-    ViewRoot->SetRelativeLocation(FMath::VInterpTo(ViewRoot->GetRelativeLocation(),Target,Delta,18));
+    SmoothedPoseLocation = FMath::VInterpTo(SmoothedPoseLocation, Target, Delta, 18.f);
+    ViewRoot->SetRelativeLocation(SmoothedPoseLocation - FVector(AxialKick, 0, 0));
     FRotator Pose(Aim && bSightAnchorsValid?0.f:Recoil*(bHandlingReady?.35f:1.f),0,0);
     if(P->IsSliding()) Pose.Pitch-=4.f;
     if(Aim && bSightAnchorsValid) Pose+=SightRoot.Rotator();
@@ -128,9 +133,13 @@ void UCRWeaponViewComponent::TickComponent(float Delta,ELevelTick TickType,FActo
 }
 void UCRWeaponViewComponent::Shot(FVector Impact,bool Hit,bool BlockingHit)
 {
-    if (!Weapon.IsValid() || !Weapon->Data) return;
+    if (!Weapon.IsValid() || !Weapon->Data || !ViewRoot || bPresentationHidden) return;
     PlayHandling(0);
-    Recoil=FMath::Min(Weapon->Data->RecoilDegrees,2.f); Flash->SetVisibility(true);
+    Recoil = FMath::Clamp(Weapon->Data->RecoilDegrees, 0.f, 2.f);
+    // The shot impulse bypasses the locomotion pose filter. ADS stays on the camera sight axis.
+    AxialKick = Recoil * (Weapon->bAiming ? .65f : 1.25f);
+    ViewRoot->SetRelativeLocation(SmoothedPoseLocation - FVector(AxialKick, 0, 0));
+    Flash->SetVisibility(true);
     GetWorld()->GetTimerManager().SetTimer(FlashTimer,this,&UCRWeaponViewComponent::HideFlash,.055f,false);
     // Confirmed impact classification follows this accepted-shot event.
     if(auto* Audio=UCRAudioSettingsSubsystem::Get(this);Audio && Audio->IsReady())

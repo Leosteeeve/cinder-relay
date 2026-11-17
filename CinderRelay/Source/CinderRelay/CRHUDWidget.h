@@ -20,7 +20,7 @@ class CINDERRELAY_API UCRHUDWidget : public UUserWidget
 {
     GENERATED_BODY()
 public:
-    void SetObjective(const FText& Text); void SetPrompt(const FText& Text); void SetStreamingStatus(const FText& Text);
+    void SetObjective(const FText& Text, bool Notify = true); void SetPrompt(const FText& Text); void SetStreamingStatus(const FText& Text);
     void SetMenu(bool Visible,bool Ended,bool Defeated=false);
     void SetRecoveryMenu(bool Startup,bool Defeated,bool CanResume,bool CanContinue,const FString& Status);
     void SetCheckpointStatus(const FText& Text); void SetCombat(float Health,int32 Magazine,int32 Reserve,bool Reloading);

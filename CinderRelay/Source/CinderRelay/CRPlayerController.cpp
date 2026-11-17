@@ -48,6 +48,7 @@ void ACRPlayerController::BeginPlay()
 		Mode->OnObjectiveChanged.AddDynamic(this, &ACRPlayerController::ObjectiveChanged);
 		Mode->OnRestorationChanged.AddDynamic(this,&ACRPlayerController::RestorationChanged);
 		Mode->OnFieldItemsChanged.AddDynamic(this,&ACRPlayerController::FieldItemsChanged);
+		Mode->OnMaintenanceChanged.AddDynamic(this, &ACRPlayerController::MaintenanceChanged);
 		bLastOptic=Mode->HasSurveyOptic();bLastUpgrade=Mode->HasSurveyUpgrade();
 		bStartupMenu = Mode->IsStartupMenu();
 	}
@@ -153,6 +154,12 @@ void ACRPlayerController::PromptChanged(FText Prompt)
 	if (HUD) HUD->SetPrompt(bPrototypePaused ? FText::GetEmpty() : Prompt);
 }
 
+void ACRPlayerController::MaintenanceChanged()
+{
+	if (const auto* Mode = GetWorld()->GetAuthGameMode<ACRGameMode>(); HUD && Mode)
+		HUD->SetObjective(Mode->GetObjectiveText(), false);
+}
+
 void ACRPlayerController::RefreshHUD()
 {
 	if (!HUD) return;
@@ -242,6 +249,7 @@ void ACRPlayerController::EndPlay(const EEndPlayReason::Type Reason)
 		Mode->OnObjectiveChanged.RemoveDynamic(this, &ACRPlayerController::ObjectiveChanged);
 		Mode->OnRestorationChanged.RemoveDynamic(this, &ACRPlayerController::RestorationChanged);
 		Mode->OnFieldItemsChanged.RemoveDynamic(this, &ACRPlayerController::FieldItemsChanged);
+		Mode->OnMaintenanceChanged.RemoveDynamic(this, &ACRPlayerController::MaintenanceChanged);
 	}
 	if (HUD) { HUD->RemoveFromParent(); HUD = nullptr; }
 	if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset();

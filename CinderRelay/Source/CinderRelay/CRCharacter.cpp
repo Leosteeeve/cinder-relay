@@ -134,9 +134,16 @@ void ACRCharacter::MoveForward() { AddMovementInput(GetActorForwardVector(), 1.f
 void ACRCharacter::MoveBack() { AddMovementInput(GetActorForwardVector(), -1.f); }
 void ACRCharacter::MoveRight() { AddMovementInput(GetActorRightVector(), 1.f); }
 void ACRCharacter::MoveLeft() { AddMovementInput(GetActorRightVector(), -1.f); }
-void ACRCharacter::LookYaw(const FInputActionValue& Value) { AddControllerYawInput(Value.Get<float>() * MouseSensitivity); }
+float ACRCharacter::GetLookScale() const
+{
+    // Keep apparent screen motion consistent as the native camera narrows from 85 degrees.
+    const float HalfFov = FMath::DegreesToRadians(Camera->FieldOfView * .5f);
+    return MouseSensitivity * FMath::Tan(HalfFov) / FMath::Tan(FMath::DegreesToRadians(42.5f));
+}
+
+void ACRCharacter::LookYaw(const FInputActionValue& Value) { AddControllerYawInput(Value.Get<float>() * GetLookScale()); }
 // Unreal MouseY is already positive when the mouse moves up; preserve that sign.
-void ACRCharacter::LookPitch(const FInputActionValue& Value) { AddControllerPitchInput(Value.Get<float>() * MouseSensitivity); }
+void ACRCharacter::LookPitch(const FInputActionValue& Value) { AddControllerPitchInput(Value.Get<float>() * GetLookScale()); }
 bool ACRCharacter::IsSliding() const { const auto* M=Cast<UCRCharacterMovementComponent>(GetCharacterMovement()); return M && M->bSliding; }
 void ACRCharacter::RefreshSprint()
 {

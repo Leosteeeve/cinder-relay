@@ -181,7 +181,7 @@ void UCRHUDWidget::SetObjectiveExpanded(bool Expanded)
     if (auto *Panel = WidgetTree->FindWidget(TEXT("ObjectivePanel")))
         Panel->SetRenderOpacity(Expanded ? 1.f : .82f);
 }
-void UCRHUDWidget::SetObjective(const FText &V)
+void UCRHUDWidget::SetObjective(const FText &V, bool Notify)
 {
     if (FullObjective.EqualTo(V))
         return;
@@ -190,7 +190,7 @@ void UCRHUDWidget::SetObjective(const FText &V)
     ObjectiveAge = 4;
     Put(TEXT("Objective"), V);
     SetObjectiveExpanded(true);
-    if (Changed)
+    if (Changed && Notify)
     {
         Notice(FText::FromString(TEXT("OBJECTIVE UPDATED")));
         PlayInterfaceSound(TEXT("Confirm"));
@@ -304,7 +304,7 @@ void UCRHUDWidget::SetCombat(float H, int32 M, int32 R, bool Reload)
     }
     Put(TEXT("Magazine"), FString::Printf(TEXT("%02d"), M));
     Put(TEXT("Reserve"), FString::Printf(TEXT("/  %02d"), R));
-    Put(TEXT("ReloadState"), Reload ? TEXT("RELOADING") : M == 0 ? TEXT("R  RELOAD") : TEXT(""));
+    Put(TEXT("ReloadState"), Reload ? TEXT("RELOADING") : M > 0 ? TEXT("") : R > 0 ? TEXT("R  RELOAD") : TEXT("NO AMMO"));
     if (bHadCombat && bWasReloading && !Reload && H > 0)
         Notice(FText::FromString(TEXT("RELOAD COMPLETE")));
     bWasReloading = Reload;
@@ -328,6 +328,8 @@ void UCRHUDWidget::Notice(const FText &V)
 void UCRHUDWidget::ShotFeedback(bool)
 {
     ShotPulse = .12f;
+    if (auto *W = WidgetTree->FindWidget(TEXT("Reticle")))
+        W->SetRenderScale(FVector2D(1.24f));
 }
 void UCRHUDWidget::HitFeedback(bool K)
 {

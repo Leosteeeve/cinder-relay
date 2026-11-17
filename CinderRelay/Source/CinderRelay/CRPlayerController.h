@@ -52,6 +52,7 @@ protected:
 private:
 	UFUNCTION() void RestorationChanged();
 	UFUNCTION() void FieldItemsChanged();
+	UFUNCTION() void MaintenanceChanged();
 	void CloseFieldPackForTravel();
 	bool bFieldPackOpen=false, bLastOptic=false, bLastUpgrade=false;
 	void BindPawn();

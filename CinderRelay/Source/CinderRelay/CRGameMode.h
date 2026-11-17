@@ -35,8 +35,8 @@ public:
 	UFUNCTION(BlueprintPure) FText GetObjectiveText() const;
 	bool TryAdvance(ECRObjective Expected);
 	// Session-only mechanical progress: derived from original objectives on checkpoint restore.
-	void RegisterWorkshopDiagnostic() { bWorkshopDiagnostic = true; }
-	void RegisterAccessMachinery() { bAccessMachinery = true; }
+	void RegisterWorkshopDiagnostic();
+	void RegisterAccessMachinery();
 	int32 GetDiagnosticStep() const { return Objective >= ECRObjective::RestorePower ? 3 : DiagnosticStep; }
 	bool TryDiagnosticStep(int32 Step);
 	bool IsModuleReleased() const { return !bWorkshopDiagnostic || GetDiagnosticStep() == 3; }

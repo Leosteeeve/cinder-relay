@@ -77,6 +77,7 @@ private:
 	void Reload();
 	void AimStart();
 	void AimStop();
+	float GetLookScale() const;
 	UFUNCTION() void Died();
 	void InstallInputContext();
 	TWeakObjectPtr<UEnhancedInputLocalPlayerSubsystem> InputSubsystem;
