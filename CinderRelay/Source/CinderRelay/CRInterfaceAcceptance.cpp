@@ -27,6 +27,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
+#include "Scalability.h"
 #include "UnrealClient.h"
 
 namespace
@@ -248,7 +249,35 @@ void ACRInterfaceAcceptance::Tick(float DeltaSeconds)
             }
         }
         for(int32 I=0;I<5;++I) if(!Check(FMath::IsNearlyEqual(Audio->GetVolume(InterfaceAudioGroups[I]),InterfaceAudioExpected[I],.001f),TEXT("UI or cross-process audio value: ")+InterfaceAudioGroups[I].ToString())) return;
-        Capture(TEXT("02_Settings"),TEXT("settings_back")); return;
+        Capture(TEXT("02_Settings"), FParse::Param(FCommandLine::Get(), TEXT("CR06GraphicsCheck"))
+            ? TEXT("settings_graphics") : TEXT("settings_back")); return;
+    }
+    if (Run.Stage == TEXT("settings_graphics"))
+    {
+        if (Run.Mode == TEXT("Write"))
+            for (int32 I = 0; I < 3; ++I) Key(EKeys::Down);
+        else Key(EKeys::Up);
+        Key(EKeys::Enter);
+        if (!Check(Label(HUD, TEXT("ModalTitle")) == TEXT("GRAPHICS"), TEXT("Keyboard reaches Graphics from Settings"))) return;
+        const int32 Expected = Run.Mode == TEXT("Write") ? 2 : 3;
+        const auto Quality = Scalability::GetQualityLevels();
+        if (!Check(Quality.ShadowQuality == Expected && Quality.GlobalIlluminationQuality == Expected && Quality.ReflectionQuality == Expected,
+                   TEXT("Fresh Balanced defaults or cross-process Epic state is active"))) return;
+        Capture(TEXT("10_Graphics"), TEXT("choose_lighting")); return;
+    }
+    if (Run.Stage == TEXT("choose_lighting"))
+    {
+        const auto Before = Scalability::GetQualityLevels();
+        const int32 Expected = Run.Mode == TEXT("Write") ? 3 : 2;
+        Key(Expected == 3 ? EKeys::Down : EKeys::Up);
+        Key(EKeys::Enter);
+        const auto After = Scalability::GetQualityLevels();
+        if (!Check(After.ShadowQuality == Expected && After.GlobalIlluminationQuality == Expected && After.ReflectionQuality == Expected
+                   && After.ResolutionQuality == Before.ResolutionQuality,
+                   TEXT("Lighting selection applies only the intended groups and retains resolution scale"))) return;
+        Key(EKeys::Escape);
+        if (!Check(Label(HUD, TEXT("ModalTitle")) == TEXT("SETTINGS"), TEXT("Escape returns from Graphics to Settings"))) return;
+        Next(TEXT("settings_back")); return;
     }
     if(Run.Stage==TEXT("settings_back"))
     {

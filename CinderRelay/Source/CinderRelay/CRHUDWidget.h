@@ -27,7 +27,7 @@ public:
     void SetSightState(bool HideReticle,bool Installed);
     void ShotFeedback(bool Hit); void HitFeedback(bool Killed); void DamageFeedback();
     void SetSubtitle(const FText& Text); void SetAssembly(bool Active, bool Iron = false); void Notice(const FText& Text);
-    void ShowFieldGuide(const FText& Objective);
+    void ShowFieldGuide(const FText& Objective, const FText& Route);
     bool HandleBack(); void HandleAction(int32 Action); void PlayInterfaceSound(FName Cue);
     void SetFieldPack(bool Open); void RefreshFieldPack();
     bool IsFieldPackVisible() const {return bPack;}
@@ -45,6 +45,7 @@ private:
     void BeginModal(const FString& Title,const FString& Body,int32 Kind); void CloseModal();
     UCRInterfaceAction* AddAction(int32 Id,const FString& Label);
     void AddVolume(FName Group); void ChangeVolume(FName Group,float Value); void SaveVolumes(); void RefreshTitleArtwork();
+    void ShowGraphics(); void SetLightingQuality(int32 Quality);
     UFUNCTION() void ResumeClicked(); UFUNCTION() void RestartClicked(); UFUNCTION() void ExitClicked();
     UFUNCTION() void ContinueClicked(); UFUNCTION() void SettingsClicked(); UFUNCTION() void CreditsClicked();
     UFUNCTION() void PackCloseClicked();

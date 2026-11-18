@@ -82,7 +82,7 @@ void ACRPlayerController::OpenFieldGuide()
 		ApplyPause(true);
 	}
 	const auto* Chapter = GetWorld()->GetAuthGameMode<ACRGameMode>();
-	HUD->ShowFieldGuide(Chapter ? Chapter->GetObjectiveText() : FText::GetEmpty());
+	if (Chapter) HUD->ShowFieldGuide(Chapter->GetObjectiveText(), Chapter->GetObjectiveGuide());
 }
 
 void ACRPlayerController::SelectIronSights()

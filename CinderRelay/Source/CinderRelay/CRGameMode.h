@@ -35,6 +35,7 @@ public:
 	bool ClaimStoryBeat(FName Id) { return !Id.IsNone() && !StoryBeats.Contains(Id) ? (StoryBeats.Add(Id), true) : false; }
 	UFUNCTION(BlueprintPure) ECRObjective GetObjective() const { return Objective; }
 	UFUNCTION(BlueprintPure) FText GetObjectiveText() const;
+	FText GetObjectiveGuide() const;
 	bool TryAdvance(ECRObjective Expected);
 	// Session-only mechanical progress: derived from original objectives on checkpoint restore.
 	void RegisterWorkshopDiagnostic();

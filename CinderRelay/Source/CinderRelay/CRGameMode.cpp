@@ -235,29 +235,58 @@ FText ACRGameMode::GetObjectiveText() const
 {
 	switch (Objective)
 	{
-	case ECRObjective::ReachWorkshop: return NSLOCTEXT("Cinder", "WorkshopLights", "Reach the lit workshop shutter.");
+	case ECRObjective::ReachWorkshop: return NSLOCTEXT("Cinder", "WorkshopLights", "Reach the lit Workshop shutter.\nPress E at the door control.");
 	case ECRObjective::FindModule:
 		if (bWorkshopDiagnostic)
 		{
 			switch (GetDiagnosticStep())
 			{
-			case 0: return NSLOCTEXT("Cinder", "RouteSupplyBay", "Enter the test hall. Route bench supply in Bay 01.");
-			case 1: return NSLOCTEXT("Cinder", "VerifyLoadBay", "Follow the test hall to Bay 02. Verify the load.");
-			case 2: return NSLOCTEXT("Cinder", "ReleaseCradleBay", "Reach Bay 03 and release the module cradle.");
+			case 0: return NSLOCTEXT("Cinder", "RouteSupplyBay", "Bay 01 / Route bench supply\nEnter the signed Module Test Hall.");
+			case 1: return NSLOCTEXT("Cinder", "VerifyLoadBay", "Bay 02 / Verify the load\nFollow the blue bay signs.");
+			case 2: return NSLOCTEXT("Cinder", "ReleaseCradleBay", "Bay 03 / Release the module cradle\nFollow the blue bay signs.");
 			default: break;
 			}
 		}
-		return NSLOCTEXT("Cinder", "CollectModule", "Collect the replacement power module.");
+		return bWorkshopDiagnostic
+			? NSLOCTEXT("Cinder", "CollectModuleViaReturn", "Collect the power module.\nTake the amber return to the bench.")
+			: NSLOCTEXT("Cinder", "CollectModule", "Collect the replacement power module.");
 	case ECRObjective::RestorePower:
 		if (!IsRelayServiceReady())
 			return GetRelayServiceStep() == 0
-				? NSLOCTEXT("Cinder", "PrimeServiceBus", "Cross the shuttle. Prime the auxiliary service bus at A.")
-				: NSLOCTEXT("Cinder", "OpenServiceInterlock", "Follow the auxiliary hall to B. Release the interlock.");
+				? NSLOCTEXT("Cinder", "PrimeServiceBus", "A / Prime the auxiliary bus.\nCross the shuttle or use the side walk.")
+				: NSLOCTEXT("Cinder", "OpenServiceInterlock", "B / Release the interlock.\nFollow the blue signs past the bus.");
 		return IsAccessStopped()
 			? NSLOCTEXT("Cinder", "InstallModule", "Install the module at Relay Nine.")
-			: NSLOCTEXT("Cinder", "StopShuttle", "Relay Access: latch the machinery stop.");
+			: NSLOCTEXT("Cinder", "StopShuttle", "Latch the machinery stop.\nTake the amber return to the relay.");
 	case ECRObjective::InvestigateSignal: return NSLOCTEXT("Cinder", "ReadSignal", "Read the MERIDIAN signal monitor.");
 	default: return NSLOCTEXT("Cinder", "Complete", "Connection restored.");
+	}
+}
+
+FText ACRGameMode::GetObjectiveGuide() const
+{
+	switch (Objective)
+	{
+	case ECRObjective::ReachWorkshop:
+		return NSLOCTEXT("Cinder", "GuideYard", "Follow the rail line to the lit shutter and use its door control.\nThe north Signal Store is an optional salvage detour.");
+	case ECRObjective::FindModule:
+		if (GetDiagnosticStep() == 0 && bWorkshopDiagnostic)
+			return NSLOCTEXT("Cinder", "GuideBay01", "Look for MODULE TEST HALL on the south side of the Workshop.\nOperate the console beneath the Bay 01 sign.");
+		if (!IsModuleReleased())
+			return NSLOCTEXT("Cinder", "GuideNextBay", "Move around the equipment wall. Follow the blue bay signs.\nThe amber signs mark the way back to the module bench.");
+		return NSLOCTEXT("Cinder", "GuideModule", "Find the power module on the Workshop bench.\nChanging sights at the bench is optional.");
+	case ECRObjective::RestorePower:
+		if (!IsRelayServiceReady())
+			return GetRelayServiceStep() == 0
+				? NSLOCTEXT("Cinder", "GuideBus", "Go down the ramp and cross via the shuttle or side walk.\nLook for AUXILIARY SERVICE on the far side and operate A.")
+				: NSLOCTEXT("Cinder", "GuideInterlock", "Go around the bus equipment wall on the right.\nContinue through the opening marked B. Look for the amber return.");
+		if (!IsAccessStopped())
+			return NSLOCTEXT("Cinder", "GuideStop", "Follow the amber return walk back to the main chamber.\nLatch the machinery stop, then fit the module at the terminal.");
+		return NSLOCTEXT("Cinder", "GuideInstall", "Use E at the orange Relay Nine terminal to fit the power module.");
+	case ECRObjective::InvestigateSignal:
+		return NSLOCTEXT("Cinder", "GuideSignal", "Find the cyan monitor inside the relay room and inspect it with E.");
+	default:
+		return FText::GetEmpty();
 	}
 }
 

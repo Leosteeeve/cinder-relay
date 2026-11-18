@@ -1,5 +1,31 @@
 # CINDER RELAY — Performance Budget
 
+## Phase06 architecture and lighting refinement
+
+The 2026-11-17 owner report identified low frame rate in the expanded chapter. The archived Epic route shows a Workshop annex p95 of 52.35 ms and Relay annex p95 of 58.76 ms. The corresponding Game Thread p95 values were 10.93 and 21.84 ms. Render Thread p95 was 52.41 and 59.01 ms, and GPU p95 was 45.92 and 43.78 ms. These older captures show variability and place initial investigation on rendering. They do not isolate one render pass or external cause.
+
+The fresh control compares the same archived Windows Development executable and checkpoint inputs at 1920×1080, screen percentage 100, dynamic resolution off and VSync off. It uses no screenshots or heavy Insights trace during the comparison. High lighting changes shadow, global illumination and reflection groups from 3 to 2. Both route processes wrote CP02 and exited 0. An initial pair used a stale CP02 as the intended CP01 seed and is excluded. The corrected pair used a fresh CP01 produced by normal gameplay.
+
+| Old build sample | Epic frame p50 / p95 / p99 ms | High lighting frame p50 / p95 / p99 ms | Epic → High GPU p95 ms |
+| --- | ---: | ---: | ---: |
+| Workshop annex | 16.31 / 20.39 / 24.74 | 13.70 / 21.63 / 26.25 | 17.28 → 11.66 |
+| Workshop core | 18.81 / 27.11 / 36.37 | 13.80 / 20.05 / 25.50 | 19.67 → 13.92 |
+| Optic assembly | 19.63 / 24.84 / 31.48 | 16.54 / 25.05 / 32.92 | 19.68 → 15.18 |
+
+High lighting reduced GPU time and the measured median across all three segments. Whole-frame tails were mixed. Settings → Graphics now exposes Balanced lighting for those three High groups and Epic lighting for the original reference. New preferences default to Balanced. The native option saves separately from checkpoints and leaves output resolution and rendering scale unchanged. The [Epic Lumen performance guide](https://dev.epicgames.com/documentation/en-us/unreal-engine/lumen-performance-guide-for-unreal-engine?application_version=5.8) describes the quality tiers. The desktop comparison uses the measurements above. The old Epic configuration stays available for repeat testing.
+
+The first candidate Balanced run produced whole-frame p95 values of 37.67 / 53.62 / 52.39 ms in the three segments despite lower GPU p95. A post-validation repeat alternated new and old packages at identical Balanced settings and used the same fresh CP01 snapshot. Both exited 0 after writing CP02. Neither repeat ran during a cook, editor session or capture. Power and scheduler conditions were not measured continuously. The earlier slower candidate remains part of the evidence.
+
+| Repeat segment | Old → New frame p50 ms | Old → New frame p95 ms | Old → New frame p99 ms | Old → New RT p95 ms | Old → New GPU p95 ms | Old → New frames above 50 ms |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Workshop annex | 22.72 → 17.52 | 35.76 → 26.18 | 39.92 → 31.22 | 35.74 → 26.18 | 8.43 → 8.35 | 0 → 1 |
+| Workshop core | 21.77 → 23.16 | 39.53 → 38.04 | 49.67 → 47.75 | 39.48 → 38.11 | 10.03 → 9.60 | 5 → 5 |
+| Optic assembly | 22.30 → 20.59 | 33.26 → 32.10 | 42.79 → 38.06 | 33.64 → 32.34 | 11.97 → 11.60 | 3 → 0 |
+
+The annex recorded the clearest improvement. The Workshop core median was slower. Render Thread tails still exceed the 16.67 ms frame budget and the route has no stable 60 FPS acceptance. Frame counts and quantiles cover the same stages and location filters per run. Thread and GPU counters use previous engine frames and cannot be summed. Raw Windows Development evidence is under `.environment-local/phase-06/refinement/controlled/`, `candidate/` and `paired-repeat/`.
+
+The final UI binary also ran one diagnostic `-trace=cpu,frame,bookmark,loadtime -statnamedevents` route. It recorded native route completion and a 116,602,187-byte trace. Its process did not meet the clean-exit gate and is excluded from the benchmark. Offline Unreal Insights exited 0 and exported Render and RHI timing statistics over trace seconds 11–45. `WaitForTasks` recorded 34.62 s inclusive over both threads. `WaitForVisibilityTasks` and `Present time` recorded maximum inclusive spans of 59.61 and 66.80 ms. `SlateDrawWindowsCommand` averaged about 0.46 ms and had a 3.28 ms maximum inclusive span. These CPU scopes can nest or include idle time. They identify renderer waits for inspection and do not establish their upstream cause. Allocation and loading warnings in this partial-channel capture exclude those analyses. Evidence is under `render-trace/`.
+
 ## Phase06 controlled candidate observations (2026-11-01 local)
 
 **Not accepted as stable native60FPS.** UE5.8.4, RTX5070Laptop8GB/32GB, driver616.92; actual1920x1080, all Epic groups3, ScreenPercentage100, DynamicRes0, VSync0, MaxFPS0. No frame generation, quality reduction or cache clearing. One unchanged Phase055 packaged route1 baseline and one final Phase06 package's three-process suite used the same input fixture/settings. No Editor, recording, offline analysis or heavy trace ran during the primary samples. Existing desktop applications remained open; instantaneous background CPU load/power/thermal state were not controlled. First launch of each comparison build used existing caches, **not a cold shader cache**. The separate warm traced run is diagnostic only.

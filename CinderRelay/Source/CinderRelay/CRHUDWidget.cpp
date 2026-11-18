@@ -19,6 +19,7 @@
 #include "Engine/StreamableManager.h"
 #include "Engine/Texture2D.h"
 #include "Engine/GameInstance.h"
+#include "GameFramework/GameUserSettings.h"
 #include "InputCoreTypes.h"
 #include "ProfilingDebugging/CpuProfilerTrace.h"
 namespace
@@ -100,6 +101,14 @@ void UCRHUDWidget::NativeOnInitialized()
     SetIsFocusable(true);
     if (!WidgetTree->RootWidget)
         CRInterfaceLayout::Build(WidgetTree, BodyFont, TitleFont, TEXT("HUDRoot"));
+    for (const auto& Row : {TPair<FName, float>(TEXT("StreamingStatus"), 188.f),
+                           TPair<FName, float>(TEXT("CheckpointStatus"), 228.f),
+                           TPair<FName, float>(TEXT("EventNotice"), 292.f)})
+    {
+        if (auto *Label = Text(Row.Key))
+            if (auto *CanvasSlot = Cast<UCanvasPanelSlot>(Label->Slot))
+                CanvasSlot->SetPosition(FVector2D(CanvasSlot->GetPosition().X, Row.Value));
+    }
     auto B = [this](const TCHAR *N)
     {
         auto *W = Cast<UButton>(WidgetTree->FindWidget(N));
@@ -181,7 +190,7 @@ void UCRHUDWidget::NativeDestruct()
 void UCRHUDWidget::SetObjectiveExpanded(bool Expanded)
 {
     Visibility(TEXT("ObjectiveLabel"), Expanded);
-    const float Height = Expanded ? 104.f : 72.f;
+    const float Height = Expanded ? 132.f : 96.f;
     for (const TCHAR *Name : {TEXT("ObjectivePanel"), TEXT("ObjectiveRail")})
     {
         if (auto *Widget = WidgetTree->FindWidget(Name))
@@ -193,7 +202,10 @@ void UCRHUDWidget::SetObjectiveExpanded(bool Expanded)
     if (auto *Objective = Text(TEXT("Objective")))
     {
         if (auto *CanvasSlot = Cast<UCanvasPanelSlot>(Objective->Slot))
+        {
             CanvasSlot->SetPosition(FVector2D(CanvasSlot->GetPosition().X, Expanded ? 46.f : 8.f));
+            CanvasSlot->SetSize(FVector2D(CanvasSlot->GetSize().X, 76.f));
+        }
     }
     if (auto *Panel = WidgetTree->FindWidget(TEXT("ObjectivePanel")))
         Panel->SetRenderOpacity(Expanded ? 1.f : .82f);
@@ -442,6 +454,9 @@ void UCRHUDWidget::BeginModal(const FString &T, const FString &B, int32 K)
         W->SetIsEnabled(false);
     Put(TEXT("ModalTitle"), T);
     Put(TEXT("ModalBody"), B);
+    if (auto *Body = Text(TEXT("ModalBody")))
+        if (auto *BodySlot = Cast<UVerticalBoxSlot>(Body->Slot))
+            BodySlot->SetPadding(FMargin(0, 0, 0, K == 6 ? 48.f : 24.f));
     if (auto *Box = Cast<UVerticalBox>(WidgetTree->FindWidget(TEXT("ModalChoices"))))
         Box->ClearChildren();
     MenuNavigation.Reset();
@@ -488,6 +503,12 @@ bool UCRHUDWidget::HandleBack()
             PC->ToggleFieldPack();
         return true;
     }
+    if (ModalKind == 7)
+    {
+        PlayInterfaceSound(TEXT("UICancel"));
+        SettingsClicked();
+        return true;
+    }
     if (ModalKind)
     {
         PlayInterfaceSound(TEXT("UICancel"));
@@ -497,16 +518,14 @@ bool UCRHUDWidget::HandleBack()
     return false;
 }
 
-void UCRHUDWidget::ShowFieldGuide(const FText& Objective)
+void UCRHUDWidget::ShowFieldGuide(const FText& Objective, const FText& Route)
 {
     if (ModalKind == 6) { CloseModal(); return; }
     if (ModalKind != 0) return;
-    const FString Brief = FString::Printf(TEXT("CURRENT TASK\n%s\n\nFIELD PROCEDURE\n"
-        "Rail Yard: follow the lit shutter. The north signal store holds optional salvage.\n"
-        "Workshop: visit the numbered test bays in order. Follow amber markings back to the module bench.\n"
-        "Relay: cross the shuttle or take the side walk. Prime A, release B, then latch the machinery stop.\n\n"
-        "E  Interact / fit the recovered optic       1  Service iron sights while facing the workbench\n"
-        "R  Reload       I  Field Pack       Tab  Skip a presentation       F5  Retry a streaming door"), *Objective.ToString());
+    const FString Brief = FString::Printf(TEXT("CURRENT TASK\n%s\n\nWHERE TO GO\n%s\n\nFIELD CONTROLS\n"
+        "E  Interact      I  Field Pack      F5  Retry a streaming door\n"
+        "1  Service iron sights at the bench      Tab  Skip a presentation"),
+        *Objective.ToString(), *Route.ToString());
     BeginModal(TEXT("FIELD GUIDE"), Brief, 6);
     AddAction(0, TEXT("Back"));
     FocusIndex(0);
@@ -561,8 +580,9 @@ FReply UCRHUDWidget::NativeOnKeyDown(const FGeometry &G, const FKeyEvent &E)
             int32 D = K == EKeys::Up ? -1 : 1;
             if (ModalKind == 4)
             {
-                VolumeFocus = (VolumeFocus + D + 7) % 7;
-                FocusIndex(VolumeFocus >= 5 ? VolumeFocus - 5 : -1);
+                const int32 ChoiceCount = Groups.Num() + MenuNavigation.Num();
+                VolumeFocus = (VolumeFocus + D + ChoiceCount) % ChoiceCount;
+                FocusIndex(VolumeFocus >= Groups.Num() ? VolumeFocus - Groups.Num() : -1);
                 for (auto &Pair : VolumeLabels)
                     Pair.Value->SetColorAndOpacity(Groups.IndexOfByKey(Pair.Key) == VolumeFocus ? Amber() : White());
             }
@@ -580,7 +600,7 @@ FReply UCRHUDWidget::NativeOnKeyDown(const FGeometry &G, const FKeyEvent &E)
         }
         if (K == EKeys::Enter || K == EKeys::SpaceBar)
         {
-            if ((ModalKind != 4 || VolumeFocus >= 5) && MenuNavigation.IsValidIndex(Focused) &&
+            if ((ModalKind != 4 || VolumeFocus >= Groups.Num()) && MenuNavigation.IsValidIndex(Focused) &&
                 MenuNavigation[Focused]->GetIsEnabled())
                 MenuNavigation[Focused]->OnClicked.Broadcast();
             return FReply::Handled();
@@ -676,9 +696,37 @@ void UCRHUDWidget::SettingsClicked()
         AddVolume(G);
     AddAction(102, TEXT("Controls / Help"));
     AddAction(0, TEXT("Save & back"));
+    AddAction(105, TEXT("Graphics"));
     FocusIndex(-1);
     if (auto *P = VolumeLabels.Find(TEXT("Master")))
         (*P)->SetColorAndOpacity(Amber());
+}
+void UCRHUDWidget::ShowGraphics()
+{
+    const auto *Settings = UGameUserSettings::GetGameUserSettings();
+    if (!Settings) return;
+    const int32 Shadows = Settings->GetShadowQuality();
+    const bool IsPreset = Shadows == Settings->GetGlobalIlluminationQuality() && Shadows == Settings->GetReflectionQuality();
+    const TCHAR *Current = IsPreset && Shadows == 2 ? TEXT("BALANCED") : IsPreset && Shadows == 3 ? TEXT("EPIC") : TEXT("CUSTOM");
+    BeginModal(TEXT("GRAPHICS"), FString::Printf(TEXT("LIGHTING / %s\n\n"
+        "Balanced uses High shadows, global illumination and reflections.\n"
+        "Epic uses the original Epic settings for those three groups.\n"
+        "Both choices keep the current resolution and render scale."), Current), 7);
+    AddAction(106, TEXT("Balanced lighting"));
+    AddAction(107, TEXT("Epic lighting"));
+    AddAction(103, TEXT("Back to settings"));
+    FocusIndex(IsPreset && Shadows == 3 ? 1 : 0);
+}
+void UCRHUDWidget::SetLightingQuality(int32 Quality)
+{
+    auto *Settings = UGameUserSettings::GetGameUserSettings();
+    if (!Settings) return;
+    Settings->SetShadowQuality(Quality);
+    Settings->SetGlobalIlluminationQuality(Quality);
+    Settings->SetReflectionQuality(Quality);
+    Settings->ApplyNonResolutionSettings();
+    Settings->SaveSettings();
+    ShowGraphics();
 }
 void UCRHUDWidget::ChangeVolume(FName G, float V)
 {
@@ -749,6 +797,13 @@ void UCRHUDWidget::HandleAction(int32 Id)
     }
     else if (Id == 104)
         PC->OpenFieldGuide();
+    else if (Id == 105)
+    {
+        SaveVolumes();
+        ShowGraphics();
+    }
+    else if (Id == 106 || Id == 107)
+        SetLightingQuality(Id == 106 ? 2 : 3);
     else if (Id == 103)
         SettingsClicked();
     else if (Id >= 200 && Id < 204)
