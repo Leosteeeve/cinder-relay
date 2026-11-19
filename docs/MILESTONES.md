@@ -1,5 +1,25 @@
 # CINDER RELAY — Milestones
 
+## November 18 Chapter 01 remake
+
+Starting revision `dc43433`, UE 5.8.4 CL58902052. The three playable areas of The Dead Station now connect equipment repairs to changes in the level. The yard hoist opens an optional passage and draws scouts to the pump. Five service gates open as the existing maintenance objectives advance. The relay console has a physical carrier meter driven by the two native sequences. The title, Field Guide, HUD, pack, machine lighting and five original machinery and signal cues accompany the new route. [Playable route and controls](CHAPTER_06_EXPANSION.md#november-18-playable-remake).
+
+Local executable: `.environment-local/phase-06/remake/package/Windows/CinderRelay.exe`. All evidence paths below are relative to `.environment-local/phase-06/remake/`.
+
+| Check | Result and evidence |
+| --- | --- |
+| Native level authoring | Blender and UE authored nine original mesh assets. The Editor reloaded 42 yard actors, the five gates, all six original controls and all three checkpoint transforms. Two initial authoring checks returned −1 because their Python collision enum was invalid. The corrected checks queried the engine's blocking response, passed yard and interior validation, and exited 0. See `verified-results.txt`, `yard-native.json`, `interiors/native-author.json` and `receiver-native.json`. |
+| Windows build | `Build.bat CinderRelayEditor Win64 Development` exited 0. `RunUAT BuildCookRun -platform=Win64 -clientconfig=Development -build -cook -stage -pak -archive` cooked 837 packages and exited 0 in 240.20 s. After comparing the workshop renders, a second content cook and archive included the new task lights and exited 0 in 56.05 s. See `editor-final.log`, `package.log`, `package-final.log` and `final-interior-visuals/`. |
+| Packaged gameplay | `run_checkpoint_acceptance.ps1 -RemakeCheck -SlideCheck -LowOverhead` passed in three separate processes. Each native game and launcher exited 0. A real interact input raised the wagon 310 cm, both scouts received the hearing stimulus, and a standing capsule cleared the opened passage. The routes exercised all five gates, CP01/CP02 recovery, the workbench, backtracking, death/retry and both the fitted-optic and bypass paths to the MERIDIAN ending. The physical needle moved during ending playback. See `routes/process-results.json` and `routes/packaged-route1.log` through `packaged-route3.log`. |
+| Interface and existing saves | `run_interface_acceptance.ps1 -GraphicsCheck` passed native preference write at 1920×1080 and read at 2560×1600, both exit 0. The test covers menu input, the Field Guide, inventory, reload/pause and audio and graphics preferences. A separate native read of the previous build's isolated CP00 save and audio preferences also passed, exit 0. See `interface/process-results.json`, `legacy-copies.json` and `legacy-read.log`. |
+| Cleanup | Removed six rejected captures, temporary files and Python cache files plus 48 files from the staging tree whose SHA-256 matched the archived copies. Total reclaimed was 1,115,351,263 bytes. See `cleanup-files.json` and `cleanup-stage.json`. Player slots A and B were copied from the preceding local archive and checked against `source-player-slots.json`. |
+
+Review of the actual 1600p guide uncovered overlapping paragraphs. After setting the wrap width before Slate measures the two columns, `Build.bat CinderRelay Win64 Development` exited 0 in 40.47 s. The archived executable and symbols matched the build output by SHA-256. A second pair of packaged preference-write/read runs completed with exit 0. The resulting 1080p and 1600p captures show the last line of each paragraph clear of the controls below it. See `guide-game-build.log`, `guide-final/process-results.json` and `guide-final/guide-both.jpg`.
+
+The normal package contains the two original player save generations and the previous local graphics preferences, with matching hashes in `player-carryover-final.json`. Test slots, audio preferences and native capture folders were moved to `packaged-fixtures/` after the last test. The gameplay captures include `packaged-fixtures/Phase04/1/hoist.png` and `packaged-fixtures/Phase04/3/carrier.png`.
+
+The third traversal run at native 1920×1080 and Epic quality yielded 7,317 walking/sprinting frame samples. Median frame time was 17.16 ms and p95 was 21.45 ms. The log also reports virtual shadow map job-queue warnings. This run missed the 16.67 ms target. See `route3-motion-sample.json`. Unaided wayfinding, headphone listening and the 12–16 minute first-play target still require a human playthrough.
+
 ## Phase05.5 identity, interface, audio and Field Pack — integration ledger
 
 Authorized by the owner's2026-11-01 Phase05.5 brief. Baseline `09eaa5fe39beb1c4365220e09fde311e0d3b10fe`; branch `phase-05-5-ui-audio-inventory`; UE5.8.4 CL58902052. [Design, behavior and evidence](INTERFACE_AUDIO_05_5.md). No Phase06 work.

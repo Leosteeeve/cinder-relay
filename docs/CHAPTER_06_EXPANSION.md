@@ -1,5 +1,19 @@
 # Chapter 01 expansion
 
+## November 18 playable remake
+
+The owner chose a remake of the first chapter around Elias's repair work. The new equipment behavior and signage are gameplay proposals within the original Dead Station story. Each section changes where the player can go.
+
+| Location | Action and consequence |
+| --- | --- |
+| Rail Yard | The yellow booth near CP00 operates the north transfer hoist. Press E to raise the service wagon 310 cm over 2.8 seconds. Walk underneath for a direct route to the Signal Store and the east flank. The pump makes a spatial sound that the existing scouts can investigate. The east entrance remains available without using the hoist. |
+| Workshop | Routing supply and verifying the load open folding safety gates in the test hall. Releasing the cradle opens a crosswalk through the gridded gallery to the amber return lane. Take the released module from the original bench. Servicing the sights is optional. |
+| Relay Bunker | Priming the bus opens the breaker passage. Releasing the interlock opens a transverse passage to the stop-control return walk. Fit the module at Relay Nine, then inspect the console in front of the carrier meter. The physical pointer follows the power and signal sequences. |
+
+The hoist state lives in the chapter session and is derived from progression when restoring an older CP01 or CP02 save. The five interior gates derive from the existing diagnostic and service steps. The center of each passage blocks a standing player until the leaves have finished opening. Hoist and gate motion stop ticking at rest. Ending playback supplies the time for the meter animation, including pause. The title and F1 guide share an original illustrated section of the three sites. The HUD draws the current action and its second-line route cue separately.
+
+The Windows Development build is archived under `.environment-local/phase-06/remake/package/Windows`. Evidence for this revision lives in `.environment-local/phase-06/remake/`. [Build, acceptance and cleanup](MILESTONES.md#november-18-chapter-01-remake). [Model and sound sources](ASSET_SOURCES.md).
+
 Phase06 extends The Dead Station using the three original streamed maps. The design target is 12–16 minutes for an uncoached first completion. Measure that separately from automated traversal and interrupted checkpoint tests.
 
 ## References and original decisions

@@ -19,6 +19,11 @@
 #include "CRStreamingGate.h"
 #include "CRMaintenanceStation.h"
 #include "CRAccessMachinery.h"
+#include "CRYardHoist.h"
+#include "CRServiceCircuit.h"
+#include "CRZonePresentation.h"
+#include "CRAudioSettingsSubsystem.h"
+#include "Components/BoxComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -60,6 +65,7 @@ void ACRCheckpointRoute::BeginPlay()
     bSlideEdges=FParse::Param(FCommandLine::Get(),TEXT("CRSlideEdges"));
     bSlideCheck=FParse::Param(FCommandLine::Get(),TEXT("CRSlideCheck"));
     bGateCheck=FParse::Param(FCommandLine::Get(),TEXT("CR06GateCheck"));
+    bRemakeCheck=FParse::Param(FCommandLine::Get(),TEXT("CR06RemakeCheck"));
     bSlideVideo=FParse::Param(FCommandLine::Get(),TEXT("CR054Video"));
     bLifecycle = FParse::Param(FCommandLine::Get(), TEXT("CRCheckpointLifecycle"));
     bHandlingVideo = FParse::Param(FCommandLine::Get(), TEXT("CRHandlingVideo"));
@@ -138,6 +144,7 @@ void ACRCheckpointRoute::Tick(float Delta)
     auto* W = Player->Weapon.Get();
     if (Player->Health->IsDead() && Stage != TEXT("die") && Stage!=TEXT("bench_dead")) { Finish(false,TEXT("Unexpected death in ")+Stage); return; }
     if(Stage.StartsWith(TEXT("gate_"))) { TickGateCheck(); return; }
+    if(Stage.StartsWith(TEXT("hoist_"))) { TickHoistCheck(); return; }
     if (Stage == TEXT("walk"))
     {
         if (Waypoints.IsEmpty()) { Next(AfterWalk); return; }
@@ -156,7 +163,12 @@ void ACRCheckpointRoute::Tick(float Delta)
     if (Stage == TEXT("wait_cp00"))
     {
         if(!Store->IsBusy()&&Store->GetLatest()&&Store->GetLatest()->CheckpointId==TEXT("CP00_START_YARD"))
-        { Check(Store->GetLatest()->SaveGeneration==1,TEXT("Fresh New Game confirms native CP00 write before entering combat")); if(bSlideCheck) Next(TEXT("slide_low_speed")); else Walk({{-300,0}},TEXT("fight")); }
+        {
+            Check(Store->GetLatest()->SaveGeneration==1,TEXT("Fresh New Game confirms native CP00 write before entering combat"));
+            if(bRemakeCheck) Walk({{-1305,130}},TEXT("hoist_panel"));
+            else if(bSlideCheck) Next(TEXT("slide_low_speed"));
+            else Walk({{-300,0}},TEXT("fight"));
+        }
     }
     else if(Stage==TEXT("slide_low_speed"))
     {
@@ -428,6 +440,7 @@ void ACRCheckpointRoute::Tick(float Delta)
     }
     else if(Stage==TEXT("workshop_reconcile") && Streaming->IsZoneReady(1))
     {
+        if(bRemakeCheck) CheckServicePassages(false);
         for(TActorIterator<ACRWorkbench> It(GetWorld());It;++It)Check(It->State==ECRAssemblyState::Completed,TEXT("Restored Workshop bench reconciles completed state"));
         for(TActorIterator<ACRSalvagePickup> It(GetWorld());It;++It)Check(It->IsHidden(),TEXT("Restored alternate salvage remains consumed"));
         Check(!G->ClaimStoryBeat(TEXT("CR03_AssemblyReflection"))&&!G->ClaimStoryBeat(TEXT("CR03_WorkshopDiscovery")),TEXT("Saved one-time story claims do not replay"));
@@ -435,6 +448,12 @@ void ACRCheckpointRoute::Tick(float Delta)
     }
     else if(Stage==TEXT("yard_reconcile") && Streaming->IsZoneReady(0) && Streaming->IsZoneUnloaded(1) && Streaming->IsZoneUnloaded(2))
     {
+        if (bRemakeCheck)
+        {
+            TActorIterator<ACRYardHoist> Hoist(GetWorld());
+            Check(Hoist && G->IsYardHoistPowered() && !Hoist->IsActorTickEnabled() &&
+                Hoist->WagonBody->GetRelativeLocation().Z > 500, TEXT("Revisited yard restored locked wagon from CP02"));
+        }
         int32 Count=0;for(TActorIterator<ACRAshWarden> It(GetWorld());It;++It)++Count;
         Check(Count==0&&G->DefeatedEnemies.Num()==2,TEXT("Returning yard preserves saved enemy deaths across native unload/reload"));
         for(TActorIterator<ACRAmmoPickup> It(GetWorld());It;++It)Check(It->IsHidden(),TEXT("Saved ammo remains consumed in reloaded yard"));
@@ -446,7 +465,11 @@ void ACRCheckpointRoute::Tick(float Delta)
     {
         if (!G->IsRelayServiceReady()) { Next(TEXT("relay_service")); return; }
         if(!G->IsAccessStopped()) { Walk({{5950,450}},TEXT("access_stop")); return; }
-        if(G->GetObjective()==ECRObjective::InvestigateSignal) { Walk({{6500,-250},{6700,0}},TEXT("signal")); return; }
+        if(G->GetObjective()==ECRObjective::InvestigateSignal)
+        {
+            if (bRemakeCheck) CheckServicePassages(true);
+            Walk({{6500,-250},{6700,0}},TEXT("signal")); return;
+        }
         for(TActorIterator<ACRInteractionActor> It(GetWorld());It;++It)if(It->Kind==ECRInteractionKind::Relay){Interact(*It,It->GetActorLocation());break;}
     }
     else if(Stage==TEXT("signal"))
@@ -456,6 +479,15 @@ void ACRCheckpointRoute::Tick(float Delta)
     }
     else if(Stage==TEXT("ending"))
     {
+        if (bRemakeCheck && !bCapturedReceiver && Age>1.5 && !PC->bPrototypeEnded)
+        {
+            TActorIterator<ACRZonePresentation> Receiver(GetWorld());
+            Check(Receiver && Receiver->IsActorTickEnabled() && Receiver->ReceiverNeedle->GetStaticMesh() &&
+                FMath::Abs(Receiver->ReceiverNeedle->GetRelativeRotation().Roll)>1.f,
+                TEXT("Receiver needle moves during native ending playback"));
+            FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Phase04/3/carrier.png"),true,false);
+            bCapturedReceiver=true;
+        }
         if(!PC->bPrototypeEnded) return; // Real native ending playback, bounded by the route stage timeout.
         Check(PC->bPrototypeEnded,TEXT("Original MERIDIAN chapter ending still completes"));
         if(Journey==4) { Check(!G->HasSurveyOptic()&&!G->HasSurveyUpgrade(),TEXT("Optional workbench bypass reaches ending")); Finish(true,TEXT("Checkpoint recovery, backtracking, death retry, restart and optional ending passed")); }
@@ -487,6 +519,58 @@ bool ACRCheckpointRoute::Interact(AActor* Actor,const FVector& Point)
     // Separate Started edges for E; repeat only when the previous input pulse has ended.
     if(FPlatformTime::Seconds()-LastShot<.4)return false;
     Inject(Player->InteractAction);LastShot=FPlatformTime::Seconds();return true;
+}
+void ACRCheckpointRoute::TickHoistCheck()
+{
+    TActorIterator<ACRYardHoist> Hoists(GetWorld());
+    if (!Hoists) { Finish(false,TEXT("Missing yard hoist in starting map")); return; }
+    auto* Hoist = *Hoists;
+    auto* Game = GetWorld()->GetAuthGameMode<ACRGameMode>();
+    auto* Audio = UCRAudioSettingsSubsystem::Get(this);
+    if (!Audio || !Audio->IsReady()) return;
+    const FVector Center = Hoist->GetActorLocation() + FVector(0,0,112);
+    const FVector Across(0,245,0);
+    FCollisionQueryParams Query(SCENE_QUERY_STAT(HoistPassage),false,Player.Get());
+    FHitResult Hit;
+    const bool Blocked = GetWorld()->SweepSingleByChannel(Hit,Center-Across,Center+Across,FQuat::Identity,
+        ECC_Pawn,FCollisionShape::MakeCapsule(40,88),Query);
+    if (Stage == TEXT("hoist_panel"))
+    {
+        if (Game->IsYardHoistPowered())
+        {
+            Check(Audio->GetEventCount(TEXT("HoistLift"))==1,TEXT("E powered the hoist and emitted one spatial motor cue"));
+            Next(TEXT("hoist_raise"));
+            return;
+        }
+        if (!Blocked || Hit.GetComponent()!=Hoist->WagonBody)
+        { Finish(false,TEXT("Unpowered wagon must physically block the store crossing")); return; }
+        Interact(Hoist,Hoist->ConsoleFace->GetComponentLocation());
+        return;
+    }
+    if (Hoist->IsActorTickEnabled()) return;
+    Check(!Blocked,TEXT("Raised wagon opens a continuous capsule-width crossing through the aperture"));
+    FScreenshotRequest::RequestScreenshot(FPaths::ProjectSavedDir()/TEXT("Phase04/1/hoist.png"),true,false);
+    if (bFinished) return;
+    if (bSlideCheck) Walk({{-1370,0}}, TEXT("slide_low_speed"));
+    else Walk({{-1300,0},{-300,0}}, TEXT("fight"));
+}
+void ACRCheckpointRoute::CheckServicePassages(bool Relay)
+{
+    int32 Count = 0;
+    for (TActorIterator<ACRServiceCircuit> Gate(GetWorld()); Gate; ++Gate)
+    {
+        if (Gate->bRelayCircuit!=Relay) continue;
+        ++Count;
+        const FVector Mid = Gate->GetActorLocation() + FVector(0,0,110);
+        const FVector Along = Gate->GetActorRightVector() * 70;
+        FHitResult Hit;
+        FCollisionQueryParams Query(SCENE_QUERY_STAT(ServicePassage),false,Player.Get());
+        const bool Blocked = GetWorld()->SweepSingleByChannel(Hit,Mid-Along,Mid+Along,FQuat::Identity,
+            ECC_Pawn,FCollisionShape::MakeCapsule(40,88),Query);
+        if (Blocked) UE_LOG(LogTemp, Warning, TEXT("CR06 passage blocked %s by %s"), *Gate->GetName(), *GetNameSafe(Hit.GetActor()));
+        Check(!Blocked && !Gate->IsActorTickEnabled(),TEXT("Powered service gate provides a physically clear crossing"));
+    }
+    Check(Count == (Relay ? 2 : 3), TEXT("All authored service gates are present"));
 }
 void ACRCheckpointRoute::Check(bool Condition,const TCHAR* Message)
 { if(bFinished)return;if(!Condition){Finish(false,Message);return;}Events+=FString::Printf(TEXT("%.3f PASS %s\n"),FPlatformTime::Seconds()-RunStart,Message);UE_LOG(LogTemp,Display,TEXT("CR04_ROUTE PASS %s"),Message); }

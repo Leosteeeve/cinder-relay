@@ -26,11 +26,15 @@ private:
     int32 Route = 0, SlideEdgeCase=0;
     bool bSlideEdges=false;
     bool bGateCheck=false;
+    bool bRemakeCheck=false;
+    bool bCapturedReceiver=false;
     int32 GateCheckStep=0;
     double GateCheckAt=0;
     float GatePausedWorldTime=0;
     FTransform GatePausedPose;
     void TickGateCheck();
+    void TickHoistCheck();
+    void CheckServicePassages(bool Relay);
     FVector SlideEdgeOrigin=FVector::ZeroVector;
     TWeakObjectPtr<AActor> SlideObstacle;
     AActor* SlideBlock(FVector Position,FVector Size);

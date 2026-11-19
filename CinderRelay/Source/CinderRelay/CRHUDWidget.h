@@ -49,6 +49,7 @@ private:
     UFUNCTION() void ResumeClicked(); UFUNCTION() void RestartClicked(); UFUNCTION() void ExitClicked();
     UFUNCTION() void ContinueClicked(); UFUNCTION() void SettingsClicked(); UFUNCTION() void CreditsClicked();
     UFUNCTION() void PackCloseClicked();
+    UFUNCTION() void MenuHovered();
     UFUNCTION() void MasterChanged(float V); UFUNCTION() void SFXChanged(float V); UFUNCTION() void AmbienceChanged(float V);
     UFUNCTION() void UIChanged(float V); UFUNCTION() void VoiceChanged(float V);
     UPROPERTY(Transient) TArray<TObjectPtr<UButton>> MenuNavigation;
@@ -59,6 +60,7 @@ private:
     int32 Focused=0,ModalKind=0,PackCategory=0,PackSelection=0,VolumeFocus=0;
     bool bMenu=false,bStartup=false,bAssembly=false,bEnded=false,bDefeated=false,bPack=false,bKilled=false;
     bool bHadCombat=false,bWasReloading=false;
+    bool bObjectiveHasHint=false;
     float ShotPulse=0,HitPulse=0,HurtPulse=0,ObjectiveAge=0,NoticeAge=0;
     FText FullObjective;
 };

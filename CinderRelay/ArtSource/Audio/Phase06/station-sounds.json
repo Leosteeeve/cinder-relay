@@ -1,0 +1,32 @@
+[
+  {
+    "event": "HoistLift",
+    "file": "S_CR06_HoistLift.wav",
+    "seconds": 2.3,
+    "sha256": "509ee2db76a0ff08d96471407566148d215ce120b2f0cb54804d3ba9182b32cb"
+  },
+  {
+    "event": "BusEnergize",
+    "file": "S_CR06_BusEnergize.wav",
+    "seconds": 1.35,
+    "sha256": "0ccc0bb290d416bf42a77bd265b53030f47ff5f0adf25b5ad1b19a5b32a89842"
+  },
+  {
+    "event": "InterlockTravel",
+    "file": "S_CR06_InterlockTravel.wav",
+    "seconds": 1.6,
+    "sha256": "26e704651b4b7e79f8078faefda3dc87e806fcee472abe2269c97f1fd5e0dae5"
+  },
+  {
+    "event": "RelayWake",
+    "file": "S_CR06_RelayWake.wav",
+    "seconds": 4.0,
+    "sha256": "36bf67a34a5b634ad35df17486abebda47b0fc406786d766e2f581a1a6c786b8"
+  },
+  {
+    "event": "CarrierLock",
+    "file": "S_CR06_CarrierLock.wav",
+    "seconds": 8.0,
+    "sha256": "4c301503bc28def05822bb91e24a38fa528d3d4f74e7718d032da71856290b6c"
+  }
+]

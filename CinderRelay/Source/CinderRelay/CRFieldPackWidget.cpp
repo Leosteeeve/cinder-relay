@@ -1,48 +1,94 @@
 #include "CRHUDWidget.h"
 #include "CRFieldPackModel.h"
 #include "CRCharacter.h"
-#include "CRPlayerController.h"
 #include "Blueprint/WidgetTree.h"
+#include "Brushes/SlateColorBrush.h"
+#include "Components/ButtonSlot.h"
+#include "Components/Image.h"
+#include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
-#include "Components/TextBlock.h"
-#include "Components/Image.h"
-#include "Engine/AssetManager.h"
-#include "Engine/StreamableManager.h"
 #include "Engine/Texture2D.h"
 #include "ProfilingDebugging/CpuProfilerTrace.h"
-namespace {
-const TCHAR* Categories[]={TEXT("Equipment"),TEXT("Supplies"),TEXT("Components"),TEXT("Mission Items")};
-FLinearColor PackColor(const TCHAR* Hex){return FLinearColor::FromSRGBColor(FColor::FromHex(Hex));}
+
+namespace
+{
+const TCHAR* const Categories[] = {TEXT("Equipment"), TEXT("Supplies"), TEXT("Components"), TEXT("Mission Items")};
+FLinearColor PackColor(const TCHAR* Hex) { return FLinearColor::FromSRGBColor(FColor::FromHex(Hex)); }
 }
+
 void UCRHUDWidget::SetFieldPack(bool Open)
 {
-    bPack=Open;Visibility(TEXT("PackPanel"),Open);Visibility(TEXT("MenuBackdrop"),false);
-    Visibility(TEXT("GameplayLayer"),!Open&&!bAssembly&&!bMenu);Visibility(TEXT("SubtitlePanel"),!Open&&Text(TEXT("Subtitle"))&&!Text(TEXT("Subtitle"))->GetText().IsEmpty());
-    if(Open){PackCategory=0;PackSelection=0;RefreshFieldPack();PlayInterfaceSound(TEXT("UIConfirm"));}
-    else {PlayInterfaceSound(TEXT("UICancel"));MenuNavigation.Reset();}
+    bPack = Open;
+    Visibility(TEXT("PackPanel"), Open);
+    Visibility(TEXT("MenuBackdrop"), false);
+    Visibility(TEXT("GameplayLayer"), !Open && !bAssembly && !bMenu);
+    auto* Subtitle = Text(TEXT("Subtitle"));
+    Visibility(TEXT("SubtitlePanel"), !Open && Subtitle && !Subtitle->GetText().IsEmpty());
+    if (Open)
+    {
+        PackCategory = 0;
+        PackSelection = 0;
+        RefreshFieldPack();
+    }
+    else MenuNavigation.Reset();
+    PlayInterfaceSound(Open ? TEXT("UIConfirm") : TEXT("UICancel"));
 }
+
 void UCRHUDWidget::RefreshFieldPack()
 {
-    if(!bPack)return;
+    if (!bPack) return;
     TRACE_CPUPROFILER_EVENT_SCOPE(CR055_FieldPackUpdate);
-    const auto* P=Cast<ACRCharacter>(GetOwningPlayerPawn());const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();if(!P||!G)return;
-    const auto Items=CRFieldPack::Items(CRFieldPack::Read(*G,*P),PackCategory);if(Items.IsEmpty())return;
-    PackSelection=FMath::Clamp(PackSelection,0,Items.Num()-1);const auto& Item=Items[PackSelection];
-    auto* CatBox=Cast<UVerticalBox>(WidgetTree->FindWidget(TEXT("PackCategories")));auto* ItemBox=Cast<UVerticalBox>(WidgetTree->FindWidget(TEXT("PackItems")));if(!CatBox||!ItemBox)return;
-    CatBox->ClearChildren();ItemBox->ClearChildren();MenuNavigation.Reset();
-    auto Make=[this](UVerticalBox* Box,int32 Id,const FString& Label,bool Selected)
+    const auto* Player = Cast<ACRCharacter>(GetOwningPlayerPawn());
+    const auto* Chapter = GetWorld()->GetAuthGameMode<ACRGameMode>();
+    if (!Player || !Chapter) return;
+    const auto Items = CRFieldPack::Items(CRFieldPack::Read(*Chapter, *Player), PackCategory);
+    if (Items.IsEmpty()) return;
+    PackSelection = FMath::Clamp(PackSelection, 0, Items.Num() - 1);
+    const auto& Item = Items[PackSelection];
+    auto* CategoryList = Cast<UVerticalBox>(WidgetTree->FindWidget(TEXT("PackCategories")));
+    auto* ItemList = Cast<UVerticalBox>(WidgetTree->FindWidget(TEXT("PackItems")));
+    if (!CategoryList || !ItemList) return;
+    CategoryList->ClearChildren();
+    ItemList->ClearChildren();
+    MenuNavigation.Reset();
+
+    auto AddChoice = [this](UVerticalBox* Box, int32 Id, const FString& Label, bool Selected)
     {
-        auto* B=WidgetTree->ConstructWidget<UCRInterfaceAction>();B->Configure(this,Id);
-        FButtonStyle S;FSlateBrush N;N.DrawAs=ESlateBrushDrawType::Box;N.TintColor=PackColor(Selected?TEXT("30413F"):TEXT("182122"));FSlateBrush H=N;H.TintColor=PackColor(TEXT("3E4C46"));S.SetNormal(N).SetHovered(H).SetPressed(H).SetNormalPadding(FMargin(20,18)).SetPressedPadding(FMargin(20,19,20,17));B->SetStyle(S);
-        auto* T=WidgetTree->ConstructWidget<UTextBlock>();T->SetText(FText::FromString(Label));T->SetFont(FSlateFontInfo(BodyFont,24));T->SetColorAndOpacity(PackColor(Selected?TEXT("C99553"):TEXT("E8E3D8")));T->SetAutoWrapText(true);B->SetContent(T);Box->AddChildToVerticalBox(B)->SetPadding(FMargin(0,0,0,12));return B;
+        auto* Button = WidgetTree->ConstructWidget<UCRInterfaceAction>();
+        Button->Configure(this, Id);
+        FButtonStyle Style;
+        Style.SetNormal(FSlateColorBrush(PackColor(Selected ? TEXT("3D514F") : TEXT("1B292D"))))
+            .SetHovered(FSlateColorBrush(PackColor(TEXT("425855"))))
+            .SetPressed(FSlateColorBrush(PackColor(TEXT("4A4537"))))
+            .SetNormalPadding(FMargin(18, 16)).SetPressedPadding(FMargin(18, 17, 18, 15));
+        Button->SetStyle(Style);
+        auto* LabelWidget = WidgetTree->ConstructWidget<UTextBlock>();
+        LabelWidget->SetFont(FSlateFontInfo(BodyFont, 23));
+        LabelWidget->SetText(FText::FromString(Selected ? FString(TEXT(">   ")) + Label : Label));
+        LabelWidget->SetColorAndOpacity(PackColor(Selected ? TEXT("F0C48A") : TEXT("E8E3D8")));
+        LabelWidget->SetAutoWrapText(true);
+        Button->SetContent(LabelWidget);
+        if (auto* Slot = Cast<UButtonSlot>(LabelWidget->Slot)) Slot->SetHorizontalAlignment(HAlign_Left);
+        Box->AddChildToVerticalBox(Button)->SetPadding(FMargin(0, 0, 0, 9));
+        return Button;
     };
-    for(int32 C=0;C<4;++C)Make(CatBox,200+C,Categories[C],C==PackCategory);
-    for(int32 I=0;I<Items.Num();++I)MenuNavigation.Add(Make(ItemBox,220+I,FString::Printf(TEXT("%s\n%s  /  %02d"),*Items[I].Name,*Items[I].State,Items[I].Quantity),I==PackSelection));
-    Focused=PackSelection;
-    Put(TEXT("PackDetailTitle"),Item.Name);Put(TEXT("PackDetailState"),FString::Printf(TEXT("%s  /  QUANTITY %02d"),*Item.State,Item.Quantity));Put(TEXT("PackDetailBody"),Item.Description);
-    Put(TEXT("PackFooter"),TEXT("I / ESC  Close     UP / DOWN  Select     LEFT / RIGHT  Category     ENTER  Inspect"));
-    auto* Icon=Cast<UImage>(WidgetTree->FindWidget(TEXT("PackIcon")));
-    const FSoftObjectPath IconPath(FString::Printf(TEXT("/Game/Generated/Phase055/Interface/Textures/T_CR055_Icon%s.T_CR055_Icon%s"),*Item.Icon.ToString(),*Item.Icon.ToString()));
-    if(Icon){Icon->SetBrushFromTexture(Cast<UTexture2D>(IconPath.ResolveObject()));}
+    for (int32 Index = 0; Index < UE_ARRAY_COUNT(Categories); ++Index)
+        AddChoice(CategoryList, 200 + Index, Categories[Index], Index == PackCategory);
+    for (int32 Index = 0; Index < Items.Num(); ++Index)
+        MenuNavigation.Add(AddChoice(ItemList, 220 + Index, Items[Index].Name, Index == PackSelection));
+    Focused = PackSelection;
+    Put(TEXT("PackDetailTitle"), Item.Name);
+    // Quantity here is actual inventory. An installed module stays intelligible
+    // after its carried quantity becomes zero, and the ROOK readout owns ammo.
+    Put(TEXT("PackDetailState"), PackCategory == 3
+        ? FString::Printf(TEXT("%s   /   IN PACK %d"), *Item.State, Item.Quantity) : Item.State);
+    Put(TEXT("PackDetailBody"), Item.Description);
+    Put(TEXT("PackFooter"), TEXT("LEFT / RIGHT   Category       UP / DOWN   Item       I / ESC   Close"));
+    if (auto* Icon = Cast<UImage>(WidgetTree->FindWidget(TEXT("PackIcon"))))
+    {
+        const FString Name = TEXT("T_CR055_Icon") + Item.Icon.ToString();
+        const FSoftObjectPath Path(TEXT("/Game/Generated/Phase055/Interface/Textures/") + Name + TEXT(".") + Name);
+        Icon->SetBrushFromTexture(Cast<UTexture2D>(Path.ResolveObject()));
+    }
 }

@@ -55,7 +55,7 @@ FText ACRInteractionActor::GetInteractionPrompt_Implementation(ACRCharacter* Pla
 	if (bUsed) return FText::GetEmpty();
 	const auto* Mode=GetWorld()->GetAuthGameMode<ACRGameMode>();
 	if(Mode && Kind==ECRInteractionKind::PowerModule && !Mode->IsModuleReleased())
-		return NSLOCTEXT("Cinder","ModuleDiagnostic","Module cradle locked. Follow the amber diagnostic labels: ROUTE / VERIFY / RELEASE.");
+		return NSLOCTEXT("Cinder","ModuleDiagnostic","Cradle locked. Follow the numbered blue bays to route supply, verify load and release the module.");
 	if(Mode && Kind==ECRInteractionKind::Relay && Mode->GetObjective()==ECRObjective::RestorePower && !Mode->IsAccessStopped())
 		return NSLOCTEXT("Cinder","RelayMachinery","Stop the cycling access machinery at the marked local control first.");
 	if (!CanInteract_Implementation(Player))

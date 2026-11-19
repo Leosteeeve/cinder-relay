@@ -84,6 +84,9 @@ void ACRGameMode::CaptureSession(UCRChapterSaveGame& S) const
 bool ACRGameMode::RestoreSession(const UCRChapterSaveGame& S)
 {
 	FString Reason; if (!S.Validate(Reason)) return false;
+	// CP00 rolls the opening back. Later checkpoints reconstruct a clear return route
+	// for existing schema1 saves, including runs that originally used the east walk.
+	bYardHoistPowered = S.TargetZone >= 1;
 	DiagnosticStep=0; RelayServiceStep=0; bAccessStopped=false; bUseIronSights=false;
 	Objective = S.CurrentObjective; DefeatedEnemies.Reset(); CollectedPickups.Reset(); StoryBeats.Reset();
 	for (FName Id : S.DefeatedEnemyIds) DefeatedEnemies.Add(Id);
@@ -121,6 +124,21 @@ ACRGameMode::ACRGameMode()
 {
 	DefaultPawnClass = ACRCharacter::StaticClass();
 	PlayerControllerClass = ACRPlayerController::StaticClass();
+}
+
+void ACRGameMode::RegisterYardHoist()
+{
+	if (bHasYardHoist) return;
+	bHasYardHoist = true;
+	OnMaintenanceChanged.Broadcast();
+}
+
+bool ACRGameMode::PowerYardHoist()
+{
+	if (bYardHoistPowered) return false;
+	bYardHoistPowered = true;
+	OnMaintenanceChanged.Broadcast();
+	return true;
 }
 
 void ACRGameMode::RegisterWorkshopDiagnostic()
@@ -235,7 +253,11 @@ FText ACRGameMode::GetObjectiveText() const
 {
 	switch (Objective)
 	{
-	case ECRObjective::ReachWorkshop: return NSLOCTEXT("Cinder", "WorkshopLights", "Reach the lit Workshop shutter.\nPress E at the door control.");
+	case ECRObjective::ReachWorkshop:
+		if (!bHasYardHoist) return NSLOCTEXT("Cinder", "ReachLegacyWorkshop", "Follow the rail line to the Workshop.");
+		return bYardHoistPowered
+			? NSLOCTEXT("Cinder", "YardStoreOpen", "Reach the Workshop shutter.\nThe raised wagon opens the Signal Store route.")
+			: NSLOCTEXT("Cinder", "YardShutter", "Reach the Workshop shutter.\nOptional: power the hoist at the yellow booth.");
 	case ECRObjective::FindModule:
 		if (bWorkshopDiagnostic)
 		{
@@ -258,7 +280,7 @@ FText ACRGameMode::GetObjectiveText() const
 		return IsAccessStopped()
 			? NSLOCTEXT("Cinder", "InstallModule", "Install the module at Relay Nine.")
 			: NSLOCTEXT("Cinder", "StopShuttle", "Latch the machinery stop.\nTake the amber return to the relay.");
-	case ECRObjective::InvestigateSignal: return NSLOCTEXT("Cinder", "ReadSignal", "Read the MERIDIAN signal monitor.");
+	case ECRObjective::InvestigateSignal: return NSLOCTEXT("Cinder", "ReadSignal", "Inspect the MERIDIAN signal console.");
 	default: return NSLOCTEXT("Cinder", "Complete", "Connection restored.");
 	}
 }
@@ -268,23 +290,26 @@ FText ACRGameMode::GetObjectiveGuide() const
 	switch (Objective)
 	{
 	case ECRObjective::ReachWorkshop:
-		return NSLOCTEXT("Cinder", "GuideYard", "Follow the rail line to the lit shutter and use its door control.\nThe north Signal Store is an optional salvage detour.");
+		if (!bHasYardHoist) return NSLOCTEXT("Cinder", "GuideLegacyWorkshop", "Follow the tracks east to the Workshop. Take cover along the way.");
+		return bYardHoistPowered
+			? NSLOCTEXT("Cinder", "GuideRaisedWagon", "Cross under the raised wagon for the Signal Store.\nLeave the apron by its east gate, then use E at the Workshop shutter.")
+			: NSLOCTEXT("Cinder", "GuideYardHoist", "The yellow booth powers the wagon lift. The noise carries across the yard.\nFor a quiet approach, follow the north track east to the Workshop.");
 	case ECRObjective::FindModule:
 		if (GetDiagnosticStep() == 0 && bWorkshopDiagnostic)
 			return NSLOCTEXT("Cinder", "GuideBay01", "Look for MODULE TEST HALL on the south side of the Workshop.\nOperate the console beneath the Bay 01 sign.");
 		if (!IsModuleReleased())
-			return NSLOCTEXT("Cinder", "GuideNextBay", "Move around the equipment wall. Follow the blue bay signs.\nThe amber signs mark the way back to the module bench.");
-		return NSLOCTEXT("Cinder", "GuideModule", "Find the power module on the Workshop bench.\nChanging sights at the bench is optional.");
+			return NSLOCTEXT("Cinder", "GuideNextBay", "Follow the blue bay signs through the raised safety gate.\nThe bay numbers follow the order of the module test.");
+		return NSLOCTEXT("Cinder", "GuideModule", "Use the open crosswalk or follow the amber lane back to the bench.\nCollect the module. Servicing the sights is optional.");
 	case ECRObjective::RestorePower:
 		if (!IsRelayServiceReady())
 			return GetRelayServiceStep() == 0
 				? NSLOCTEXT("Cinder", "GuideBus", "Go down the ramp and cross via the shuttle or side walk.\nLook for AUXILIARY SERVICE on the far side and operate A.")
 				: NSLOCTEXT("Cinder", "GuideInterlock", "Go around the bus equipment wall on the right.\nContinue through the opening marked B. Look for the amber return.");
 		if (!IsAccessStopped())
-			return NSLOCTEXT("Cinder", "GuideStop", "Follow the amber return walk back to the main chamber.\nLatch the machinery stop, then fit the module at the terminal.");
+			return NSLOCTEXT("Cinder", "GuideStop", "Cross through the open interlock to the amber return walk.\nLatch the stop in the main chamber, then fit the module.");
 		return NSLOCTEXT("Cinder", "GuideInstall", "Use E at the orange Relay Nine terminal to fit the power module.");
 	case ECRObjective::InvestigateSignal:
-		return NSLOCTEXT("Cinder", "GuideSignal", "Find the cyan monitor inside the relay room and inspect it with E.");
+		return NSLOCTEXT("Cinder", "GuideSignal", "Use E at the cyan console in front of the large carrier meter.\nWatch the needle for the returning signal.");
 	default:
 		return FText::GetEmpty();
 	}

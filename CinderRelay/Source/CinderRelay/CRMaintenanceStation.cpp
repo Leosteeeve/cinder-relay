@@ -68,14 +68,18 @@ void ACRMaintenanceStation::Interact_Implementation(ACRCharacter* Player)
         if (G->GetRelayServiceStep() > Step) return;
         const bool Accepted = G->TryRelayServiceStep(Step);
         const TCHAR* Line = !Accepted ? TEXT("INTERLOCK HELD / Prime the service bus at A first.") : Step == 0
-            ? TEXT("BUS ONLINE / Follow the blue-lit hall to B.") : TEXT("INTERLOCK OPEN / Follow the amber return walk. Latch the stop at the relay.");
+            ? TEXT("BUS ONLINE / The shutter beyond A is rising. Cross to B.")
+            : TEXT("INTERLOCK RELEASED / The crosswalk is open. Follow the amber lane to the machinery stop.");
         if (auto* PC = Cast<ACRPlayerController>(Player->GetController())) PC->ShowSubtitle(FText::FromString(Line), 5);
         if (auto* Audio = UCRAudioSettingsSubsystem::Get(this)) Audio->PlayEvent(Accepted ? TEXT("FeedIn") : TEXT("Dry"), this, GetActorLocation(), true);
         return;
     }
     if(G->GetDiagnosticStep()>Step) return;
     const bool Accepted=G->TryDiagnosticStep(Step);
-    const TCHAR* Lines[]={TEXT("BENCH SUPPLY ROUTED / Follow 02 VERIFY in the load-test bay."),TEXT("TEST LOAD STABLE / Follow 03 RELEASE deeper in the hall."),TEXT("CRADLE RELEASED / Use the amber return walk to collect the module at the workshop bench.")};
+    const TCHAR* Lines[]={
+        TEXT("SUPPLY LIVE / The first guard is lifting. Enter Bay 02 and verify the load."),
+        TEXT("TEST LOAD STABLE / The next guard is lifting. Enter Bay 03 to release the cradle."),
+        TEXT("CRADLE RELEASED / The crosswalk is open. Follow the amber lane back to the module bench.")};
     if(auto* PC=Cast<ACRPlayerController>(Player->GetController()))
         PC->ShowSubtitle(FText::FromString(Accepted?Lines[FMath::Clamp(Step,0,2)]:TEXT("CONTROL INTERLOCK / Follow the numbered labels. Previous completed steps are retained.")),5);
     if(auto* Audio=UCRAudioSettingsSubsystem::Get(this)) Audio->PlayEvent(Accepted?TEXT("FeedIn"):TEXT("Dry"),this,GetActorLocation(),true);

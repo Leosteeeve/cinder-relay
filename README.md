@@ -1,5 +1,9 @@
 # CINDER RELAY
 
+## Play the Chapter 01 remake
+
+Launch `.environment-local/phase-06/remake/package/Windows/CinderRelay.exe` and choose **New Game** to see the rebuilt opening. At the yellow booth, **E** powers the hoist and raises the wagon. The sound draws nearby scouts. The east approach also leads to the Workshop. Inside, the three diagnostic bays and two underground controls now operate physical gates and crosswalks. The final console drives a working carrier meter. **F1** opens the illustrated field guide. [Route and verification](docs/CHAPTER_06_EXPANSION.md#november-18-playable-remake).
+
 ## Phase06 — The Dead Station candidate
 
 Active branch: `phase-06-complete-chapter`, based on Phase055 merge `de958e1`. The owner's baseline playtest reached the ending in approximately **2 minutes**; **12–16 minutes is an unmet acceptance target**, not a measured candidate duration. This branch adds E-operated mechanical streaming doors, a three-step Workshop module diagnostic, a recoverable underground machinery crossing with a permanent service walkway, encounter cover and environmental instructions. The original ending, checkpoints, schema1, weapon, slide, Field Pack and audio architecture remain.

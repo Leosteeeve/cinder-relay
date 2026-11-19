@@ -5,11 +5,14 @@
 #include "CRInterfaceLayout.generated.h"
 
 class UWidgetTree;
+class UWidget;
 
 /** Shared visual construction only. Gameplay and modal authority remain in the existing HUD/controller. */
 namespace CRInterfaceLayout
 {
     CINDERRELAY_API bool Build(UWidgetTree* Tree, UObject* BodyFont, UObject* TitleFont, FName Panel = TEXT("HUDRoot"));
+    void ApplyChapterLayout(UWidgetTree* Tree, UObject* BodyFont, UObject* TitleFont);
+    UWidget* StationSection(UWidgetTree* Tree, UObject* Font, int32 TaskArea = INDEX_NONE, FName Name = NAME_None);
 }
 
 /** Editor bridge uses reflected properties, keeping UMGEditor out of the runtime module. */

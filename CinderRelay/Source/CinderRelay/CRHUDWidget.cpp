@@ -2,9 +2,11 @@
 #include "CRInterfaceLayout.h"
 #include "CRPlayerController.h"
 #include "CRAudioSettingsSubsystem.h"
+#include "CRGameMode.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/TextBlock.h"
 #include "Components/Border.h"
+#include "Components/ButtonSlot.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
 #include "Components/Slider.h"
@@ -20,6 +22,8 @@
 #include "Engine/Texture2D.h"
 #include "Engine/GameInstance.h"
 #include "GameFramework/GameUserSettings.h"
+#include "Engine/World.h"
+#include "Brushes/SlateColorBrush.h"
 #include "InputCoreTypes.h"
 #include "ProfilingDebugging/CpuProfilerTrace.h"
 namespace
@@ -39,23 +43,29 @@ FLinearColor Cyan()
 FButtonStyle Style(bool Focus)
 {
     FButtonStyle S;
-    FSlateBrush N;
-    N.DrawAs = ESlateBrushDrawType::Box;
-    N.TintColor = Focus ? FLinearColor::FromSRGBColor(FColor(61, 53, 43)) : FLinearColor(.025f, .035f, .038f);
-    FSlateBrush H = N;
-    H.TintColor = FLinearColor::FromSRGBColor(FColor(54, 64, 61));
-    FSlateBrush P = N;
-    P.TintColor = FLinearColor::FromSRGBColor(FColor(48, 67, 63));
-    FSlateBrush D = N;
-    D.TintColor = FLinearColor(.02f, .025f, .025f, .5f);
-    S.SetNormal(N)
-        .SetHovered(H)
-        .SetPressed(P)
-        .SetDisabled(D)
-        .SetNormalPadding(FMargin(16, 10))
-        .SetPressedPadding(FMargin(16, 11, 16, 9));
+    S.SetNormal(FSlateColorBrush(FLinearColor::FromSRGBColor(Focus ? FColor(72, 62, 44) : FColor(27, 41, 45))))
+        .SetHovered(FSlateColorBrush(FLinearColor::FromSRGBColor(FColor(61, 73, 68))))
+        .SetPressed(FSlateColorBrush(FLinearColor::FromSRGBColor(FColor(80, 66, 47))))
+        .SetDisabled(FSlateColorBrush(FLinearColor::FromSRGBColor(FColor(21, 32, 35))))
+        .SetNormalPadding(FMargin(23, 10))
+        .SetPressedPadding(FMargin(23, 11, 23, 9));
     return S;
 }
+int32 TaskArea(const UWorld* World)
+{
+    const auto* Chapter = World ? World->GetAuthGameMode<ACRGameMode>() : nullptr;
+    if (!Chapter) return INDEX_NONE;
+    switch (Chapter->GetObjective())
+    {
+    case ECRObjective::ReachWorkshop: return 0;
+    case ECRObjective::FindModule: return 1;
+    case ECRObjective::RestorePower:
+    case ECRObjective::InvestigateSignal:
+    case ECRObjective::Complete: return 2;
+    }
+    return INDEX_NONE;
+}
+const TCHAR* const TaskAreas[] = {TEXT("RAIL YARD"), TEXT("WORKSHOP"), TEXT("RELAY BUNKER")};
 const TArray<FName> Groups = {TEXT("Master"), TEXT("SFX"), TEXT("Ambience"), TEXT("UI"), TEXT("Voice")};
 } // namespace
 void UCRInterfaceAction::Configure(UCRHUDWidget *W, int32 Id)
@@ -101,13 +111,14 @@ void UCRHUDWidget::NativeOnInitialized()
     SetIsFocusable(true);
     if (!WidgetTree->RootWidget)
         CRInterfaceLayout::Build(WidgetTree, BodyFont, TitleFont, TEXT("HUDRoot"));
-    for (const auto& Row : {TPair<FName, float>(TEXT("StreamingStatus"), 188.f),
-                           TPair<FName, float>(TEXT("CheckpointStatus"), 228.f),
-                           TPair<FName, float>(TEXT("EventNotice"), 292.f)})
+    CRInterfaceLayout::ApplyChapterLayout(WidgetTree, BodyFont, TitleFont);
+    for (const auto& Row : {TPair<FName, float>(TEXT("StreamingStatus"), 198.f),
+                           TPair<FName, float>(TEXT("CheckpointStatus"), 234.f),
+                           TPair<FName, float>(TEXT("EventNotice"), 290.f)})
     {
         if (auto *Label = Text(Row.Key))
             if (auto *CanvasSlot = Cast<UCanvasPanelSlot>(Label->Slot))
-                CanvasSlot->SetPosition(FVector2D(CanvasSlot->GetPosition().X, Row.Value));
+                CanvasSlot->SetPosition(FVector2D(40.f, Row.Value));
     }
     auto B = [this](const TCHAR *N)
     {
@@ -116,6 +127,9 @@ void UCRHUDWidget::NativeOnInitialized()
         {
             W->IsFocusable = false;
             W->SetStyle(Style(false));
+            W->OnHovered.AddDynamic(this, &UCRHUDWidget::MenuHovered);
+            if (auto* Label = W->GetContent())
+                if (auto* Slot = Cast<UButtonSlot>(Label->Slot)) Slot->SetHorizontalAlignment(HAlign_Left);
         }
         return W;
     };
@@ -189,8 +203,8 @@ void UCRHUDWidget::NativeDestruct()
 }
 void UCRHUDWidget::SetObjectiveExpanded(bool Expanded)
 {
-    Visibility(TEXT("ObjectiveLabel"), Expanded);
-    const float Height = Expanded ? 132.f : 96.f;
+    Visibility(TEXT("ObjectiveHint"), Expanded && bObjectiveHasHint);
+    const float Height = Expanded && bObjectiveHasHint ? 156.f : 98.f;
     for (const TCHAR *Name : {TEXT("ObjectivePanel"), TEXT("ObjectiveRail")})
     {
         if (auto *Widget = WidgetTree->FindWidget(Name))
@@ -203,12 +217,12 @@ void UCRHUDWidget::SetObjectiveExpanded(bool Expanded)
     {
         if (auto *CanvasSlot = Cast<UCanvasPanelSlot>(Objective->Slot))
         {
-            CanvasSlot->SetPosition(FVector2D(CanvasSlot->GetPosition().X, Expanded ? 46.f : 8.f));
-            CanvasSlot->SetSize(FVector2D(CanvasSlot->GetSize().X, 76.f));
+            CanvasSlot->SetPosition(FVector2D(23.f, 41.f));
+            CanvasSlot->SetSize(FVector2D(568.f, 52.f));
         }
     }
     if (auto *Panel = WidgetTree->FindWidget(TEXT("ObjectivePanel")))
-        Panel->SetRenderOpacity(Expanded ? 1.f : .82f);
+        Panel->SetRenderOpacity(Expanded ? 1.f : .91f);
 }
 void UCRHUDWidget::SetObjective(const FText &V, bool Notify)
 {
@@ -216,12 +230,23 @@ void UCRHUDWidget::SetObjective(const FText &V, bool Notify)
         return;
     bool Changed = !FullObjective.IsEmpty();
     FullObjective = V;
-    ObjectiveAge = 4;
-    Put(TEXT("Objective"), V);
+    ObjectiveAge = 7.f;
+    FString Primary = V.ToString(), Hint;
+    int32 BreakAt;
+    if (Primary.FindChar(TEXT('\n'), BreakAt))
+    {
+        Hint = Primary.Mid(BreakAt + 1).TrimStartAndEnd();
+        Primary.LeftInline(BreakAt);
+    }
+    bObjectiveHasHint = !Hint.IsEmpty();
+    Put(TEXT("Objective"), Primary);
+    Put(TEXT("ObjectiveHint"), Hint);
+    const int32 Area = TaskArea(GetWorld());
+    Put(TEXT("ObjectiveLabel"), Area == INDEX_NONE ? FString(TEXT("CURRENT TASK"))
+        : FString::Printf(TEXT("TASK   /   %s"), TaskAreas[Area]));
     SetObjectiveExpanded(true);
     if (Changed && Notify)
     {
-        Notice(FText::FromString(TEXT("OBJECTIVE UPDATED")));
         PlayInterfaceSound(TEXT("Confirm"));
     }
 }
@@ -285,8 +310,9 @@ void UCRHUDWidget::SetRecoveryMenu(bool Startup, bool Dead, bool Resume, bool Co
     if (Startup)
     {
         Put(TEXT("MenuTitle"), TEXT("CINDER\nRELAY"));
-        Put(TEXT("MenuBody"), TEXT("CHAPTER 01  /  THE DEAD STATION"));
+        Put(TEXT("MenuBody"), TEXT("The Dead Station"));
     }
+    Visibility(TEXT("TitleStationSection"), Startup);
     if (Changed)
         RefreshTitleArtwork();
     if (bMenu && !ModalKind && !bPack)
@@ -326,7 +352,7 @@ void UCRHUDWidget::RefreshTitleArtwork()
 void UCRHUDWidget::SetCombat(float H, int32 M, int32 R, bool Reload)
 {
     TRACE_CPUPROFILER_EVENT_SCOPE(CR055_HUDUpdate);
-    Put(TEXT("HealthValue"), FString::Printf(TEXT("%03.0f"), H));
+    Put(TEXT("HealthValue"), FString::Printf(TEXT("%.0f"), H));
     Put(TEXT("HealthState"), H <= 25 ? TEXT("LOW HEALTH") : TEXT("HEALTH"));
     if (auto *B = Cast<UProgressBar>(WidgetTree->FindWidget(TEXT("HealthBar"))))
     {
@@ -345,7 +371,7 @@ void UCRHUDWidget::SetSightState(bool Hide, bool Installed)
 {
     if (auto *R = WidgetTree->FindWidget(TEXT("Reticle")))
         R->SetRenderOpacity(Hide ? 0 : 1);
-    Put(TEXT("OpticState"), Installed ? TEXT("SURVEY OPTIC") : TEXT(""));
+    Put(TEXT("OpticState"), Installed ? TEXT("SURVEY OPTIC") : TEXT("IRON SIGHTS"));
 }
 void UCRHUDWidget::SetCheckpointStatus(const FText &V)
 {
@@ -446,6 +472,16 @@ void UCRHUDWidget::MoveFocus(int32 D)
         PlayInterfaceSound(TEXT("UISelect"));
     }
 }
+void UCRHUDWidget::MenuHovered()
+{
+    for (int32 Index = 0; Index < MenuNavigation.Num(); ++Index)
+        if (MenuNavigation[Index]->IsHovered())
+        {
+            FocusIndex(Index);
+            PlayInterfaceSound(TEXT("UISelect"));
+            break;
+        }
+}
 void UCRHUDWidget::BeginModal(const FString &T, const FString &B, int32 K)
 {
     ModalKind = K;
@@ -520,13 +556,80 @@ bool UCRHUDWidget::HandleBack()
 
 void UCRHUDWidget::ShowFieldGuide(const FText& Objective, const FText& Route)
 {
-    if (ModalKind == 6) { CloseModal(); return; }
+    if (ModalKind == 6)
+    {
+        PlayInterfaceSound(TEXT("UICancel"));
+        CloseModal();
+        return;
+    }
     if (ModalKind != 0) return;
-    const FString Brief = FString::Printf(TEXT("CURRENT TASK\n%s\n\nWHERE TO GO\n%s\n\nFIELD CONTROLS\n"
-        "E  Interact      I  Field Pack      F5  Retry a streaming door\n"
-        "1  Service iron sights at the bench      Tab  Skip a presentation"),
-        *Objective.ToString(), *Route.ToString());
-    BeginModal(TEXT("FIELD GUIDE"), Brief, 6);
+    const int32 Area = bStartup ? INDEX_NONE : TaskArea(GetWorld());
+    BeginModal(TEXT("FIELD GUIDE"), bStartup ? TEXT("Chapter 01   /   The Dead Station")
+        : FString::Printf(TEXT("Task area   /   %s"), Area == INDEX_NONE ? TEXT("THE DEAD STATION") : TaskAreas[Area]), 6);
+    auto* Choices = Cast<UVerticalBox>(WidgetTree->FindWidget(TEXT("ModalChoices")));
+    if (Choices)
+    {
+        auto* Row = WidgetTree->ConstructWidget<UHorizontalBox>();
+        Choices->AddChildToVerticalBox(Row)->SetPadding(FMargin(0, 0, 0, 30));
+        auto* Instructions = WidgetTree->ConstructWidget<UVerticalBox>();
+        auto* Left = Row->AddChildToHorizontalBox(Instructions);
+        Left->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+        Left->SetPadding(FMargin(0, 0, 42, 0));
+        auto* References = WidgetTree->ConstructWidget<UVerticalBox>();
+        Row->AddChildToHorizontalBox(References)->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+        // The scroll panel measures its rows before Slate assigns their final width.
+        // Give paragraphs a wrap width during the first layout pass so later rows clear every line.
+        const float PanelWidth = GetCachedGeometry().GetLocalSize().X * .8f;
+        const float ColumnWidth = FMath::Max(160.f, (PanelWidth - 96.f) * .5f - 42.f);
+        auto AddLine = [this, ColumnWidth](UVerticalBox* Box, const FString& Value, int32 Size, FLinearColor Tint, bool Heading, float After)
+        {
+            auto* Line = WidgetTree->ConstructWidget<UTextBlock>();
+            auto Font = Line->GetFont();
+            Font.Size = Size;
+            if (auto* Face = Heading ? TitleFont.Get() : BodyFont.Get()) Font.FontObject = Face;
+            Line->SetFont(Font);
+            Line->SetText(FText::FromString(Value));
+            Line->SetColorAndOpacity(Tint);
+            Line->SetWrapTextAt(ColumnWidth);
+            Line->SetAutoWrapText(true);
+            Box->AddChildToVerticalBox(Line)->SetPadding(FMargin(0, 0, 0, After));
+        };
+        if (bStartup)
+        {
+            AddLine(Instructions, TEXT("THE ROUTE"), 19, Cyan(), false, 10);
+            AddLine(Instructions, TEXT("Bring Relay Nine back online."), 37, White(), true, 16);
+            AddLine(Instructions, TEXT("Cross the rail yard to the Workshop. Release the replacement module, "
+                "then take it below ground to restore the relay."), 23, White(), false, 18);
+        }
+        else
+        {
+            AddLine(Instructions, TEXT("CURRENT TASK"), 19, Cyan(), false, 10);
+            const FString ObjectiveText = Objective.ToString();
+            int32 BreakAt;
+            const FString Primary = ObjectiveText.FindChar(TEXT('\n'), BreakAt) ? ObjectiveText.Left(BreakAt) : ObjectiveText;
+            AddLine(Instructions, Primary, 37, White(), true, 16);
+            AddLine(Instructions, Route.ToString().Replace(TEXT("\n"), TEXT(" ")), 23, White(), false, 18);
+        }
+        References->AddChildToVerticalBox(CRInterfaceLayout::StationSection(WidgetTree, BodyFont, Area))->SetPadding(FMargin(0, 0, 0, 18));
+        const TCHAR* ReferenceTitle = TEXT("YARD APPROACH");
+        const TCHAR* ReferenceBody = TEXT("Press E at the yellow booth to raise the wagon. The motor alerts the scouts. "
+            "For a quiet route, follow the north track east.");
+        if (Area == 1)
+        {
+            ReferenceTitle = TEXT("AT THE WORKBENCH");
+            ReferenceBody = TEXT("Use 1 to service the iron sights. If you have recovered the Survey Optic, "
+                "press E at the calibration bench to fit it. Both sight choices are optional.");
+        }
+        else if (Area == 2)
+        {
+            ReferenceTitle = TEXT("AT THE CROSSING");
+            ReferenceBody = TEXT("The shuttle moves across the main passage. The side service walk lets you cross "
+                "on foot throughout the cycle.");
+        }
+        AddLine(References, ReferenceTitle, 19, Amber(), false, 6);
+        AddLine(References, ReferenceBody, 20, White(), false, 12);
+        AddLine(Instructions, TEXT("E   Interact      I   Field Pack"), 19, Cyan(), false, 0);
+    }
     AddAction(0, TEXT("Back"));
     FocusIndex(0);
 }
@@ -571,6 +674,7 @@ FReply UCRHUDWidget::NativeOnKeyDown(const FGeometry &G, const FKeyEvent &E)
         PackCategory = (PackCategory + (K == EKeys::Right ? 1 : 3)) % 4;
         PackSelection = 0;
         RefreshFieldPack();
+        PlayInterfaceSound(TEXT("UISelect"));
         return FReply::Handled();
     }
     if (bMenu || bPack)
@@ -592,6 +696,7 @@ FReply UCRHUDWidget::NativeOnKeyDown(const FGeometry &G, const FKeyEvent &E)
                 {
                     PackSelection = (PackSelection + D + MenuNavigation.Num()) % MenuNavigation.Num();
                     RefreshFieldPack();
+                    if (MenuNavigation.Num() > 1) PlayInterfaceSound(TEXT("UISelect"));
                 }
             }
             else
@@ -764,7 +869,7 @@ void UCRHUDWidget::SaveVolumes()
 }
 void UCRHUDWidget::HandleAction(int32 Id)
 {
-    PlayInterfaceSound(TEXT("UIConfirm"));
+    PlayInterfaceSound(Id == 0 || Id == 103 ? TEXT("UICancel") : TEXT("UIConfirm"));
     if (Id == 0)
     {
         CloseModal();
@@ -787,10 +892,12 @@ void UCRHUDWidget::HandleAction(int32 Id)
     {
         SaveVolumes();
         BeginModal(TEXT("FIELD CONTROLS"),
-                   TEXT("W A S D  Move  /  Mouse  Look\nShift  Sprint  /  Ctrl  Crouch or grounded sprint slide\nSpace "
-                        " Jump  /  E  Interact\nLMB  Fire  /  RMB  Aim  /  R  Reload\nI  Field Pack  /  Esc  Pause or "
-                        "close\nTab  Skip workbench / ending  /  F5  Retry streaming\n\nField Pack pauses the world "
-                        "and reload.\nUnavailable during assembly and ending."),
+                   TEXT("MOVE     WASD  Move     Mouse  Look     Space  Jump\n"
+                        "               Shift  Sprint     Ctrl  Crouch or slide while sprinting\n\n"
+                        "ROOK-5     LMB  Fire     RMB  Aim     R  Reload\n\n"
+                        "STATION     E  Operate doors, stations and pickups     F5  Retry a streaming door\n"
+                        "                   1  Service irons at the calibration bench     Tab  Skip workbench or ending\n\n"
+                        "FIELD     F1  Field Guide     I  Field Pack     Esc  Pause or close"),
                    5);
         AddAction(103, TEXT("Back to settings"));
         FocusIndex(0);

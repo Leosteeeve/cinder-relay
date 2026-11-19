@@ -38,6 +38,9 @@ public:
 	FText GetObjectiveGuide() const;
 	bool TryAdvance(ECRObjective Expected);
 	// Session-only mechanical progress: derived from original objectives on checkpoint restore.
+	bool IsYardHoistPowered() const { return bYardHoistPowered; }
+	void RegisterYardHoist();
+	bool PowerYardHoist();
 	void RegisterWorkshopDiagnostic();
 	void RegisterAccessMachinery();
 	void RegisterRelayService();
@@ -71,6 +74,8 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 private:
+	bool bHasYardHoist = false;
+	bool bYardHoistPowered = false;
 	int32 DiagnosticStep = 0;
 	int32 RelayServiceStep = 0;
 	bool bRelayService = false;

@@ -1,5 +1,11 @@
 # CINDER RELAY — Asset Sources and Licensing
 
+## Chapter 01 remake, November 18
+
+The transfer hoist reuses the project's existing service wagon, structural steel, pump and sign meshes. The new press, telescoping gate, test dynamometer, transformer, gallery grille and carrier meter were modeled from project-authored primitives in Blender 4.5.11. Their reproducible sources are `CinderRelay/Scripts/remake_interiors.py` and `CinderRelay/ArtSource/Blender/Phase06/author_receiver.py`. The carrier meter also has an editable `CR06_Receiver.blend`. The new meshes use the registered Phase052 materials.
+
+Five original mono 48 kHz PCM recordings come from deterministic synthesis in `CinderRelay/ArtSource/Audio/Phase06/author_station.py`. The waveforms, durations and SHA-256 digests live alongside the script. The two receiver sequences derive from the existing Phase055 power and ending sequences. The station illustration uses project-authored Slate linework and the existing licensed Barlow fonts. All new model geometry, instrument sounds and linework are original project work. No external pack or sample was acquired.
+
 ## Phase05.5 original identity and audio
 
 - Original Blender/Cycles environment-led title artwork, two camera compositions, editable SVG typography, relay mark and four item symbols. Editable source: `ArtSource/Blender/Phase055/CR055_TheLastSignal.blend`; outputs and per-file metadata: `ArtSource/Interface/Phase055/`. Source authoring uses original geometry plus read-only appended project-authored Phase052 props. No reference-game pixels or image-generation-service output is admitted. [Full art provenance](PHASE055_ART_PROVENANCE.md).

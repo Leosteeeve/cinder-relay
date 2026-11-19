@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory=$true)][string]$PackageRoot,
     [Parameter(Mandatory=$true)][string]$EvidenceRoot,
     [Parameter(Mandatory=$true)][ValidatePattern('^Phase055[A-Za-z0-9_]{1,32}$')][string]$TestPrefix,
-    [switch]$Trace
+    [switch]$Trace,
+    [switch]$GraphicsCheck
 )
 $ErrorActionPreference='Stop'
 $crPackage=(Resolve-Path -LiteralPath $PackageRoot).Path
@@ -18,6 +19,10 @@ if(Test-Path -LiteralPath (Join-Path $crSaved "Config\CR04_TEST_Audio_$TestPrefi
 if(Test-Path -LiteralPath (Join-Path $crSaved "Phase055\$TestPrefix")) { throw 'Choose a fresh prefix; prior route evidence exists.' }
 New-Item -ItemType Directory -Path $crEvidence | Out-Null
 $crQuality='au.DisableAppVolume 1,r.ScreenPercentage 100,r.DynamicRes.OperationMode 0,r.VSync 0,t.MaxFPS 0,sg.ViewDistanceQuality 3,sg.AntiAliasingQuality 3,sg.ShadowQuality 3,sg.GlobalIlluminationQuality 3,sg.ReflectionQuality 3,sg.PostProcessQuality 3,sg.TextureQuality 3,sg.EffectsQuality 3,sg.FoliageQuality 3,sg.ShadingQuality 3'
+if ($GraphicsCheck) {
+    # The menu owns these three settings during the persistence test.
+    $crQuality = $crQuality -replace ',sg\.(ShadowQuality|GlobalIlluminationQuality|ReflectionQuality) 3',''
+}
 $crResults=@()
 foreach($crMode in @('Write','Read')) {
     $crWidth=if($crMode -eq 'Write'){1920}else{2560}
@@ -27,6 +32,7 @@ foreach($crMode in @('Write','Read')) {
     $crReceiptPath=Join-Path $crArtifacts 'acceptance.json'
     $crArgs="-CR055InterfaceCheck=$crMode -CRCheckpointTest=$TestPrefix -CR055AudioTest=$TestPrefix -windowed -ResX=$crWidth -ResY=$crHeight -ForceRes -NoVSync -unattended -ExecCmds=`"$crQuality`" -abslog=`"$crLog`""
     if($Trace) { $crArgs+=" -trace=cpu,frame,bookmark -tracefile=`"$(Join-Path $crEvidence "$crMode.utrace")`"" }
+    if($GraphicsCheck) { $crArgs+=' -CR06GraphicsCheck' }
     $crStart=[DateTime]::UtcNow
     $crProcess=Start-Process -FilePath $crNative -ArgumentList $crArgs -WindowStyle Hidden -PassThru
     $null=$crProcess.Handle

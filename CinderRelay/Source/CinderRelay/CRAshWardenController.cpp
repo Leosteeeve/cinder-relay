@@ -58,19 +58,31 @@ void ACRAshWardenController::NavigationGenerated(ANavigationData*)
 }
 void ACRAshWardenController::Perceived(AActor* Actor,FAIStimulus Stimulus)
 {
-    if(bStopped || !bNavigationReady || !Cast<ACRCharacter>(Actor))return;
+    if(bStopped || !bNavigationReady || !Warden.IsValid() || !Cast<ACRCharacter>(Actor))return;
     auto* H=Actor->FindComponentByClass<UCRHealthComponent>(); if(!H||H->IsDead())return;
+    const double Now = GetWorld()->GetTimeSeconds();
+    const float Memory = FMath::Max(1.f, Warden->MemorySeconds);
     if(Stimulus.Type==UAISense::GetSenseID<UAISense_Sight>())
     {
         if(!bSight && Stimulus.WasSuccessfullySensed() && Warden.IsValid()) Warden->PresentAlert();
         bSight=Stimulus.WasSuccessfullySensed();
-        if(bSight) { Target=Actor; LastKnown=Stimulus.StimulusLocation; LastStimulus=GetWorld()->GetTimeSeconds(); NextAttack=LastStimulus+.65; MoveFailures=0; SearchStarted=-1; }
-        else { LastStimulus=GetWorld()->GetTimeSeconds(); SearchStarted=-1; }
+        InvestigationUntil=Now+Memory;
+        if(bSight) { Target=Actor; LastKnown=Stimulus.StimulusLocation; NextAttack=Now+.65; MoveFailures=0; SearchStarted=-1; }
+        else { SearchStarted=-1; }
         UE_LOG(LogTemp,Display,TEXT("CR_AI Sight id=%s visible=%d"),*GetNameSafe(GetPawn()),bSight);
     }
     else if(Stimulus.WasSuccessfullySensed()&&!bSight)
     {
-        Target=Actor; LastKnown=Stimulus.StimulusLocation; LastStimulus=GetWorld()->GetTimeSeconds(); MoveFailures=0; SearchStarted=-1;
+        Target=Actor; LastKnown=Stimulus.StimulusLocation; MoveFailures=0; SearchStarted=-1;
+        const bool IsHoist = Stimulus.Tag == TEXT("YardHoist");
+        // At 200 cm/s the original scouts need about nine seconds to reach
+        // the pump. Leave time to travel around cover and search the source.
+        InvestigationUntil = Now + (IsHoist ? FMath::Max(Memory, 14.f) : Memory);
+        if (IsHoist)
+        {
+            Warden->PresentAlert();
+            UE_LOG(LogTemp, Display, TEXT("CR06_YARD ScoutHeard id=%s pump=%s"), *Warden->EnemyId.ToString(), *LastKnown.ToString());
+        }
         SetWardenState(ECRWardenState::Investigate);
     }
 }
@@ -110,12 +122,13 @@ void ACRAshWardenController::Decide()
     if(bStopped||!bNavigationReady||!Warden.IsValid()||Warden->Health->IsDead())return;
     Warden->UpdatePresentation();
     const double Now=GetWorld()->GetTimeSeconds();
-    if(Target.IsValid()) { const auto* H=Target->FindComponentByClass<UCRHealthComponent>(); if(!H||H->IsDead()) { bSight=false; Target.Reset(); LastStimulus=-100; } }
+    if(Target.IsValid()) { const auto* H=Target->FindComponentByClass<UCRHealthComponent>(); if(!H||H->IsDead()) { bSight=false; Target.Reset(); InvestigationUntil=-100; } }
     if(bSight && Target.IsValid())
     {
         // Perception authorizes tracking; every attack independently verifies real collision LOS.
-        if(LineOfSightTo(Target.Get())) { LastKnown=Target->GetActorLocation(); LastStimulus=Now; }
-        else { bSight=false; LastStimulus=Now; }
+        InvestigationUntil=Now+FMath::Max(1.f,Warden->MemorySeconds);
+        if(LineOfSightTo(Target.Get())) { LastKnown=Target->GetActorLocation(); }
+        else { bSight=false; }
     }
     if(GetBlackboardComponent()) { GetBlackboardComponent()->SetValueAsBool(TEXT("HasSight"),bSight); GetBlackboardComponent()->SetValueAsVector(TEXT("LastKnown"),LastKnown); }
     if(bSight && HasAttackLine())
@@ -132,7 +145,7 @@ void ACRAshWardenController::Decide()
             Warden->PresentAttack(); UE_LOG(LogTemp,Display,TEXT("CR_AI Attack id=%s hit=%s"),*Warden->EnemyId.ToString(),*GetNameSafe(Hit.GetActor()));
         }
     }
-    else if(Target.IsValid() && Now-LastStimulus<FMath::Max(1.f,Warden->MemorySeconds))
+    else if(Target.IsValid() && Now<InvestigationUntil)
     {
         ClearFocus(EAIFocusPriority::Gameplay);
         if(FVector::Dist2D(Warden->GetActorLocation(),LastKnown)>100) { SetWardenState(ECRWardenState::Investigate); MoveBounded(LastKnown); }
