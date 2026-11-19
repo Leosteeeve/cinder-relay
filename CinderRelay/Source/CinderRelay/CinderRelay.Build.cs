@@ -10,13 +10,13 @@ public class CinderRelay : ModuleRules
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "UMG", "AIModule", "NavigationSystem", "GameplayTasks" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "LevelSequence", "MovieScene", "AnimGraphRuntime" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore", "LevelSequence", "MovieScene", "AnimGraphRuntime", "MediaAssets", "AudioMixer" });
 		// Editor-only Designer migration uses the native widget GUID registration API.
 		if (Target.bBuildEditor)
 			PrivateDependencyModuleNames.Add("UMGEditor");
 		// Read native frame counters only in the opt-in Development acceptance runner.
 		if (Target.Configuration != UnrealTargetConfiguration.Shipping)
-			PrivateDependencyModuleNames.AddRange(new string[] { "RenderCore", "RHI", "AudioMixer" });
+			PrivateDependencyModuleNames.AddRange(new string[] { "RenderCore", "RHI" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });

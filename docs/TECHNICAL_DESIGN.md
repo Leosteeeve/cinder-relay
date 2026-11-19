@@ -1,5 +1,11 @@
 # CINDER RELAY — Technical Design
 
+## Campaign movies and chapter travel
+
+The title menu and Chapter 01 ending both call the controller's existing film presentation path. `UCRSignalFilm` opens the local MP4 with Unreal's Electra player, displays its media texture at the source aspect ratio and plays the muxed stereo track through a UI-enabled media sound component. Audio follows the media clock while the menu pauses world time. Natural playback completion and Skip both release the player and invoke the caller's existing callback once. Travel, chapter saves and the destination floor check remain owned by the controller and chapter systems.
+
+The Blender scenes contain the full camera edit at 24 fps. The finishing script mixes project sounds, burns in English captions and writes the two game masters under `Content/Movies`. The Development campaign fixture listens for the decoder's completion event, samples the decoded texture and checks audio activity before accepting arrival. The separate [media check](../CinderRelay/Scripts/verify_campaign_media.py) compares packaged screenshots and the mixer recording with the actual master.
+
 ## Phase05.5 presentation and read-only equipment
 
 `UCRHUDWidget` remains the existing controller event endpoint. Its active class is `/Game/Generated/Phase055/Interface/Widgets/WBP_CR_HUDRoot`, a real Designer WidgetTree built through an Editor-only native reflection bridge; native construction remains a fallback. `CRInterfaceLayout` shares panel construction without duplicate HUD managers or CommonUI. Fonts/icons are small resident assets; title art is async-loaded only for startup and released on travel. No gameplay title render target or full-screen UI material exists. Idle HUD ticks return before transient updates; objective/notice/hit/damage feedback is bounded. Checkpoint and collection notices have separate text and expiry ownership.

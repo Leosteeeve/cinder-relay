@@ -10,13 +10,12 @@ from fractions import Fraction
 import json
 import math
 from pathlib import Path
-import re
 import subprocess
 import sys
 import tempfile
 
 
-NATIVE_DURATIONS = {"Opening": 22.4, "Handoff": 20.4, "Select": 20.4}
+NATIVE_DURATIONS = {"Opening": 18, "Handoff": 24, "Select": 24}
 AUDIO_RATE = 16000
 PIXELS = 96 * 48
 PROJECT = Path(__file__).resolve().parents[1]
@@ -47,27 +46,22 @@ def timeline(stamps, audio_start, audio_length, fps, natural):
 
 
 def score_for(capture):
-    """Read the cue names, playback rates, gain and shot intervals used in-game."""
-    variant = {"Opening": "Opening", "Handoff": "Recap", "Select": "Recap"}.get(capture.name)
-    if not variant:
-        raise ValueError("For an authored mix, use the native Opening or Handoff capture folder")
-    source = (PROJECT / "Source/CinderRelay/CRSignalFilm.cpp").read_text(encoding="utf-8-sig")
-    cuts = re.search(r"const FCut " + variant + r"\[\]\s*=\s*\{(.*?)\n\};", source, re.S)
-    seconds = re.search(variant + r"ShotTime\s*=\s*([\d.]+)f", source)
-    volume = re.search(r"CreateSound2D\(this,\s*Wave,\s*([\d.]+)f,\s*Cut\.Pitch\)", source)
-    if not (cuts and seconds and volume):
-        raise ValueError("Could not read the film's current cue sheet")
-    shot_time, gain = Fraction(seconds[1]), float(volume[1])
-    events = re.findall(r'TEXT\("([A-Za-z0-9_]+)"\),\s*([\d.]+)f\s*\}', cuts[1])
-    if len(events) != 4:
-        raise ValueError("Expected the film's four authored cuts")
+    """Original illustrated-film cue sheet, retained for archived capture diagnostics."""
+    if capture.name == "Opening":
+        shot_time = Fraction("5.6")
+        events = [("BusEnergize", .58), ("FeedIn", .76), ("HoistLift", .65), ("InterlockTravel", .74)]
+    elif capture.name in ("Handoff", "Select"):
+        shot_time = Fraction("5.1")
+        events = [("HoistLift", .78), ("FeedIn", .92), ("BusEnergize", .92), ("Confirm", .77)]
+    else:
+        raise ValueError("Use an archived Opening or Handoff capture folder for the illustrated-film mix")
     cues = []
     for i, (name, rate) in enumerate(events):
         files = list((PROJECT / "ArtSource/Audio").rglob(f"S_CR*_{name}.wav"))
         if len(files) != 1:
             raise ValueError(f"Expected one original source WAV for {name}, found {files}")
         cues.append({"name": name, "source": files[0].relative_to(PROJECT).as_posix(), "pitch": float(rate),
-                     "gain": gain, "start_seconds": float(i * shot_time)})
+                     "gain": .55, "start_seconds": float(i * shot_time)})
     return shot_time, cues
 
 
@@ -268,7 +262,7 @@ if __name__ == "__main__":
     parser.add_argument("--audio-start-ms", type=int, default=0, help="Film time of first WAV sample (native capture starts with the film)")
     parser.add_argument("--report", type=Path, help="Optional JSON verification receipt")
     parser.add_argument("--authored-audio", action="store_true",
-                        help="Recreate the film's four original cues offline against the complete captured film clock")
+                        help="Recreate the archived illustrated-film mix. Current Blender films contain their own audio.")
     try:
         export(parser.parse_args())
     except subprocess.CalledProcessError as error:

@@ -21,6 +21,8 @@
 #include "WidgetBlueprint.h"
 #endif
 
+namespace CRInterfaceLayout
+{
 namespace
 {
     FLinearColor Color(const TCHAR* Hex) { return FLinearColor(FColor::FromHex(Hex)); }
@@ -222,8 +224,8 @@ namespace
             Place(C, Button(TEXT("PackClose"), TEXT("Close")), FVector2D(-64, 80), FVector2D(176, 54), FAnchors(1, 0), FVector2D(1, 0));
             UBorder* Rule = Panel(TEXT("PackRule"), Color(TEXT("3B4545")));
             UCanvasPanelSlot* RuleSlot = C->AddChildToCanvas(Rule); RuleSlot->SetAnchors(FAnchors(0, 0, 1, 0)); RuleSlot->SetOffsets(FMargin(64, 204, 64, 1));
-            UVerticalBox* Categories = Make<UVerticalBox>(TEXT("PackCategories"));
-            Place(C, Categories, FVector2D(64, 252), FVector2D(272, 520));
+            UVerticalBox* CategoryColumn = Make<UVerticalBox>(TEXT("PackCategories"));
+            Place(C, CategoryColumn, FVector2D(64, 252), FVector2D(272, 520));
             UBorder* Divider = Panel(TEXT("PackDivider"), Color(TEXT("3B4545")));
             UCanvasPanelSlot* DividerSlot = C->AddChildToCanvas(Divider); DividerSlot->SetAnchors(FAnchors(0, 0, 0, 1)); DividerSlot->SetOffsets(FMargin(368, 248, 1, 128));
             Place(C, Text(TEXT("PackItemHeading"), TEXT("ITEMS"), 18, Olive), FVector2D(408, 250), FVector2D(408, 28));
@@ -245,6 +247,7 @@ namespace
             Pack->SetVisibility(ESlateVisibility::Collapsed);
         }
     };
+}
 }
 
 bool CRInterfaceLayout::Build(UWidgetTree* Tree, UObject* BodyFont, UObject* TitleFont, FName Panel)
@@ -349,7 +352,7 @@ void CRInterfaceLayout::ApplyChapterLayout(UWidgetTree* Tree, UObject* BodyFont,
 bool UCRInterfaceLibrary::BuildDesignerLayout(UObject* Blueprint, UObject* BodyFont, UObject* TitleFont, FName Panel)
 {
 #if WITH_EDITOR
-    UWidgetTree* Tree = DesignerTree(Blueprint);
+    UWidgetTree* Tree = CRInterfaceLayout::DesignerTree(Blueprint);
     if (!Tree || Tree->RootWidget) return false; // Never rebuild over authored Designer changes.
     Blueprint->Modify(); Tree->Modify();
     if (!CRInterfaceLayout::Build(Tree, BodyFont, TitleFont, Panel)) return false;
@@ -362,7 +365,7 @@ bool UCRInterfaceLibrary::BuildDesignerLayout(UObject* Blueprint, UObject* BodyF
 bool UCRInterfaceLibrary::UpgradeDesignerArtworkAspect(UObject* Blueprint)
 {
 #if WITH_EDITOR
-    UWidgetTree* Tree=DesignerTree(Blueprint);
+    UWidgetTree* Tree=CRInterfaceLayout::DesignerTree(Blueprint);
     auto* WidgetBP=Cast<UWidgetBlueprint>(Blueprint);
     if(!Tree || !WidgetBP) return false;
     auto Register=[WidgetBP](FName Name)
@@ -410,7 +413,7 @@ TArray<FName> UCRInterfaceLibrary::GetDesignerWidgetNames(UObject* Blueprint)
 {
     TArray<FName> Names;
 #if WITH_EDITOR
-    if (const UWidgetTree* Tree = DesignerTree(Blueprint))
+    if (const UWidgetTree* Tree = CRInterfaceLayout::DesignerTree(Blueprint))
         Tree->ForEachWidget([&Names](UWidget* Widget) { Names.Add(Widget->GetFName()); });
 #endif
     return Names;

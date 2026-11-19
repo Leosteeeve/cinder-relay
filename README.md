@@ -2,7 +2,7 @@
 
 ## 开场与第二章《回声渡口》
 
-本地 Windows 启动入口为 `.environment-local/chapter-02/package/Windows/CinderRelay.exe`。**New Game** 播放游戏开场，再进入第一章。第一章终点选择 **Next / Echo Crossing** 可以携带当前装备前往渡口。也可从标题画面选择 **Chapters & story → Begin Echo Crossing** 直接体验第二章。该菜单还能重播开场和章节回顾。**Continue** 可恢复尚未完成的第二章；两章都有检查点时会显示选择框。
+本地 Windows 启动入口为 `.environment-local/campaign-3d/package/Windows/CinderRelay.exe`。**New Game** 播放 18 秒的 Blender 3D 开场，跟随 Elias 抵达铁路场，再进入第一章。第一章终点选择 **Next / Echo Crossing**，会看到他安装模块、给 Relay Nine 通电并收到回波的 24 秒回顾。画面切到渡口天线后，玩家带着原有装备进入第二章。标题画面的 **Chapters & story** 可以单独重播过场，也可以选择 **Begin Echo Crossing**。**Continue** 可恢复尚未完成的第二章；两章都有检查点时会显示选择框。
 
 在渡口按 **E** 操作设备，按 **I** 核对回收的参考条，按 **F1** 查看当前步骤。两段动画都支持 **Tab** 跳过。[剧情梳理、关卡设计与验收路线](docs/CHAPTER_02.md)
 

@@ -1,6 +1,19 @@
 # CINDER RELAY — Milestones
 
-## Campaign opening and Chapter 02 · Echo Crossing
+## Blender campaign films · November 18
+
+The current candidate opens from `.environment-local/campaign-3d/package/Windows/CinderRelay.exe`. The opening runs for 18 seconds across four shots. The 24-second recap covers the module installation, isolator, carrier test, delayed reply, Elias's reaction and the river aerial. Both masters are native 1280 × 720 at 24 fps, with stereo 48 kHz audio. [Shot list and editable scenes](CHAPTER_02.md#blender-过场分镜)
+
+The following evidence paths are relative to `.environment-local/campaign-3d/`.
+
+- Blender 4.5.11 rendered 432 opening frames and 576 recap frames. Each JPEG decoded at its intended size and each sequence contained distinct frames throughout. The recap scene reopened with six cameras and local mesh data. See `opening-render-validation.json`, `recap-frame-check.json` and `recap-blend-check.log`.
+- UE 5.8.4 built `CinderRelayEditor Win64 Development` and `CinderRelay Win64 Development` with exit 0. An initial Editor build exposed a pre-existing unity namespace collision in the Designer widget helpers. Qualifying those helpers resolved the compiler errors. See `media-editor-corrected.log` and `media-game-build.log`.
+- The incremental Windows cook and subsequent `BuildCookRun -skipcook -stage -pak -archive` each exited 0. UAT listed both movies in the NonUFS manifest. Both staged SHA-256 values matched the authored masters. See `cook.log`, `package.log` and `package-movies.json`.
+- Three runs of `run_campaign_acceptance.ps1` against that archive exited 0. Opening reached the playable Chapter 01 floor after Electra reported the native end. Handoff restored a CP02 test save, played the new recap to its native end and entered Echo Crossing with the Survey Optic, 68 health, five loaded rounds and 30 in reserve. Select skipped the recap with Tab at 3.12 s and entered the crossing. See `native/{Opening,Handoff,Select}-result.json` and the corresponding game logs.
+- `verify_campaign_media.py` matched five opening screenshots and seven recap screenshots against their film frames (minimum correlation 0.993 across the two natural routes). Each natural run also matched three events from the actual packaged mixer recording. All three media checks exited 0. See `native/*-media.json` and `campaign-in-game.jpg`.
+- Four player save generations across the two chapters and the previous graphics preferences were copied into the final local archive. SHA-256 matched for all five files. Test-only slots were archived separately. See `player-carryover.json`. One short owner playthrough remains for subjective rhythm, legibility and headphone balance.
+
+## Earlier campaign opening and Chapter 02 · Echo Crossing
 
 2026-11-18. The owner authorized the story introduction, recap and playable second chapter. Local Windows entry is `.environment-local/chapter-02/package/Windows/CinderRelay.exe`. Captures and receipts below are relative to `.environment-local/chapter-02/`. [Playthrough and narrative outline](CHAPTER_02.md).
 

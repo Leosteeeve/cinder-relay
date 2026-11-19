@@ -4,9 +4,11 @@
 #include "Blueprint/UserWidget.h"
 #include "CRSignalFilm.generated.h"
 
-class UAudioComponent;
+class UMediaPlayer;
+class UMediaSoundComponent;
+class UMediaTexture;
+class USizeBox;
 class UTextBlock;
-class SWidget;
 
 /** The opening and the inter-chapter recap. The caller owns travel and menu focus. */
 UCLASS()
@@ -17,8 +19,15 @@ class CINDERRELAY_API UCRSignalFilm final : public UUserWidget
 public:
     static UCRSignalFilm* Open(APlayerController* Owner, bool bRecap, FSimpleDelegate OnFinished);
     UFUNCTION() void FinishFilm();
-    float GetPlaybackTime() const { return Playback; }
+    float GetPlaybackTime() const;
     float GetDuration() const;
+    FIntPoint GetDecodedDimensions() const;
+    bool HasDecodedMedia() const;
+    bool HasPlaybackError() const { return bPlaybackFailed; }
+#if !UE_BUILD_SHIPPING
+    FSimpleMulticastDelegate OnNativeMediaEnd;
+    float GetAudioEnvelope() const;
+#endif
 
 protected:
     void NativeTick(const FGeometry& Geometry, float Delta) override;
@@ -27,17 +36,20 @@ protected:
 
 private:
     void BuildScreen();
-    void EnterShot(int32 Shot);
-    void StopCue();
+    UFUNCTION() void MediaOpened(FString Url);
+    UFUNCTION() void MediaOpenFailed(FString Url);
+    UFUNCTION() void MediaEnded();
+    void CloseMedia();
 
-    UPROPERTY(Transient) TObjectPtr<UTextBlock> Caption;
-    UPROPERTY(Transient) TObjectPtr<UTextBlock> ShotTitle;
-    UPROPERTY(Transient) TObjectPtr<UAudioComponent> Sound;
-    TWeakPtr<SWidget> Artwork;
+    UPROPERTY(Transient) TObjectPtr<UMediaPlayer> Player;
+    UPROPERTY(Transient) TObjectPtr<UMediaTexture> Picture;
+    UPROPERTY(Transient) TObjectPtr<UMediaSoundComponent> Sound;
+    UPROPERTY(Transient) TObjectPtr<UTextBlock> FailureMessage;
+    UPROPERTY(Transient) TObjectPtr<USizeBox> SourceSize;
     FSimpleDelegate WhenFinished;
-    double StartedAt = 0;
-    float Playback = 0;
-    int32 ActiveShot = INDEX_NONE;
+    FIntPoint DisplaySize{1920,1080};
     bool bRecapVersion = false;
+    bool bReachedEnd = false;
+    bool bPlaybackFailed = false;
     bool bFinished = false;
 };

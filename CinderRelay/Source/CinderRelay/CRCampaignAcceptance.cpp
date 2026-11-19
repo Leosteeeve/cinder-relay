@@ -26,6 +26,10 @@ namespace
 	int32 Frames = 0, ExpectedMag = -1, ExpectedReserve = -1;
 	float ExpectedHealth = 0;
 	bool ExpectedOptic = false;
+	bool SawNativeEnd = false, SawDecodedVideo = false;
+	float MovieLength = 0, PeakMediaEnvelope = 0;
+	double LastMovieTime = 0;
+	FIntPoint VideoDimensions = FIntPoint::ZeroValue;
 	void Press(FKey Key)
 	{
 		const FKeyEvent Event(Key,FModifierKeysState(),0,false,0,0);
@@ -104,7 +108,9 @@ void ACRCampaignAcceptance::Tick(float DeltaSeconds)
 		Start->OnClicked.Broadcast();
 		if (Mode == TEXT("Opening")) Press(EKeys::Up);
 		Press(EKeys::Enter);
-		if (!PC->GetCampaignFilm()) { Finish(false,TEXT("Selected menu action did not start the film")); return; }
+		auto* Film = PC->GetCampaignFilm();
+		if (!Film) { Finish(false,TEXT("Selected menu action did not start the film")); return; }
+		Film->OnNativeMediaEnd.AddLambda([]() { SawNativeEnd = true; });
 		UAudioMixerBlueprintLibrary::StartRecordingOutput(this,38);
 		bRecording = true;
 		Stage = ECampaignTest::Film;
@@ -114,7 +120,14 @@ void ACRCampaignAcceptance::Tick(float DeltaSeconds)
 	{
 		auto* Film = PC->GetCampaignFilm();
 		if (!Film) { StopSound(); Stage = ECampaignTest::Arrival; LastProgress = Now; return; }
+		if (Film->HasPlaybackError()) { Finish(false,TEXT("The movie decoder rejected the packaged movie")); return; }
+		if (!Film->HasDecodedMedia()) return;
 		const double T = Film->GetPlaybackTime();
+		SawDecodedVideo = true;
+		VideoDimensions = Film->GetDecodedDimensions();
+		MovieLength = Film->GetDuration();
+		LastMovieTime = FMath::Max(LastMovieTime,T);
+		PeakMediaEnvelope = FMath::Max(PeakMediaEnvelope, Film->GetAudioEnvelope());
 		const bool Record = FParse::Param(FCommandLine::Get(),TEXT("CRFilmCapture"));
 		if ((Frames == 0 || T - LastFrame >= (Record ? .064 : 3.0)) && !FScreenshotRequest::IsScreenshotRequested())
 		{
@@ -149,7 +162,14 @@ void ACRCampaignAcceptance::Tick(float DeltaSeconds)
 				ExpectedOptic != GetWorld()->GetAuthGameMode<ACRGameMode>()->HasSurveyUpgrade())))
 				{ Finish(false,TEXT("Cross-chapter arrival state differs")); return; }
 		}
-		Finish(Frames >= 2, Mode + TEXT(" film and playable destination verified"));
+		const float AuthoredLength = Mode == TEXT("Opening") ? 18.f : 24.f;
+		const bool ExpectedEnd = Mode == TEXT("Select") ? !SawNativeEnd : SawNativeEnd && LastMovieTime >= MovieLength - 1.0;
+		const bool MediaPassed = SawDecodedVideo && FMath::Abs(MovieLength-AuthoredLength) < .25f
+			&& LastMovieTime > 0 && PeakMediaEnvelope > .00001f && ExpectedEnd;
+		const FString MediaProof = FString::Printf(
+			TEXT("%s media=%dx%d duration=%.3f decoded_through=%.3f paused_audio_peak=%.6f native_end=%d"),
+			*Mode, VideoDimensions.X,VideoDimensions.Y,MovieLength,LastMovieTime,PeakMediaEnvelope,SawNativeEnd);
+		Finish(Frames >= 2 && MediaPassed, MediaProof + TEXT(" destination and handoff checked"));
 	}
 #endif
 }
