@@ -8,6 +8,7 @@ class UCRHUDWidget;
 class ACRCharacter;
 class ACRWorkbench;
 class ACRZonePresentation;
+class UCRSignalFilm;
 
 UCLASS()
 class CINDERRELAY_API ACRPlayerController : public APlayerController
@@ -30,6 +31,11 @@ public:
 	void RetryStreaming();
 	void PlayerDefeated();
 	void ShowSubtitle(const FText& Text, float Seconds=5.f);
+	void OpenFieldGuide();
+	void PlayCampaignFilm(bool bRecap);
+	void EnterEchoCrossing(bool bContinue);
+	void ReturnToTitle();
+	UCRSignalFilm* GetCampaignFilm() const { return CampaignFilm; }
 	void SetAssembly(ACRWorkbench* Workbench);
 	bool IsAssembling() const { return ActiveWorkbench.IsValid(); }
 	void SkipAssembly();
@@ -52,12 +58,22 @@ protected:
 private:
 	UFUNCTION() void RestorationChanged();
 	UFUNCTION() void FieldItemsChanged();
+	UFUNCTION() void MaintenanceChanged();
 	void CloseFieldPackForTravel();
+	void SelectIronSights();
 	bool bFieldPackOpen=false, bLastOptic=false, bLastUpgrade=false;
 	void BindPawn();
 	void ApplyPause(bool bPause);
 	void SaveAvailabilityChanged();
 	void TravelToChapter();
+	void StartFirstChapter();
+	void TravelToEcho(bool bContinue);
+	void PresentFilm(bool bRecap, FSimpleDelegate After);
+	void EchoUpdated();
+	bool bTravelling=false;
+	bool bEchoInputHeld=false;
+	FText LastEchoNotice;
+	UPROPERTY(Transient) TObjectPtr<UCRSignalFilm> CampaignFilm;
 	bool bStartupMenu = false, bPendingContinue = false, bOpeningShown=false;
 	UFUNCTION() void ObjectiveChanged(ECRObjective Objective);
 	UFUNCTION() void PromptChanged(FText Prompt);

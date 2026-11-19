@@ -149,6 +149,11 @@ void UCRWeaponViewComponent::WeaponStateChanged()
 {
     if(!Weapon.IsValid()) return;
     const bool Interrupted=Weapon->State==ECRWeaponState::Disabled || Weapon->IsPresentationLocked();
+    if (Interrupted && ViewRoot)
+    {
+        AxialKick = Recoil = 0;
+        ViewRoot->SetRelativeLocation(SmoothedPoseLocation);
+    }
     if(Interrupted || Weapon->State==ECRWeaponState::Ready) CancelHandling(Interrupted);
 }
 void UCRWeaponViewComponent::TickCases(float Delta)

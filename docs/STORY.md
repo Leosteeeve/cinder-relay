@@ -1,5 +1,7 @@
 # CINDER RELAY — Story Bible
 
+2026-11-18 的开场、第一章回顾和第二章按玩家实际获知信息的顺序整理在[第二章剧情与制作方案](CHAPTER_02.md)。Elias 在铁路场看到工坊的灯光；修复 Relay Nine 后，终端确认连接并收到不规则载波。第二章可玩稿让他在渡口检测回波的返回线路。渡口的名称、设施和测试记录属于本次新剧情提案。
+
 ## 已批准的故事事实
 
 | 项目 | 事实 |
@@ -50,3 +52,7 @@ No additional canon is established. The cause of The Quieting and MERIDIAN's mot
 - Ending subtitle: "RELAY NINE / LOCAL POWER STABLE" and "[The returned signal breaks into an irregular carrier tone.]"
 
 Existing Phase03 discovery/reflection/echo lines retain their existing stable session flags. New wall records and the opening/ending presentation do not add IDs to schema1. Restoration settles the relay's steady light from the existing objective without replaying an old sequence. There is no new radio operator, voice performance or confirmed explanation of the catastrophe. The final on-screen text remains MERIDIAN NETWORK / CONNECTION RESTORED.
+
+## Phase06 provisional environmental instruction
+
+The Workshop's `01 ROUTE / BENCH SUPPLY`, `02 VERIFY / TEST LOAD`, and `03 RELEASE / MODULE CRADLE` labels describe a fictional diagnostic sequence. The yard work order directs the player to the replacement module; underground labels identify a cycling shuttle, always-open service walk and machinery-stop control. These are provisional equipment instructions, not new historical facts, character biography or realistic electrical procedures. They establish no cause of The Quieting, identity for a radio speaker or interpretation of MERIDIAN. The original mission objectives, existing one-time story IDs and final **MERIDIAN NETWORK / CONNECTION RESTORED** remain authoritative. No new voice recording is added.

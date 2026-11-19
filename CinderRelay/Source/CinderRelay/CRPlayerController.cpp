@@ -18,6 +18,8 @@
 #include "CRZonePresentation.h"
 #include "CRWeaponViewComponent.h"
 #include "CRAudioSettingsSubsystem.h"
+#include "CREchoChapter.h"
+#include "CRSignalFilm.h"
 #include "UObject/ConstructorHelpers.h"
 
 ACRPlayerController::ACRPlayerController()
@@ -48,10 +50,15 @@ void ACRPlayerController::BeginPlay()
 		Mode->OnObjectiveChanged.AddDynamic(this, &ACRPlayerController::ObjectiveChanged);
 		Mode->OnRestorationChanged.AddDynamic(this,&ACRPlayerController::RestorationChanged);
 		Mode->OnFieldItemsChanged.AddDynamic(this,&ACRPlayerController::FieldItemsChanged);
+		Mode->OnMaintenanceChanged.AddDynamic(this, &ACRPlayerController::MaintenanceChanged);
 		bLastOptic=Mode->HasSurveyOptic();bLastUpgrade=Mode->HasSurveyUpgrade();
 		bStartupMenu = Mode->IsStartupMenu();
 	}
 	if (auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>()) Store->OnAvailabilityChanged.AddUObject(this, &ACRPlayerController::SaveAvailabilityChanged);
+	if (auto* Echo = GetWorld()->GetSubsystem<UCREchoChapter>())
+		Echo->OnChanged.AddUObject(this, &ACRPlayerController::EchoUpdated);
+	if (auto* Store = GetGameInstance()->GetSubsystem<UCREchoStore>())
+		Store->OnAvailabilityChanged.AddUObject(this, &ACRPlayerController::RefreshHUD);
 	BindPawn();
 	SetInputMode(FInputModeGameOnly());
 	bShowMouseCursor = false;
@@ -68,6 +75,27 @@ void ACRPlayerController::SetupInputComponent()
 	InputComponent->BindKey(EKeys::I,IE_Pressed,this,&ACRPlayerController::ToggleFieldPack).bExecuteWhenPaused=true;
 	InputComponent->BindKey(EKeys::F5, IE_Pressed, this, &ACRPlayerController::RetryStreaming);
 	InputComponent->BindKey(EKeys::Tab, IE_Pressed, this, &ACRPlayerController::SkipAssembly);
+	InputComponent->BindKey(EKeys::F1, IE_Pressed, this, &ACRPlayerController::OpenFieldGuide);
+	InputComponent->BindKey(EKeys::One, IE_Pressed, this, &ACRPlayerController::SelectIronSights);
+}
+
+void ACRPlayerController::OpenFieldGuide()
+{
+	if (!HUD || bFieldPackOpen || IsAssembling() || ActiveEnding.IsValid() || bPrototypeEnded || bPrototypeDefeated) return;
+	if (!bStartupMenu && !bPrototypePaused)
+	{
+		if (!ObservedPawn.IsValid()) return;
+		ApplyPause(true);
+	}
+	const auto* Chapter = GetWorld()->GetAuthGameMode<ACRGameMode>();
+	if (auto* Echo = GetWorld()->GetSubsystem<UCREchoChapter>(); Echo && UCREchoChapter::IsEchoWorld(GetWorld()))
+		HUD->ShowFieldGuide(Echo->GetObjectiveText(), Echo->GetGuideText());
+	else if (Chapter) HUD->ShowFieldGuide(Chapter->GetObjectiveText(), Chapter->GetObjectiveGuide());
+}
+
+void ACRPlayerController::SelectIronSights()
+{
+	if (!bPrototypePaused && !ActiveEnding.IsValid() && ObservedPawn.IsValid()) ObservedPawn->TryServiceIronSights();
 }
 
 void ACRPlayerController::SetStreamingStatus(const FText& Text) { if (HUD) HUD->SetStreamingStatus(Text); }
@@ -95,6 +123,13 @@ void ACRPlayerController::BindPawn()
 	ObservedPawn = Cast<ACRCharacter>(GetPawn());
 	if (ObservedPawn.IsValid())
 	{
+		if (auto* Echo = GetWorld()->GetSubsystem<UCREchoChapter>(); UCREchoChapter::IsEchoWorld(GetWorld()) && Echo && !Echo->IsStarted() && !bEchoInputHeld)
+		{
+			bEchoInputHeld = true;
+			SetIgnoreMoveInput(true);
+			SetIgnoreLookInput(true);
+			ObservedPawn->Weapon->SetPresentationLocked(true);
+		}
 		ObservedPawn->OnPromptChanged.AddDynamic(this, &ACRPlayerController::PromptChanged);
 		ObservedPawn->Health->OnHealthChanged.AddDynamic(this, &ACRPlayerController::HealthChanged);
 		ObservedPawn->Weapon->OnChanged.AddDynamic(this, &ACRPlayerController::RefreshCombat);
@@ -105,7 +140,9 @@ void ACRPlayerController::BindPawn()
 	if(HUD && ObservedPawn.IsValid() && !bOpeningShown)
 	{
 		bOpeningShown=true;
-		if(const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>(); G && G->GetObjective()==ECRObjective::ReachWorkshop)
+		if(UCREchoChapter::IsEchoWorld(GetWorld()))
+			ShowSubtitle(FText::FromString(TEXT("ECHO CROSSING\nELIAS: The line comes ashore here. I'll take a reading at the intake.")),5.f);
+		else if(const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>(); G && G->GetObjective()==ECRObjective::ReachWorkshop)
 			ShowSubtitle(FText::FromString(TEXT("THE DEAD STATION / 2118\nELIAS: Workshop lights. There may be a way to bring the relay back.")),6.f);
 	}
 }
@@ -116,7 +153,7 @@ void ACRPlayerController::RefreshCombat()
 	if(HUD&&ObservedPawn.IsValid())
 	{
 		const auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>();
-		HUD->SetSightState(ObservedPawn->Weapon->bAiming&&ObservedPawn->WeaponView&&ObservedPawn->WeaponView->HasImportedAppearance(),G&&G->HasSurveyUpgrade());
+		HUD->SetSightState(ObservedPawn->Weapon->bAiming&&ObservedPawn->WeaponView&&ObservedPawn->WeaponView->HasImportedAppearance(),G&&G->IsSurveyOpticActive());
 		if(bFieldPackOpen)HUD->RefreshFieldPack();
 	}
 }
@@ -153,14 +190,37 @@ void ACRPlayerController::PromptChanged(FText Prompt)
 	if (HUD) HUD->SetPrompt(bPrototypePaused ? FText::GetEmpty() : Prompt);
 }
 
+void ACRPlayerController::MaintenanceChanged()
+{
+	if (const auto* Mode = GetWorld()->GetAuthGameMode<ACRGameMode>(); HUD && Mode)
+		HUD->SetObjective(Mode->GetObjectiveText(), false);
+}
+
 void ACRPlayerController::RefreshHUD()
 {
 	if (!HUD) return;
+	if (auto* Echo = GetWorld()->GetSubsystem<UCREchoChapter>(); Echo && UCREchoChapter::IsEchoWorld(GetWorld()))
+	{
+		HUD->SetObjective(Echo->GetObjectiveText());
+		HUD->SetPrompt(!bPrototypePaused && ObservedPawn.IsValid() ? ObservedPawn->GetCurrentPrompt() : FText::GetEmpty());
+		HUD->SetMenu(bPrototypePaused && !bFieldPackOpen, bPrototypeEnded, bPrototypeDefeated);
+		auto* Store = GetGameInstance()->GetSubsystem<UCREchoStore>();
+		HUD->SetRecoveryMenu(false, bPrototypeDefeated, GetPawn() && !bPrototypeEnded && !bPrototypeDefeated,
+			Store && Store->IsReady() && Store->HasUnfinishedCheckpoint() && !Echo->IsSaving(),
+			Echo->IsSaving() ? TEXT("Saving crossing checkpoint…") : TEXT(""));
+		RefreshCombat();
+		return;
+	}
 	if (const auto* Mode = GetWorld()->GetAuthGameMode<ACRGameMode>()) HUD->SetObjective(Mode->GetObjectiveText());
 	HUD->SetPrompt(!bPrototypePaused && ObservedPawn.IsValid() ? ObservedPawn->GetCurrentPrompt() : FText::GetEmpty());
 	HUD->SetMenu(bPrototypePaused&&!bFieldPackOpen, bPrototypeEnded, bPrototypeDefeated);
 	if (auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>())
-		HUD->SetRecoveryMenu(bStartupMenu, bPrototypeDefeated, GetPawn() != nullptr && !bPrototypeEnded && !bPrototypeDefeated, Store->HasCheckpoint() && !Store->IsBusy(), Store->GetStatus());
+	{
+		auto* EchoStore = GetGameInstance()->GetSubsystem<UCREchoStore>();
+		const bool HasEcho = bStartupMenu && EchoStore && EchoStore->IsReady() && EchoStore->HasUnfinishedCheckpoint();
+		HUD->SetRecoveryMenu(bStartupMenu, bPrototypeDefeated, GetPawn() != nullptr && !bPrototypeEnded && !bPrototypeDefeated,
+			HasEcho || (Store->HasCheckpoint() && !Store->IsBusy()), HasEcho ? TEXT("Echo Crossing checkpoint available.") : Store->GetStatus());
+	}
 	RefreshCombat();
 }
 
@@ -187,11 +247,21 @@ void ACRPlayerController::TogglePrototypePause() { if(bFieldPackOpen){ToggleFiel
 void ACRPlayerController::ResumePrototype() { if(bFieldPackOpen){ToggleFieldPack();return;} if (!bStartupMenu && GetPawn() && !bPrototypeEnded && !bPrototypeDefeated) ApplyPause(false); }
 void ACRPlayerController::RestartPrototype()
 {
+	if (bTravelling || CampaignFilm) return;
+	if (UCREchoChapter::IsEchoWorld(GetWorld())) { TravelToEcho(false); return; }
+	if (bStartupMenu)
+		PresentFilm(false, FSimpleDelegate::CreateUObject(this, &ACRPlayerController::StartFirstChapter));
+	else StartFirstChapter();
+}
+void ACRPlayerController::StartFirstChapter()
+{
 	if (auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>()) Store->PrepareNewChapter();
 	TravelToChapter();
 }
 void ACRPlayerController::TravelToChapter()
 {
+	if (bTravelling) return;
+	bTravelling=true;
 	bPendingContinue = false;
 	CloseFieldPackForTravel();
 	if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset();
@@ -201,6 +271,8 @@ void ACRPlayerController::TravelToChapter()
 }
 void ACRPlayerController::ContinueCheckpoint()
 {
+	if (bTravelling || CampaignFilm) return;
+	if (UCREchoChapter::IsEchoWorld(GetWorld())) { EnterEchoCrossing(true); return; }
 	auto* Store = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>();
 	if (!Store || Store->IsBusy() || bPendingContinue) return;
 	bPendingContinue = true;
@@ -224,7 +296,7 @@ void ACRPlayerController::ShowCheckpointFeedback(const FString& Text)
 }
 void ACRPlayerController::ExitPrototype() { AbortAssembly(); if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset(); UKismetSystemLibrary::QuitGame(this, this, EQuitPreference::Quit, false); }
 void ACRPlayerController::SetAssembly(ACRWorkbench* Workbench)
-{ ActiveWorkbench=Workbench; if(HUD) HUD->SetAssembly(Workbench!=nullptr); }
+{ ActiveWorkbench=Workbench; if(HUD) HUD->SetAssembly(Workbench!=nullptr, Workbench && Workbench->IsIronService()); }
 void ACRPlayerController::SkipAssembly()
 { if(!bPrototypePaused) { if(ActiveWorkbench.IsValid()) ActiveWorkbench->Skip(); else if(ActiveEnding.IsValid()) ActiveEnding->SkipEnding(); } }
 void ACRPlayerController::AbortAssembly()
@@ -236,12 +308,16 @@ void ACRPlayerController::ShowSubtitle(const FText& Text,float Seconds)
 }
 void ACRPlayerController::EndPlay(const EEndPlayReason::Type Reason)
 {
+	if (CampaignFilm) { CampaignFilm->RemoveFromParent(); CampaignFilm=nullptr; }
+	if (auto* Store = GetGameInstance()->GetSubsystem<UCREchoStore>()) Store->OnAvailabilityChanged.RemoveAll(this);
+	if (auto* Echo = GetWorld()->GetSubsystem<UCREchoChapter>()) Echo->OnChanged.RemoveAll(this);
 	CloseFieldPackForTravel();
 	if (auto* Mode = GetWorld()->GetAuthGameMode<ACRGameMode>())
 	{
 		Mode->OnObjectiveChanged.RemoveDynamic(this, &ACRPlayerController::ObjectiveChanged);
 		Mode->OnRestorationChanged.RemoveDynamic(this, &ACRPlayerController::RestorationChanged);
 		Mode->OnFieldItemsChanged.RemoveDynamic(this, &ACRPlayerController::FieldItemsChanged);
+		Mode->OnMaintenanceChanged.RemoveDynamic(this, &ACRPlayerController::MaintenanceChanged);
 	}
 	if (HUD) { HUD->RemoveFromParent(); HUD = nullptr; }
 	if(ActiveEnding.IsValid()) ActiveEnding->AbortPresentation(); ActiveEnding.Reset();

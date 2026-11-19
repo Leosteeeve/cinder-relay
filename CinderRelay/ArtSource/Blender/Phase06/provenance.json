@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "author": "Cinder Relay project-original authoring",
+  "source_url": null,
+  "license": "Project-owned original work; no separate third-party asset license or standalone public license grant",
+  "public_repository_redistribution": "Authorized project-owned source for Leosteeeve/cinder-relay",
+  "tools": [
+    "Blender 4.5.11",
+    "Unreal Editor 5.8.4"
+  ],
+  "source_files": [
+    {
+      "path": "author_chapter_kit.py",
+      "bytes": 4674,
+      "sha256": "e827025d1df2b276d53478b9d23b4009d3fce581372c2e4fb77a3edb00ee27d3"
+    },
+    {
+      "path": "CR06_ChapterMechanics.blend",
+      "bytes": 1125633,
+      "sha256": "fd7665199c84ed9fd42821ab3d67e22df0c19f4b186c4b80b4928fc17e284a4c"
+    }
+  ],
+  "meshes": [
+    {
+      "name": "SM_CR06_RollerShutter",
+      "dimensions_cm": [
+        21.5,
+        358.0,
+        349.9499816894531
+      ],
+      "triangles": 6156
+    },
+    {
+      "name": "SM_CR06_IsolationDoor",
+      "dimensions_cm": [
+        45.5,
+        356.0,
+        348.0
+      ],
+      "triangles": 2484
+    },
+    {
+      "name": "SM_CR06_DoorFrame",
+      "dimensions_cm": [
+        98.0,
+        438.0,
+        440.5
+      ],
+      "triangles": 972
+    },
+    {
+      "name": "SM_CR06_DiagnosticPanel",
+      "dimensions_cm": [
+        41.5,
+        65.0,
+        86.0
+      ],
+      "triangles": 648
+    },
+    {
+      "name": "SM_CR06_AccessShuttle",
+      "dimensions_cm": [
+        56.0,
+        600.0,
+        300.0
+      ],
+      "triangles": 864
+    }
+  ],
+  "materials": "Existing project-original Phase052 Steel, Paint, Dark, Amber, Pale",
+  "audio": "No new audio files; existing original Phase055 resident cues reused",
+  "external_assets": [],
+  "exports": "Temporary FBX files remain ignored local intermediates",
+  "native_path": "/Game/Generated/Phase06/Meshes"
+}

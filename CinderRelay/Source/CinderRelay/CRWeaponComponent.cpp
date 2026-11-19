@@ -27,7 +27,7 @@ bool UCRWeaponComponent::CanUse() const
 float UCRWeaponComponent::GetAimFOV() const
 {
     const auto* G=GetWorld()?GetWorld()->GetAuthGameMode<ACRGameMode>():nullptr;
-    return G && G->HasSurveyUpgrade()?60.f:Data?Data->AimFOV:65.f;
+    return G && G->IsSurveyOpticActive()?60.f:Data?Data->AimFOV:65.f;
 }
 void UCRWeaponComponent::SetPresentationLocked(bool Locked)
 { bPresentationLocked=Locked; if(Locked) { bAiming=false; bSprinting=false; } OnChanged.Broadcast(); }
@@ -71,6 +71,11 @@ bool UCRWeaponComponent::TryFire()
             const float Applied = UGameplayStatics::ApplyPointDamage(Hit.GetActor(), Data->BodyDamage * (bHead ? Data->HeadMultiplier : 1.f), Direction, Hit, Player->GetController(), Player, nullptr);
             bTarget = Applied > 0;
             if(bTarget) ImpactKind=Health->IsDead()?ECRImpactKind::EnemyKill:ECRImpactKind::EnemyHit;
+        }
+        else if (Hit.GetComponent() && Hit.GetComponent()->ComponentHasTag(TEXT("CR_PointDamageReceiver")))
+        {
+            UGameplayStatics::ApplyPointDamage(Hit.GetActor(), Data->BodyDamage, Direction, Hit,
+                Player->GetController(), Player, nullptr);
         }
     }
     const FVector Impact = Hit.bBlockingHit ? Hit.ImpactPoint : End;

@@ -1,8 +1,30 @@
 # CINDER RELAY
 
+## 开场与第二章《回声渡口》
+
+本地 Windows 启动入口为 `.environment-local/campaign-3d/package/Windows/CinderRelay.exe`。**New Game** 播放 18 秒的 Blender 3D 开场，跟随 Elias 抵达铁路场，再进入第一章。第一章终点选择 **Next / Echo Crossing**，会看到他安装模块、给 Relay Nine 通电并收到回波的 24 秒回顾。画面切到渡口天线后，玩家带着原有装备进入第二章。标题画面的 **Chapters & story** 可以单独重播过场，也可以选择 **Begin Echo Crossing**。**Continue** 可恢复尚未完成的第二章；两章都有检查点时会显示选择框。
+
+在渡口按 **E** 操作设备，按 **I** 核对回收的参考条，按 **F1** 查看当前步骤。两段动画都支持 **Tab** 跳过。[剧情梳理、关卡设计与验收路线](docs/CHAPTER_02.md)
+
+## Play the Chapter 01 remake
+
+Launch `.environment-local/phase-06/remake/package/Windows/CinderRelay.exe` and choose **New Game** to see the rebuilt opening. At the yellow booth, **E** powers the hoist and raises the wagon. The sound draws nearby scouts. The east approach also leads to the Workshop. Inside, the three diagnostic bays and two underground controls now operate physical gates and crosswalks. The final console drives a working carrier meter. **F1** opens the illustrated field guide. [Route and verification](docs/CHAPTER_06_EXPANSION.md#november-18-playable-remake).
+
+## Phase06 — The Dead Station candidate
+
+Active branch: `phase-06-complete-chapter`, based on Phase055 merge `de958e1`. The owner's baseline playtest reached the ending in approximately **2 minutes**; **12–16 minutes is an unmet acceptance target**, not a measured candidate duration. This branch adds E-operated mechanical streaming doors, a three-step Workshop module diagnostic, a recoverable underground machinery crossing with a permanent service walkway, encounter cover and environmental instructions. The original ending, checkpoints, schema1, weapon, slide, Field Pack and audio architecture remain.
+
+Door controls on both sides request the adjacent native sublevel; the door opens only after readiness. In the Workshop follow **01 Route → 02 Verify → 03 Release**, then collect the existing power module. Underground, cross on cyan or use the side service walk, latch the stop beyond the shuttle, and restore Relay Nine. These equipment instructions are provisional environmental text, not new story canon. [Route audit, design and acceptance ledger](docs/CHAPTER_06.md). The local candidate is `.environment-local/phase-06/package/Windows/CinderRelay.exe`. One Development package, three cross-process checkpoint routes and two dual-resolution UI/preference runs passed; timing and human acceptance remain open. This is not a declaration of a completed chapter or public-release readiness.
+
+The November 17 visual and playability review build is at `.environment-local/phase-06/finish-pass/package/Windows/CinderRelay.exe`. It adds ROOK and Warden model detail, mounted service signage, immediate shot feedback, FOV-scaled look input, and step-specific HUD guidance. The earlier local archive remains available for comparison. See [review and evidence](docs/CHAPTER_06.md#presentation-and-playability-review--2026-11-17).
+
+The Chapter 01 expansion adds an optional rail-yard signal store, a three-bay Workshop test hall, and a two-control underground service loop. The local Windows Development archive is `.environment-local/phase-06/expanded/package/Windows/CinderRelay.exe`. Open the Field Guide with **F1** on the title screen or during play. At the workbench, **1** services the iron sights and **E** fits the recovered Survey Optic. See [expansion design, controls and validation](docs/CHAPTER_06_EXPANSION.md).
+
+The performance and guidance refinement adds the original service architecture kit, clearer route plaques and a step-specific F1 guide. The local Windows Development archive is `.environment-local/phase-06/refinement/package/Windows/CinderRelay.exe`. In **Settings → Graphics** choose Balanced or Epic lighting. The preset changes shadows, global illumination and reflections while keeping the resolution and render scale. [Measured comparison](docs/PERFORMANCE_BUDGET.md#phase06-architecture-and-lighting-refinement).
+
 ## Phase05.5 identity, interface, audio and Field Pack
 
-Active branch: `phase-05-5-ui-audio-inventory`, based on Phase054 merge `09eaa5f`. The Industrial Field Interface adds an original Blender title plate, licensed Barlow typography, a real Designer-editable UMG root, separate health/weapon/objective/subtitle regions, Settings/Help/Credits and **I: Elias's Field Pack**. The pack reads existing chapter and weapon state, pauses reload/world time, and clears held aim/sprint/slide on opening. Escape closes it; Tab retains workbench/ending Skip.
+Previous phase branch: `phase-05-5-ui-audio-inventory`, based on Phase054 merge `09eaa5f`. The Industrial Field Interface adds an original Blender title plate, licensed Barlow typography, a real Designer-editable UMG root, separate health/weapon/objective/subtitle regions, Settings/Help/Credits and **I: Elias's Field Pack**. The pack reads existing chapter and weapon state, pauses reload/world time, and clears held aim/sprint/slide on opening. Escape closes it; Tab retains workbench/ending Skip.
 
 Audio uses project-original effects, native SoundClasses/concurrency/attenuation and independent volume preferences. No new chapter-save schema, item economy, music, voice acting or Phase06 systems. [Implementation and validation ledger](docs/INTERFACE_AUDIO_05_5.md), [UI research](docs/PHASE055_UI_RESEARCH.md), [art provenance](docs/PHASE055_ART_PROVENANCE.md), [audio sources](docs/PHASE055_AUDIO_RESEARCH.md). One Windows Development package, three independent checkpoint processes and dual-resolution UI/persistence processes passed with exit0. The local playable package is `.environment-local/phase-05-5/package/Windows/CinderRelay.exe`. Performance is **not accepted**: frame-time tails and variable paired results remain; see [measurements](docs/PERFORMANCE_BUDGET.md#phase055-packaged-observations-2026-11-01). Human visual, gameplay-feel and stereo-headphone acceptance remain open.
 
@@ -15,7 +37,7 @@ The accepted ROOK-5/arm assets, Survey Optic, workbench and schema1 saves remain
 
 A narrative-driven single-player post-apocalyptic FPS, built with Unreal Engine 5.8, C++ and Unreal Blueprints.
 
-**Previous milestone: Phase05.3 — First-Person Arms and Weapon Handling.** Owner-approved anatomy is integrated into seven native weapon clips and the separate22s workbench derivative. Gameplay authority, schema1, native streaming and earlier rollback sources are retained. See [implementation, verification and art-review limits](docs/FIRST_PERSON_05_3.md). Final human continuous-motion acceptance remains pending. Phase06 is not authorized.
+**Previous milestone: Phase05.3 — First-Person Arms and Weapon Handling.** Owner-approved anatomy is integrated into seven native weapon clips and the separate22s workbench derivative. Gameplay authority, schema1, native streaming and earlier rollback sources are retained. See [implementation, verification and art-review limits](docs/FIRST_PERSON_05_3.md). Final human continuous-motion acceptance remains pending. That historical milestone did not authorize Phase06; the later authorization is recorded above.
 
 Reload follow-up: corrected the authored right wrist frame and left feeding-component grip in `CR053_FirstPerson_ReloadCorrected.blend`. Original sources and seven rollback actions remain intact. The seven shared-grip clips were reimported into the unchanged Skeleton; a fresh packaged recording and focused weapon fixture passed. The right hand now retains the primary grip while the left handles the component. Local fingertip/near-camera clipping remains; see the [diagnosis and evidence](docs/FIRST_PERSON_05_3.md#reload-rig-correction--2026-11-01).
 

@@ -28,12 +28,31 @@ public:
 	UPROPERTY(BlueprintAssignable) FCRRestorationChanged OnFieldItemsChanged;
 	UFUNCTION(BlueprintPure) bool HasSurveyOptic() const { return bSurveyOptic; }
 	UFUNCTION(BlueprintPure) bool HasSurveyUpgrade() const { return bSurveyUpgrade; }
+	bool IsSurveyOpticActive() const { return bSurveyUpgrade && !bUseIronSights; }
+	bool SelectSurveyOptic(bool Active);
 	bool TryCollectSurveyOptic(FName SourceId);
 	bool TryApplySurveyUpgrade();
 	bool ClaimStoryBeat(FName Id) { return !Id.IsNone() && !StoryBeats.Contains(Id) ? (StoryBeats.Add(Id), true) : false; }
 	UFUNCTION(BlueprintPure) ECRObjective GetObjective() const { return Objective; }
 	UFUNCTION(BlueprintPure) FText GetObjectiveText() const;
+	FText GetObjectiveGuide() const;
 	bool TryAdvance(ECRObjective Expected);
+	// Session-only mechanical progress: derived from original objectives on checkpoint restore.
+	bool IsYardHoistPowered() const { return bYardHoistPowered; }
+	void RegisterYardHoist();
+	bool PowerYardHoist();
+	void RegisterWorkshopDiagnostic();
+	void RegisterAccessMachinery();
+	void RegisterRelayService();
+	int32 GetRelayServiceStep() const { return Objective >= ECRObjective::InvestigateSignal ? 2 : RelayServiceStep; }
+	bool IsRelayServiceReady() const { return !bRelayService || GetRelayServiceStep() >= 2; }
+	bool TryRelayServiceStep(int32 Step);
+	int32 GetDiagnosticStep() const { return Objective >= ECRObjective::RestorePower ? 3 : DiagnosticStep; }
+	bool TryDiagnosticStep(int32 Step);
+	bool IsModuleReleased() const { return !bWorkshopDiagnostic || GetDiagnosticStep() == 3; }
+	bool IsAccessStopped() const { return !bAccessMachinery || bAccessStopped || Objective >= ECRObjective::InvestigateSignal; }
+	void StopAccessMachinery();
+	UPROPERTY(BlueprintAssignable) FCRRestorationChanged OnMaintenanceChanged;
 	void CaptureSession(UCRChapterSaveGame& Snapshot) const;
 	bool RestoreSession(const UCRChapterSaveGame& Snapshot);
 	bool ReleaseStartingPlayer();
@@ -55,6 +74,13 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 private:
+	bool bHasYardHoist = false;
+	bool bYardHoistPowered = false;
+	int32 DiagnosticStep = 0;
+	int32 RelayServiceStep = 0;
+	bool bRelayService = false;
+	bool bUseIronSights = false;
+	bool bWorkshopDiagnostic = false, bAccessMachinery = false, bAccessStopped = false;
 	void CheckpointWritten(const UCRChapterSaveGame* Save, bool Success, uint64 Epoch);
 	UPROPERTY(Transient) TObjectPtr<UCRChapterSaveGame> RestoreSnapshot;
 	FName StartingCheckpoint = TEXT("CP00_START_YARD");

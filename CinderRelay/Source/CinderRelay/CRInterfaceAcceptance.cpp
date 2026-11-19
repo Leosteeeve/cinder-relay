@@ -27,6 +27,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Parse.h"
 #include "Misc/Paths.h"
+#include "Scalability.h"
 #include "UnrealClient.h"
 
 namespace
@@ -45,8 +46,8 @@ namespace
         Text.ReplaceInline(TEXT("\r"),TEXT("\\r")); Text.ReplaceInline(TEXT("\n"),TEXT("\\n"));
         return TEXT("\"")+Text+TEXT("\"");
     }
-    const FName Groups[]={TEXT("Master"),TEXT("SFX"),TEXT("Ambience"),TEXT("UI"),TEXT("Voice")};
-    const float Expected[]={.65f,.85f,.50f,.65f,.85f};
+    const FName InterfaceAudioGroups[]={TEXT("Master"),TEXT("SFX"),TEXT("Ambience"),TEXT("UI"),TEXT("Voice")};
+    const float InterfaceAudioExpected[]={.65f,.85f,.50f,.65f,.85f};
     bool Visible(UCRHUDWidget* HUD,FName Name)
     {
         const UWidget* W=HUD?HUD->GetWidgetFromName(Name):nullptr;
@@ -211,7 +212,21 @@ void ACRInterfaceAcceptance::Tick(float DeltaSeconds)
         if(!Check(Continue&&Continue->GetIsEnabled()==Store->HasCheckpoint(),TEXT("Continue matches native disk checkpoint availability"))) return;
         if(!Check(Run.Mode==TEXT("Read")?Store->HasCheckpoint():!Store->HasCheckpoint(),TEXT("Write starts fresh; Read discovers previous native checkpoint"))) return;
         if(!Check(!PC->CanOpenFieldPack(),TEXT("Field Pack unavailable at startup"))) return;
-        Capture(TEXT("01_MainMenu"),TEXT("open_settings")); return;
+        Capture(TEXT("01_MainMenu"),TEXT("open_guide")); return;
+    }
+    if (Run.Stage == TEXT("open_guide"))
+    {
+        HUD->SetKeyboardFocus();
+        Key(EKeys::F1);
+        if (!Check(Label(HUD, TEXT("ModalTitle")) == TEXT("FIELD GUIDE") && Visible(HUD, TEXT("ModalPanel")),
+                   TEXT("F1 opens the Field Guide from the real title UI"))) return;
+        Capture(TEXT("09_FieldGuide"), TEXT("close_guide")); return;
+    }
+    if (Run.Stage == TEXT("close_guide"))
+    {
+        Key(EKeys::F1);
+        if (!Check(!Visible(HUD, TEXT("ModalPanel")), TEXT("F1 returns focus to title navigation"))) return;
+        Next(TEXT("open_settings")); return;
     }
     if(Run.Stage==TEXT("open_settings"))
     {
@@ -228,20 +243,48 @@ void ACRInterfaceAcceptance::Tick(float DeltaSeconds)
             const auto Defaults=UCRAudioSettingsSubsystem::DefaultVolumes();
             for(int32 I=0;I<5;++I)
             {
-                if(!Check(FMath::IsNearlyEqual(Audio->GetVolume(Groups[I]),Defaults.FindChecked(Groups[I]),.001f),TEXT("Fresh private preference default: ")+Groups[I].ToString())) return;
+                if(!Check(FMath::IsNearlyEqual(Audio->GetVolume(InterfaceAudioGroups[I]),Defaults.FindChecked(InterfaceAudioGroups[I]),.001f),TEXT("Fresh private preference default: ")+InterfaceAudioGroups[I].ToString())) return;
                 for(int32 N=0;N<3;++N) Key(EKeys::Left);
                 if(I<4) Key(EKeys::Down);
             }
         }
-        for(int32 I=0;I<5;++I) if(!Check(FMath::IsNearlyEqual(Audio->GetVolume(Groups[I]),Expected[I],.001f),TEXT("UI or cross-process audio value: ")+Groups[I].ToString())) return;
-        Capture(TEXT("02_Settings"),TEXT("settings_back")); return;
+        for(int32 I=0;I<5;++I) if(!Check(FMath::IsNearlyEqual(Audio->GetVolume(InterfaceAudioGroups[I]),InterfaceAudioExpected[I],.001f),TEXT("UI or cross-process audio value: ")+InterfaceAudioGroups[I].ToString())) return;
+        Capture(TEXT("02_Settings"), FParse::Param(FCommandLine::Get(), TEXT("CR06GraphicsCheck"))
+            ? TEXT("settings_graphics") : TEXT("settings_back")); return;
+    }
+    if (Run.Stage == TEXT("settings_graphics"))
+    {
+        if (Run.Mode == TEXT("Write"))
+            for (int32 I = 0; I < 3; ++I) Key(EKeys::Down);
+        else Key(EKeys::Up);
+        Key(EKeys::Enter);
+        if (!Check(Label(HUD, TEXT("ModalTitle")) == TEXT("GRAPHICS"), TEXT("Keyboard reaches Graphics from Settings"))) return;
+        const int32 Expected = Run.Mode == TEXT("Write") ? 2 : 3;
+        const auto Quality = Scalability::GetQualityLevels();
+        if (!Check(Quality.ShadowQuality == Expected && Quality.GlobalIlluminationQuality == Expected && Quality.ReflectionQuality == Expected,
+                   TEXT("Fresh Balanced defaults or cross-process Epic state is active"))) return;
+        Capture(TEXT("10_Graphics"), TEXT("choose_lighting")); return;
+    }
+    if (Run.Stage == TEXT("choose_lighting"))
+    {
+        const auto Before = Scalability::GetQualityLevels();
+        const int32 Expected = Run.Mode == TEXT("Write") ? 3 : 2;
+        Key(Expected == 3 ? EKeys::Down : EKeys::Up);
+        Key(EKeys::Enter);
+        const auto After = Scalability::GetQualityLevels();
+        if (!Check(After.ShadowQuality == Expected && After.GlobalIlluminationQuality == Expected && After.ReflectionQuality == Expected
+                   && After.ResolutionQuality == Before.ResolutionQuality,
+                   TEXT("Lighting selection applies only the intended groups and retains resolution scale"))) return;
+        Key(EKeys::Escape);
+        if (!Check(Label(HUD, TEXT("ModalTitle")) == TEXT("SETTINGS"), TEXT("Escape returns from Graphics to Settings"))) return;
+        Next(TEXT("settings_back")); return;
     }
     if(Run.Stage==TEXT("settings_back"))
     {
         Key(EKeys::Escape);
         if(!Check(!Visible(HUD,TEXT("ModalPanel")),TEXT("Slate Escape returns from Settings"))) return;
         TMap<FName,float> Saved; if(!Check(UCRAudioSettingsSubsystem::ReadPreferences(Audio->GetPreferencesPath(),Saved),TEXT("Independent audio config persisted"))) return;
-        for(int32 I=0;I<5;++I) if(!Check(FMath::IsNearlyEqual(Saved.FindChecked(Groups[I]),Expected[I],.001f),TEXT("Persisted slider value: ")+Groups[I].ToString())) return;
+        for(int32 I=0;I<5;++I) if(!Check(FMath::IsNearlyEqual(Saved.FindChecked(InterfaceAudioGroups[I]),InterfaceAudioExpected[I],.001f),TEXT("Persisted slider value: ")+InterfaceAudioGroups[I].ToString())) return;
         if(Run.Mode==TEXT("Write")) { Key(EKeys::Enter); Next(TEXT("confirm_new")); }
         else { Run.Travel=true; bHandedOff=true; Key(EKeys::Enter); }
         return;

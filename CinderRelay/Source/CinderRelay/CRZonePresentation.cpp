@@ -4,6 +4,7 @@
 #include "CRWeaponComponent.h"
 #include "CRHealthComponent.h"
 #include "Components/PointLightComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "LevelSequence.h"
 #include "LevelSequenceActor.h"
@@ -13,11 +14,43 @@
 #include "TimerManager.h"
 ACRZonePresentation::ACRZonePresentation()
 {
-    PrimaryActorTick.bCanEverTick=false;
+    PrimaryActorTick.bCanEverTick=true;
+    PrimaryActorTick.bStartWithTickEnabled=false;
     StatusLight=CreateDefaultSubobject<UPointLightComponent>(TEXT("StatusLight")); SetRootComponent(StatusLight);
     StatusLight->SetMobility(EComponentMobility::Movable); StatusLight->SetIntensityUnits(ELightUnits::Lumens);
     StatusLight->SetIntensity(0); StatusLight->SetLightColor(FLinearColor(.15f,.65f,.7f));
     StatusLight->SetAttenuationRadius(700); StatusLight->SetCastShadows(false);
+    ReceiverDial=CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ReceiverDial"));
+    ReceiverDial->SetupAttachment(StatusLight);
+    ReceiverNeedle=CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ReceiverNeedle"));
+    ReceiverNeedle->SetupAttachment(ReceiverDial);
+    for (UStaticMeshComponent* Part : {ReceiverDial.Get(), ReceiverNeedle.Get()})
+    {
+        Part->SetMobility(EComponentMobility::Movable);
+        Part->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        Part->SetCanEverAffectNavigation(false);
+        Part->SetGenerateOverlapEvents(false);
+    }
+    SetNeedleAngle(-64.f);
+}
+void ACRZonePresentation::SetNeedleAngle(float Roll)
+{
+    ReceiverNeedle->SetRelativeRotation(FRotator(0.f, 0.f, Roll));
+}
+void ACRZonePresentation::Tick(float DeltaSeconds)
+{
+    Super::Tick(DeltaSeconds);
+    auto* Playback = IsValid(PlaybackActor) ? PlaybackActor->GetSequencePlayer() : nullptr;
+    if (!Playback) { SetActorTickEnabled(false); return; }
+    const double Duration = Playback->GetDuration().AsSeconds();
+    if (Duration <= 0.) return;
+    const float Phase = FMath::Clamp(float(Playback->GetCurrentTime().AsSeconds() / Duration), 0.f, 1.f);
+    // The arm follows sequence time so pause and variable frame rates retain audio sync.
+    const float Start = bEnding ? 0.f : -64.f;
+    const float Target = bEnding ? 49.f : 0.f;
+    const float Travel = FMath::SmoothStep(0.f, .86f, Phase);
+    const float Hunt = FMath::Sin(Phase * (bEnding ? 28.f : 16.f)) * FMath::Sin(PI * Phase);
+    SetNeedleAngle(FMath::Lerp(Start, Target, Travel) + Hunt * (bEnding ? 20.f : 8.f));
 }
 void ACRZonePresentation::BeginPlay()
 {
@@ -28,7 +61,11 @@ void ACRZonePresentation::BeginPlay()
 void ACRZonePresentation::AssetsReady()
 {
     // Restore the steady appearance without replaying a saved narrative event.
-    if(auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>(); G && G->GetObjective()>=ECRObjective::InvestigateSignal) StatusLight->SetIntensity(500);
+    if(auto* G=GetWorld()->GetAuthGameMode<ACRGameMode>(); G && G->GetObjective()>=ECRObjective::InvestigateSignal && !PlaybackActor)
+    {
+        StatusLight->SetIntensity(500);
+        SetNeedleAngle(G->GetObjective()==ECRObjective::Complete ? 49.f : 0.f);
+    }
     UE_LOG(LogTemp,Display,TEXT("CR05_PRESENTATION AssetsReady power=%d ending=%d"),PowerSequence.IsValid(),EndingSequence.IsValid());
 }
 bool ACRZonePresentation::Play(ULevelSequence* Sequence)
@@ -41,11 +78,17 @@ bool ACRZonePresentation::Play(ULevelSequence* Sequence)
     if(!Playback) { Cleanup(); return false; }
     PlaybackActor->SetBindingByTag(TEXT("CR05_Presentation"),{this});
     Playback->OnFinished.AddDynamic(this,&ACRZonePresentation::Finished); Playback->OnStop.AddDynamic(this,&ACRZonePresentation::Stopped);
-    Playback->Play(); UE_LOG(LogTemp,Display,TEXT("CR05_PRESENTATION Play sequence=%s duration=%.3f"),*Sequence->GetName(),Playback->GetDuration().AsSeconds()); return true;
+    Playback->Play();
+    SetActorTickEnabled(ReceiverNeedle->GetStaticMesh() != nullptr);
+    UE_LOG(LogTemp,Display,TEXT("CR05_PRESENTATION Play sequence=%s duration=%.3f"),*Sequence->GetName(),Playback->GetDuration().AsSeconds()); return true;
 }
 void ACRZonePresentation::ObjectiveChanged(ECRObjective Objective)
 {
-    if(Objective==ECRObjective::InvestigateSignal && !bEnding && !Play(PowerSequence.Get())) StatusLight->SetIntensity(500);
+    if(Objective==ECRObjective::InvestigateSignal && !bEnding && !Play(PowerSequence.Get()))
+    {
+        StatusLight->SetIntensity(500);
+        SetNeedleAngle(0.f);
+    }
 }
 bool ACRZonePresentation::BeginEnding(ACRPlayerController* PC)
 {
@@ -66,6 +109,7 @@ void ACRZonePresentation::Finished()
     {
         if(Generation!=PlaybackGeneration || !bFinalizing) return;
         const bool End=bEnding; auto PC=Controller; Cleanup(); StatusLight->SetIntensity(500);
+        SetNeedleAngle(End ? 49.f : 0.f);
         UE_LOG(LogTemp,Display,TEXT("CR05_PRESENTATION Finished ending=%d"),End);
         if(End && PC.IsValid() && !PC->bPrototypeDefeated) PC->FinishChapterPresentation();
     }));
@@ -80,6 +124,7 @@ void ACRZonePresentation::SkipEnding() { if(bEnding && !GetWorld()->IsPaused()) 
 void ACRZonePresentation::Cleanup()
 {
     ++PlaybackGeneration;
+    SetActorTickEnabled(false);
     if(IsValid(PlaybackActor))
     {
         if(auto* P=PlaybackActor->GetSequencePlayer()) { P->OnFinished.RemoveAll(this); P->OnStop.RemoveAll(this); P->Stop(); }

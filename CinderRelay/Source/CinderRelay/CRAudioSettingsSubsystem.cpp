@@ -22,6 +22,11 @@ namespace
     const TCHAR* AudioRoot=TEXT("/Game/Generated/Phase055/Audio/");
     const TCHAR* ConfigSection=TEXT("CinderRelay.Audio");
     FSoftObjectPath AudioPath(const FString& Name) { return FSoftObjectPath(FString(AudioRoot)+Name+TEXT(".")+Name); }
+    constexpr const TCHAR* StationEvents[] = {TEXT("HoistLift"), TEXT("BusEnergize"), TEXT("InterlockTravel")};
+    FSoftObjectPath StationSoundPath(const TCHAR* Event)
+    {
+        return FSoftObjectPath(FString::Printf(TEXT("/Game/Generated/Phase06/Audio/S_CR06_%s.S_CR06_%s"), Event, Event));
+    }
 }
 
 UCRAudioSettingsSubsystem* UCRAudioSettingsSubsystem::Get(const UObject* Context)
@@ -83,6 +88,7 @@ void UCRAudioSettingsSubsystem::Initialize(FSubsystemCollectionBase& Collection)
         for(int32 I=1;I<=3;++I) SoundNames.Add(FName(*FString::Printf(TEXT("%s%d"),Family,I)));
     TArray<FSoftObjectPath> Paths;
     for(FName Name:SoundNames) Paths.Add(AudioPath(TEXT("S_CR055_")+Name.ToString()));
+    for (const TCHAR* Event : StationEvents) Paths.Add(StationSoundPath(Event));
     for(const auto& Pair:Volumes) Paths.Add(AudioPath(TEXT("SC_CR055_")+Pair.Key.ToString()));
     Paths.Add(AudioPath(TEXT("SMX_CR055_Settings"))); Paths.Add(AudioPath(TEXT("ATT_CR055_Spatial")));
     AssetLoad=UAssetManager::GetStreamableManager().RequestAsyncLoad(Paths,FStreamableDelegate::CreateUObject(this,&UCRAudioSettingsSubsystem::AssetsReady));
@@ -103,6 +109,13 @@ void UCRAudioSettingsSubsystem::AssetsReady()
     Mix=Cast<USoundMix>(AudioPath(TEXT("SMX_CR055_Settings")).ResolveObject());
     SpatialAttenuation=Cast<USoundAttenuation>(AudioPath(TEXT("ATT_CR055_Spatial")).ResolveObject());
     bReady&=Mix!=nullptr && SpatialAttenuation!=nullptr;
+    for (const TCHAR* Event : StationEvents)
+    {
+        if (auto* Sound = Cast<USoundBase>(StationSoundPath(Event).ResolveObject()))
+            Sounds.Add(FName(Event), Sound);
+        else
+            UE_LOG(LogTemp, Warning, TEXT("CR06 station sound unavailable: %s"), Event);
+    }
     UE_LOG(LogTemp,Display,TEXT("CR055_AUDIO Ready=%d critical_sounds=%d"),bReady,SoundNames.Num());
     if(AudioWorld.IsValid()) ApplyMix(AudioWorld.Get());
 }

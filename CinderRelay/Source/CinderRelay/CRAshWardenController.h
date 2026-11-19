@@ -38,7 +38,7 @@ private:
     FVector Home, MoveGoal;
     FRotator HomeRotation;
     FTimerHandle NavigationTimer;
-    double NavStarted=0,LastStimulus=-100,NextAttack=0,NextMove=0,SearchStarted=-1;
+    double NavStarted=0,InvestigationUntil=-100,NextAttack=0,NextMove=0,SearchStarted=-1;
     int32 MoveFailures=0;
     bool bStopped=false;
     FRandomStream Accuracy;

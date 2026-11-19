@@ -4,6 +4,7 @@
 #include "CRGameMode.h"
 #include "CRZonePresentation.generated.h"
 class UPointLightComponent;
+class UStaticMeshComponent;
 class ULevelSequence;
 class ALevelSequenceActor;
 class ACRPlayerController;
@@ -17,6 +18,8 @@ class CINDERRELAY_API ACRZonePresentation : public AActor
 public:
     ACRZonePresentation();
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UPointLightComponent> StatusLight;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UStaticMeshComponent> ReceiverDial;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly) TObjectPtr<UStaticMeshComponent> ReceiverNeedle;
     UPROPERTY(EditAnywhere, Category="Presentation") TSoftObjectPtr<ULevelSequence> PowerSequence;
     UPROPERTY(EditAnywhere, Category="Presentation") TSoftObjectPtr<ULevelSequence> EndingSequence;
     bool BeginEnding(ACRPlayerController* PlayerController);
@@ -24,6 +27,7 @@ public:
     void AbortPresentation();
 protected:
     virtual void BeginPlay() override;
+    virtual void Tick(float DeltaSeconds) override;
     virtual void EndPlay(const EEndPlayReason::Type Reason) override;
 private:
     UPROPERTY(Transient) TObjectPtr<ALevelSequenceActor> PlaybackActor;
@@ -35,6 +39,7 @@ private:
     bool Play(ULevelSequence* Sequence);
     void Cleanup();
     void AssetsReady();
+    void SetNeedleAngle(float Roll);
     UFUNCTION() void ObjectiveChanged(ECRObjective Objective);
     UFUNCTION() void Finished();
     UFUNCTION() void Stopped();

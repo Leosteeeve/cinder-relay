@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory=$true)][ValidatePattern('^[A-Za-z0-9_]{1,40}$')][string]$TestPrefix,
     [switch]$LowOverhead,
     [switch]$Fullscreen,
-    [switch]$SlideCheck
+    [switch]$SlideCheck,
+    [switch]$RemakeCheck
 )
 $ErrorActionPreference = 'Stop'
 $crPackage = (Resolve-Path -LiteralPath $PackageRoot).Path
@@ -30,6 +31,7 @@ foreach ($crRoute in 1..3) {
     if (!$LowOverhead) { $crArgs += " -trace=cpu,gpu,frame,bookmark,loadtime -tracefile=`"$crTrace`"" }
     if ($crRoute -eq 2) { $crArgs += ' -CRCheckpointLifecycle' }
     if ($SlideCheck -and $crRoute -eq 1) { $crArgs += ' -CRSlideCheck' }
+    if ($RemakeCheck) { $crArgs += ' -CR06RemakeCheck' }
     $crStarted = [DateTime]::UtcNow
     $crRootProcess = Start-Process -FilePath $crExecutable -ArgumentList $crArgs -WindowStyle Hidden -PassThru
     $null = $crRootProcess.Handle # retain OS handle so exit code remains readable

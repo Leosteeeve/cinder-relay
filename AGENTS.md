@@ -2,7 +2,7 @@
 
 - Communicate with the owner in Chinese; write implementation prompts in English.
 - Read `README.md`, `docs/MILESTONES.md`, and `docs/TECHNICAL_DESIGN.md` first.
-- Current authorization: Phase05.5 identity, interface, audio and Field Pack, per the owner brief dated 2026-11-01 and docs/INTERFACE_AUDIO_05_5.md. Preserve accepted Phase053 weapon/arms, Phase054 combat/slide, schema1, IDs, checkpoints, native streaming and workbench lifecycle. Stop before Phase06.
+- Current authorization: the owner requested a game opening, story introduction and recap, and the design and playable production of Chapter 02 on 2026-11-18. Chapter 01 follows the 2026-11-01 brief in docs/CHAPTER_06.md. Preserve accepted Phase053 weapon/arms, Phase054 combat/slide, Chapter 01 schema1, IDs, checkpoints, native streaming and workbench lifecycle. Chapter 02 has separate checkpoint slots. Later chapters require a new brief.
 - Canon lives in `docs/GAME_DESIGN.md` and `docs/STORY.md`; mark new creative proposals, never silently invent canon.
 - Priorities: reliability, gameplay quality, maintainability, performance, then visual fidelity.
 - Preserve existing work. Audit before edits; never upgrade the engine or rewrite working architecture without authorization.
@@ -18,6 +18,6 @@
 - Profile before optimizing. Never equate C++, a successful build, or screenshots with performance or gameplay acceptance.
 - Report commands, exit codes, evidence paths, and unverified work. Keep raw local logs under ignored `.environment-local/`; summarize durable findings in the milestone.
 - Inspect explicit staging paths and staged diff for secrets, generated files, and unlicensed raw packs before commits. Never overwrite or force-push remote history.
-- Work on `phase-05-5-ui-audio-inventory`; target `main` with a PR, never auto-merge or force-push. Never rerun old generators destructively. Keep R reload/F5 streaming retry and Tab assembly/ending Skip. DA_Rook5 is immutable; retain 0.9s cycle, 2.4s reload, five-round magazine and ADS65/60. Cosmetic notifies never award ammo/damage. Preserve Phase03/05/051/052/053/054 sources and Phase01A rollback; verify imported bones and real playback.
+- Work on `phase-06-complete-chapter`; target `main` with a PR, never auto-merge or force-push. Never rerun old generators destructively. Keep R reload/F5 streaming retry and Tab assembly/ending Skip. DA_Rook5 is immutable; retain 0.9s cycle, 2.4s reload, five-round magazine and ADS65/60. Cosmetic notifies never award ammo/damage. Preserve Phase03/05/051/052/053/054 sources and Phase01A rollback; verify imported bones and real playback.
 
 - Checkpoints use stable IDs and narrow GameMode snapshots. Never serialize Actor references or cinematic/timer state. Restore session flags before streamed actors BeginPlay; release the player only after native readiness and a validated checkpoint floor. Report success only from the native save callback. Tests must use CR04_TEST_ slots; never corrupt or delete player saves.

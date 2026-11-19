@@ -10,13 +10,19 @@
 #include "Components/ProgressBar.h"
 #include "Components/ScrollBox.h"
 #include "Components/SizeBox.h"
+#include "Components/ScaleBox.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
 #include "Engine/Font.h"
 #include "Engine/FontFace.h"
 #include "UObject/UnrealType.h"
+#if WITH_EDITOR
+#include "WidgetBlueprint.h"
+#endif
 
+namespace CRInterfaceLayout
+{
 namespace
 {
     FLinearColor Color(const TCHAR* Hex) { return FLinearColor(FColor::FromHex(Hex)); }
@@ -167,7 +173,9 @@ namespace
         {
             UCanvasPanel* M = Make<UCanvasPanel>(TEXT("MenuBackdrop")); Stretch(Root, M, 10);
             UBorder* Base = Panel(TEXT("MenuBase"), Deep); Stretch(M, Base);
-            UImage* Background = Make<UImage>(TEXT("TitleBackground")); Background->SetVisibility(ESlateVisibility::Collapsed); Stretch(M, Background, 1);
+            UScaleBox* ArtFit = Make<UScaleBox>(TEXT("TitleArtworkFit")); ArtFit->SetStretch(EStretch::ScaleToFill); ArtFit->SetClipping(EWidgetClipping::ClipToBounds); Stretch(M, ArtFit, 1);
+            USizeBox* ArtSize = Make<USizeBox>(TEXT("TitleArtworkSize")); ArtSize->SetWidthOverride(1920); ArtSize->SetHeightOverride(1080); ArtFit->AddChild(ArtSize);
+            UImage* Background = Make<UImage>(TEXT("TitleBackground")); Background->SetVisibility(ESlateVisibility::Collapsed); ArtSize->AddChild(Background);
             UBorder* Shade = Panel(TEXT("MenuShade"), FLinearColor(Deep.R, Deep.G, Deep.B, .90f));
             UCanvasPanelSlot* ShadeSlot = M->AddChildToCanvas(Shade); ShadeSlot->SetAnchors(FAnchors(0, 0, 0, 1)); ShadeSlot->SetOffsets(FMargin(0, 0, 760, 0)); ShadeSlot->SetZOrder(2);
             UCanvasPanel* Content = Make<UCanvasPanel>(TEXT("MenuContent")); Stretch(M, Content, 3);
@@ -216,8 +224,8 @@ namespace
             Place(C, Button(TEXT("PackClose"), TEXT("Close")), FVector2D(-64, 80), FVector2D(176, 54), FAnchors(1, 0), FVector2D(1, 0));
             UBorder* Rule = Panel(TEXT("PackRule"), Color(TEXT("3B4545")));
             UCanvasPanelSlot* RuleSlot = C->AddChildToCanvas(Rule); RuleSlot->SetAnchors(FAnchors(0, 0, 1, 0)); RuleSlot->SetOffsets(FMargin(64, 204, 64, 1));
-            UVerticalBox* Categories = Make<UVerticalBox>(TEXT("PackCategories"));
-            Place(C, Categories, FVector2D(64, 252), FVector2D(272, 520));
+            UVerticalBox* CategoryColumn = Make<UVerticalBox>(TEXT("PackCategories"));
+            Place(C, CategoryColumn, FVector2D(64, 252), FVector2D(272, 520));
             UBorder* Divider = Panel(TEXT("PackDivider"), Color(TEXT("3B4545")));
             UCanvasPanelSlot* DividerSlot = C->AddChildToCanvas(Divider); DividerSlot->SetAnchors(FAnchors(0, 0, 0, 1)); DividerSlot->SetOffsets(FMargin(368, 248, 1, 128));
             Place(C, Text(TEXT("PackItemHeading"), TEXT("ITEMS"), 18, Olive), FVector2D(408, 250), FVector2D(408, 28));
@@ -240,6 +248,7 @@ namespace
         }
     };
 }
+}
 
 bool CRInterfaceLayout::Build(UWidgetTree* Tree, UObject* BodyFont, UObject* TitleFont, FName Panel)
 {
@@ -251,13 +260,131 @@ bool CRInterfaceLayout::Build(UWidgetTree* Tree, UObject* BodyFont, UObject* Tit
     return true;
 }
 
+void CRInterfaceLayout::ApplyChapterLayout(UWidgetTree* Tree, UObject* BodyFont, UObject* TitleFont)
+{
+    // The shipped Designer hierarchy supplies the real menu buttons and bindings.
+    // Apply the same chapter styling to that instance and to the native fallback.
+    FLayout Layout{Tree, BodyFont, TitleFont};
+    auto Position = [Tree](const TCHAR* Name, FVector2D Offset, FVector2D Extent)
+    {
+        if (auto* Widget = Tree->FindWidget(Name))
+            if (auto* Slot = Cast<UCanvasPanelSlot>(Widget->Slot))
+            {
+                Slot->SetPosition(Offset);
+                Slot->SetSize(Extent);
+            }
+    };
+    auto Typography = [Tree](const TCHAR* Name, int32 Size, FLinearColor Tint, UObject* Face)
+    {
+        if (auto* Block = Cast<UTextBlock>(Tree->FindWidget(Name)))
+        {
+            auto Font = Block->GetFont();
+            Font.Size = Size;
+            if (Face) Font.FontObject = Face;
+            Block->SetFont(Font);
+            Block->SetColorAndOpacity(Tint);
+        }
+    };
+    auto Wash = [Tree](const TCHAR* Name, const TCHAR* Hex)
+    {
+        if (auto* Border = Cast<UBorder>(Tree->FindWidget(Name)))
+            Border->SetBrushColor(Color(Hex));
+    };
+
+    if (auto* Content = Cast<UCanvasPanel>(Tree->FindWidget(TEXT("MenuContent"))))
+    {
+        Layout.Place(Content, Layout.Panel(TEXT("MenuRegister"), Amber), FVector2D(82, 92), FVector2D(80, 4));
+        Layout.Place(Content, Layout.Text(TEXT("ChapterKicker"), TEXT("CHAPTER 01"), 22, Cyan),
+            FVector2D(166, 116), FVector2D(360, 42));
+        Position(TEXT("RelayMark"), FVector2D(74, 103), FVector2D(70, 70));
+        Position(TEXT("MenuTitle"), FVector2D(80, 176), FVector2D(610, 279));
+        Typography(TEXT("MenuTitle"), 90, White, TitleFont);
+        Position(TEXT("MenuBody"), FVector2D(84, 443), FVector2D(580, 72));
+        Typography(TEXT("MenuBody"), 34, Color(TEXT("EDB77C")), TitleFont);
+        Layout.Place(Content, StationSection(Tree, BodyFont, INDEX_NONE, TEXT("TitleStationSection")),
+            FVector2D(-62, 64), FVector2D(568, 158), FAnchors(1, 0), FVector2D(1, 0));
+        Wash(TEXT("MenuShade"), TEXT("0B171CEE"));
+        if (auto* Shade = Tree->FindWidget(TEXT("MenuShade")))
+            if (auto* Slot = Cast<UCanvasPanelSlot>(Shade->Slot)) Slot->SetOffsets(FMargin(0, 0, 686, 0));
+    }
+
+    if (auto* Board = Cast<UCanvasPanel>(Tree->FindWidget(TEXT("ObjectiveLayout"))))
+    {
+        auto* Hint = Layout.Text(TEXT("ObjectiveHint"), TEXT(""), 19, Color(TEXT("BFCECA")));
+        Hint->SetAutoWrapText(true);
+        Layout.Place(Board, Hint, FVector2D(23, 89), FVector2D(565, 58));
+        auto* Guide = Layout.Text(TEXT("ObjectiveGuideKey"), TEXT("F1   GUIDE"), 15, Cyan);
+        Guide->SetJustification(ETextJustify::Right);
+        Layout.Place(Board, Guide, FVector2D(434, 13), FVector2D(155, 32));
+        Position(TEXT("ObjectivePanel"), FVector2D(38, 34), FVector2D(614, 154));
+        Position(TEXT("ObjectiveLabel"), FVector2D(23, 10), FVector2D(400, 32));
+        Typography(TEXT("ObjectiveLabel"), 17, Amber, BodyFont);
+        Typography(TEXT("Objective"), 26, White, TitleFont);
+        Wash(TEXT("ObjectivePanel"), TEXT("101C20E9"));
+    }
+    for (const TCHAR* Name : {TEXT("HealthPanel"), TEXT("WeaponPanel")}) Wash(Name, TEXT("101B20DC"));
+    Wash(TEXT("PackPanel"), TEXT("0F1B20FC"));
+    Wash(TEXT("PackDetailPanel"), TEXT("1D2B2F"));
+    Wash(TEXT("ModalPanel"), TEXT("101C21FC"));
+    Typography(TEXT("ModalBody"), 24, Color(TEXT("BACBC6")), BodyFont);
+    Position(TEXT("HealthPanel"), FVector2D(38, -38), FVector2D(210, 104));
+    Position(TEXT("HealthState"), FVector2D(20, 8), FVector2D(180, 29));
+    Position(TEXT("HealthValue"), FVector2D(20, 32), FVector2D(170, 52));
+    Position(TEXT("HealthBar"), FVector2D(20, 89), FVector2D(168, 4));
+    Position(TEXT("WeaponPanel"), FVector2D(-38, -38), FVector2D(264, 134));
+    Position(TEXT("OpticState"), FVector2D(116, 13), FVector2D(126, 29));
+    Typography(TEXT("OpticState"), 15, Cyan, BodyFont);
+    Position(TEXT("PackTitle"), FVector2D(64, 80), FVector2D(1136, 72));
+    Position(TEXT("PackChapter"), FVector2D(68, 39), FVector2D(880, 36));
+    Typography(TEXT("PackChapter"), 20, Amber, BodyFont);
+    if (auto* Header = Cast<UTextBlock>(Tree->FindWidget(TEXT("PackChapter"))))
+        Header->SetText(FText::FromString(TEXT("THE DEAD STATION   /   EQUIPMENT")));
+    if (auto* Pack = Cast<UCanvasPanel>(Tree->FindWidget(TEXT("PackLayout"))))
+    {
+        Layout.Place(Pack, Layout.Text(TEXT("PackCategoriesHeading"), TEXT("CATEGORIES"), 18, Cyan),
+            FVector2D(66, 207), FVector2D(270, 38));
+        Typography(TEXT("PackItemHeading"), 18, Cyan, BodyFont);
+        Position(TEXT("PackItemHeading"), FVector2D(410, 207), FVector2D(400, 36));
+        Position(TEXT("PackItems"), FVector2D(408, 252), FVector2D(408, 600));
+    }
+}
+
 bool UCRInterfaceLibrary::BuildDesignerLayout(UObject* Blueprint, UObject* BodyFont, UObject* TitleFont, FName Panel)
 {
 #if WITH_EDITOR
-    UWidgetTree* Tree = DesignerTree(Blueprint);
+    UWidgetTree* Tree = CRInterfaceLayout::DesignerTree(Blueprint);
     if (!Tree || Tree->RootWidget) return false; // Never rebuild over authored Designer changes.
     Blueprint->Modify(); Tree->Modify();
     if (!CRInterfaceLayout::Build(Tree, BodyFont, TitleFont, Panel)) return false;
+    Blueprint->MarkPackageDirty(); return true;
+#else
+    return false;
+#endif
+}
+
+bool UCRInterfaceLibrary::UpgradeDesignerArtworkAspect(UObject* Blueprint)
+{
+#if WITH_EDITOR
+    UWidgetTree* Tree=CRInterfaceLayout::DesignerTree(Blueprint);
+    auto* WidgetBP=Cast<UWidgetBlueprint>(Blueprint);
+    if(!Tree || !WidgetBP) return false;
+    auto Register=[WidgetBP](FName Name)
+    { if(!WidgetBP->WidgetVariableNameToGuidMap.Contains(Name)) WidgetBP->OnVariableAdded(Name); };
+    if(Tree->FindWidget(TEXT("TitleArtworkFit")))
+    { Register(TEXT("TitleArtworkFit")); Register(TEXT("TitleArtworkSize")); return true; }
+    auto* Art=Cast<UImage>(Tree->FindWidget(TEXT("TitleBackground")));
+    auto* Parent=Art?Cast<UCanvasPanel>(Art->GetParent()):nullptr;
+    auto* OldSlot=Art?Cast<UCanvasPanelSlot>(Art->Slot):nullptr;
+    if(!Parent || !OldSlot) return false;
+    const FAnchorData Layout=OldSlot->GetLayout(); const int32 Z=OldSlot->GetZOrder();
+    Blueprint->Modify(); Tree->Modify(); Parent->Modify(); Art->Modify();
+    Art->RemoveFromParent();
+    auto* Fit=Tree->ConstructWidget<UScaleBox>(UScaleBox::StaticClass(),TEXT("TitleArtworkFit"));
+    Fit->SetStretch(EStretch::ScaleToFill); Fit->SetClipping(EWidgetClipping::ClipToBounds);
+    auto* Slot=Parent->AddChildToCanvas(Fit); Slot->SetLayout(Layout); Slot->SetZOrder(Z);
+    auto* Size=Tree->ConstructWidget<USizeBox>(USizeBox::StaticClass(),TEXT("TitleArtworkSize"));
+    Size->SetWidthOverride(1920); Size->SetHeightOverride(1080); Fit->AddChild(Size); Size->AddChild(Art);
+    Register(Fit->GetFName()); Register(Size->GetFName());
     Blueprint->MarkPackageDirty(); return true;
 #else
     return false;
@@ -286,7 +413,7 @@ TArray<FName> UCRInterfaceLibrary::GetDesignerWidgetNames(UObject* Blueprint)
 {
     TArray<FName> Names;
 #if WITH_EDITOR
-    if (const UWidgetTree* Tree = DesignerTree(Blueprint))
+    if (const UWidgetTree* Tree = CRInterfaceLayout::DesignerTree(Blueprint))
         Tree->ForEachWidget([&Names](UWidget* Widget) { Names.Add(Widget->GetFName()); });
 #endif
     return Names;

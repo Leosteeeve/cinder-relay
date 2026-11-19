@@ -73,7 +73,7 @@ bool ACRChapterStreamingController::IsZoneUnloaded(int32 I) const
 }
 bool ACRChapterStreamingController::AreGatesClosedFor(int32 I) const
 {
-    for (const auto& Gate : Gates) if (Gate.IsValid() && (Gate->LeftZone == I || Gate->LeftZone + 1 == I) && Gate->bOpen) return false;
+    for (const auto& Gate : Gates) if (Gate.IsValid() && (Gate->LeftZone == I || Gate->LeftZone + 1 == I) && !Gate->IsSealed()) return false;
     return Gates.Num() == 2;
 }
 void ACRChapterStreamingController::LogZone(int32 I, const TCHAR* Event) const
@@ -138,7 +138,7 @@ void ACRChapterStreamingController::Reconcile()
         if (CurrentZone == 2 && X < 3440) CurrentZone = 1;
     }
     bool Wanted[3] = {false, false, false}; Wanted[CurrentZone] = true;
-    for (const auto& Gate : Gates) if (Gate.IsValid() && (Gate->IsNear() || Gate->IsInThreshold()) && Gate->LeftZone >= 0 && Gate->LeftZone < 2)
+    for (const auto& Gate : Gates) if (Gate.IsValid() && Gate->WantsAdjacentZones() && Gate->LeftZone >= 0 && Gate->LeftZone < 2)
         Wanted[Gate->LeftZone] = Wanted[Gate->LeftZone + 1] = true;
     // Close the opaque boundary BEFORE removing old geometry. Latest demand wins over stale events.
     for (const auto& Gate : Gates) if (Gate.IsValid() && Gate->LeftZone >= 0 && Gate->LeftZone < 2)

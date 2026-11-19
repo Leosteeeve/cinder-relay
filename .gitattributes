@@ -24,5 +24,6 @@
 *.cmd text eol=crlf
 # Preserve Phase055 provenance hashes across Windows/Linux checkouts.
 CinderRelay/ArtSource/**/Phase055/**/*.py text eol=lf
+CinderRelay/ArtSource/Blender/Phase06/*.py text eol=lf
 CinderRelay/ArtSource/Interface/Phase055/*.svg -text whitespace=cr-at-eol
 CinderRelay/ArtSource/Interface/Phase055/Fonts/OFL.txt -text whitespace=-trailing-space

@@ -14,6 +14,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "UObject/UObjectGlobals.h"
 #include "HAL/FileManager.h"
 namespace { bool VerifyWeaponRestart=false; }
 #endif
@@ -52,7 +53,16 @@ void ACRCombatAcceptance::Tick(float Delta)
     auto* W=Player->Weapon.Get();
     if(Stage==TEXT("first") && Age>.2)
     {
+        const auto* View = FindObject<USceneComponent>(Player.Get(), TEXT("RookViewRoot"));
+        Check(View != nullptr, TEXT("Native view root exists for impulse verification"));
+        if (bFinished) return;
+        const FVector ViewBefore = View->GetRelativeLocation();
+        const FRotator AimBefore = PC->GetControlRotation();
         Check(W->TryFire(),TEXT("One accepted shot")); Check(W->Magazine==4 && TargetHealth->Health==60,TEXT("One ammo and one body damage event"));
+        const FVector ShotOffset = View->GetRelativeLocation() - ViewBefore;
+        Check(ShotOffset.X < -1.f && ShotOffset.Y == 0.f && ShotOffset.Z == 0.f,
+              TEXT("Accepted hip shot moves the view model backward in the same frame"));
+        Check(PC->GetControlRotation().Equals(AimBefore), TEXT("Shot feedback leaves the camera aim unchanged"));
         for(int I=0;I<8;++I) Check(!W->TryFire(),TEXT("Spam rejected by cycling/cooldown"));
         Check(W->Magazine==4 && TargetHealth->Health==60,TEXT("No duplicate damage/ammo consumption")); Next(TEXT("miss"));
     }
@@ -64,12 +74,26 @@ void ACRCombatAcceptance::Tick(float Delta)
     {
         Check(Player->WeaponView->GetEjectedCases()==1,TEXT("Accepted shot has exactly one native notify case; rejected spam has none"));
         Check(W->TryFire()&&W->Magazine==3&&TargetHealth->Health==60,TEXT("Miss consumes ammunition"));
-        Wall=TestBlock(Player->Camera->GetComponentLocation()+FVector(90,0,0),FVector(20,150,150),false); PC->SetControlRotation(FRotator::ZeroRotator); Next(TEXT("cover"));
+        PC->SetControlRotation(FRotator::ZeroRotator); Next(TEXT("cover"));
     }
-    else if(Stage==TEXT("cover")&&Age>1)
+    else if(Stage==TEXT("cover")&&Age>.3)
+    {
+        Wall=TestBlock(Player->Camera->GetComponentLocation()+FVector(90,0,0),FVector(20,150,150),false);
+        W->SetAiming(true);
+        Next(TEXT("cover_fire"));
+    }
+    else if(Stage==TEXT("cover_fire")&&Age>.7)
     {
         Check(Player->WeaponView->GetEjectedCases()==2,TEXT("Second montage instance emits its own case exactly once"));
+        const auto* View = FindObject<USceneComponent>(Player.Get(), TEXT("RookViewRoot"));
+        const FVector ViewBefore = View->GetRelativeLocation();
+        const FRotator AimBefore = PC->GetControlRotation();
         Check(W->TryFire()&&W->Magazine==2&&TargetHealth->Health==60,TEXT("Real solid cover blocks damage"));
+        const FVector ShotOffset = View->GetRelativeLocation() - ViewBefore;
+        Check(ShotOffset.X < -.5f && ShotOffset.X > -2.f && ShotOffset.Y == 0.f && ShotOffset.Z == 0.f,
+              TEXT("ADS gets a smaller axial impulse without moving the sight sideways"));
+        Check(PC->GetControlRotation().Equals(AimBefore), TEXT("ADS feedback leaves the camera aim unchanged"));
+        W->SetAiming(false);
         Wall->Destroy(); Target->Destroy(); Next(TEXT("partial_reload"));
     }
     else if(Stage==TEXT("partial_reload")&&Age>1)

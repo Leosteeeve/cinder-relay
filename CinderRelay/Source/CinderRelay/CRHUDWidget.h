@@ -20,13 +20,15 @@ class CINDERRELAY_API UCRHUDWidget : public UUserWidget
 {
     GENERATED_BODY()
 public:
-    void SetObjective(const FText& Text); void SetPrompt(const FText& Text); void SetStreamingStatus(const FText& Text);
+    void SetObjective(const FText& Text, bool Notify = true); void SetPrompt(const FText& Text); void SetStreamingStatus(const FText& Text);
     void SetMenu(bool Visible,bool Ended,bool Defeated=false);
     void SetRecoveryMenu(bool Startup,bool Defeated,bool CanResume,bool CanContinue,const FString& Status);
     void SetCheckpointStatus(const FText& Text); void SetCombat(float Health,int32 Magazine,int32 Reserve,bool Reloading);
     void SetSightState(bool HideReticle,bool Installed);
     void ShotFeedback(bool Hit); void HitFeedback(bool Killed); void DamageFeedback();
-    void SetSubtitle(const FText& Text); void SetAssembly(bool Active); void Notice(const FText& Text);
+    void SetSubtitle(const FText& Text); void SetAssembly(bool Active, bool Iron = false); void Notice(const FText& Text);
+    void ShowFieldGuide(const FText& Objective, const FText& Route);
+    void ShowChapterMenu();
     bool HandleBack(); void HandleAction(int32 Action); void PlayInterfaceSound(FName Cue);
     void SetFieldPack(bool Open); void RefreshFieldPack();
     bool IsFieldPackVisible() const {return bPack;}
@@ -44,9 +46,11 @@ private:
     void BeginModal(const FString& Title,const FString& Body,int32 Kind); void CloseModal();
     UCRInterfaceAction* AddAction(int32 Id,const FString& Label);
     void AddVolume(FName Group); void ChangeVolume(FName Group,float Value); void SaveVolumes(); void RefreshTitleArtwork();
+    void ShowGraphics(); void SetLightingQuality(int32 Quality);
     UFUNCTION() void ResumeClicked(); UFUNCTION() void RestartClicked(); UFUNCTION() void ExitClicked();
     UFUNCTION() void ContinueClicked(); UFUNCTION() void SettingsClicked(); UFUNCTION() void CreditsClicked();
     UFUNCTION() void PackCloseClicked();
+    UFUNCTION() void MenuHovered();
     UFUNCTION() void MasterChanged(float V); UFUNCTION() void SFXChanged(float V); UFUNCTION() void AmbienceChanged(float V);
     UFUNCTION() void UIChanged(float V); UFUNCTION() void VoiceChanged(float V);
     UPROPERTY(Transient) TArray<TObjectPtr<UButton>> MenuNavigation;
@@ -57,6 +61,7 @@ private:
     int32 Focused=0,ModalKind=0,PackCategory=0,PackSelection=0,VolumeFocus=0;
     bool bMenu=false,bStartup=false,bAssembly=false,bEnded=false,bDefeated=false,bPack=false,bKilled=false;
     bool bHadCombat=false,bWasReloading=false;
+    bool bObjectiveHasHint=false;
     float ShotPulse=0,HitPulse=0,HurtPulse=0,ObjectiveAge=0,NoticeAge=0;
     FText FullObjective;
 };
