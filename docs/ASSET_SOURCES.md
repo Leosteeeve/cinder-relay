@@ -1,5 +1,9 @@
 # CINDER RELAY — Asset Sources and Licensing
 
+## Echo Crossing and the campaign films
+
+`CinderRelay/Scripts/author_echo_crossing.py` builds eight original meshes in Blender and authors the new map and river materials in Unreal. The meshes cover the aerial dish, archive chart, bridge arm and catch, pier bent, pipe rail, riverbanks and an 8.61 m moored survey launch. The editable source library is [CR02_EchoCrossing.blend](../CinderRelay/ArtSource/Blender/Chapter02/CR02_EchoCrossing.blend). A separate Blender process reopened it and checked the pivots, bounds, triangle counts and material slots. The floodplain reuses the project's registered industrial meshes, signs and surface materials. The native campaign films use original animated Slate illustrations, the project's existing Barlow typefaces and previously registered game sound effects. The source of both cuts is `CinderRelay/Source/CinderRelay/CRSignalFilm.cpp`. The films contain English on-screen captions and no recorded narration.
+
 ## Chapter 01 remake, November 18
 
 The transfer hoist reuses the project's existing service wagon, structural steel, pump and sign meshes. The new press, telescoping gate, test dynamometer, transformer, gallery grille and carrier meter were modeled from project-authored primitives in Blender 4.5.11. Their reproducible sources are `CinderRelay/Scripts/remake_interiors.py` and `CinderRelay/ArtSource/Blender/Phase06/author_receiver.py`. The carrier meter also has an editable `CR06_Receiver.blend`. The new meshes use the registered Phase052 materials.

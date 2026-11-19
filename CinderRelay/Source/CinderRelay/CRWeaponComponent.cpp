@@ -72,6 +72,11 @@ bool UCRWeaponComponent::TryFire()
             bTarget = Applied > 0;
             if(bTarget) ImpactKind=Health->IsDead()?ECRImpactKind::EnemyKill:ECRImpactKind::EnemyHit;
         }
+        else if (Hit.GetComponent() && Hit.GetComponent()->ComponentHasTag(TEXT("CR_PointDamageReceiver")))
+        {
+            UGameplayStatics::ApplyPointDamage(Hit.GetActor(), Data->BodyDamage, Direction, Hit,
+                Player->GetController(), Player, nullptr);
+        }
     }
     const FVector Impact = Hit.bBlockingHit ? Hit.ImpactPoint : End;
     UAISense_Hearing::ReportNoiseEvent(this,Start,1.f,Player,2500,TEXT("RookShot"));

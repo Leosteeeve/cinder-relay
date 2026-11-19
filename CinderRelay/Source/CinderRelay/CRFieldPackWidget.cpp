@@ -1,6 +1,8 @@
 #include "CRHUDWidget.h"
 #include "CRFieldPackModel.h"
 #include "CRCharacter.h"
+#include "CREchoChapter.h"
+#include "CRWeaponComponent.h"
 #include "Blueprint/WidgetTree.h"
 #include "Brushes/SlateColorBrush.h"
 #include "Components/ButtonSlot.h"
@@ -42,7 +44,23 @@ void UCRHUDWidget::RefreshFieldPack()
     const auto* Player = Cast<ACRCharacter>(GetOwningPlayerPawn());
     const auto* Chapter = GetWorld()->GetAuthGameMode<ACRGameMode>();
     if (!Player || !Chapter) return;
-    const auto Items = CRFieldPack::Items(CRFieldPack::Read(*Chapter, *Player), PackCategory);
+    auto Items = CRFieldPack::Items(CRFieldPack::Read(*Chapter, *Player), PackCategory);
+    if (auto* Echo = GetWorld()->GetSubsystem<UCREchoChapter>(); Echo && UCREchoChapter::IsEchoWorld(GetWorld()))
+    {
+        Put(TEXT("PackChapter"), TEXT("ECHO CROSSING   /   EQUIPMENT"));
+        if (PackCategory == 3)
+        {
+            const bool Strip = Echo->GetStep() >= 2;
+            Items = {{TEXT("PowerModule"),TEXT("Archive reference strip"),Strip ? TEXT("COPIED") : TEXT("AT THE ARCHIVE"),
+                Strip ? TEXT("Return bearing: 120 degrees. Turn the aerial to match the strip, then use TEST RETURN.") : TEXT("The archive holds the reference for the aerial."),Strip ? 1 : 0}};
+            if (Echo->HasFieldLog()) Items.Add({TEXT("PowerModule"),TEXT("Observer's log"),TEXT("RECOVERED"),
+                TEXT("The first pulse dies at the river. Record the second return. Recovered at the survey walk overlook."),1});
+        }
+        if (PackCategory == 1 && !Items.IsEmpty())
+            Items[0].Description = FString::Printf(TEXT("Magazine  %02d / 05     Reserve  %02d"), Player->Weapon->Magazine, Player->Weapon->Reserve);
+        if (!Chapter->HasSurveyOptic() && (PackCategory == 0 || PackCategory == 2) && !Items.IsEmpty())
+            Items.Last().Description = TEXT("The optional optic can be carried here from the Workshop in Chapter 01.");
+    }
     if (Items.IsEmpty()) return;
     PackSelection = FMath::Clamp(PackSelection, 0, Items.Num() - 1);
     const auto& Item = Items[PackSelection];

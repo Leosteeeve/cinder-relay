@@ -28,6 +28,7 @@ public:
     void ShotFeedback(bool Hit); void HitFeedback(bool Killed); void DamageFeedback();
     void SetSubtitle(const FText& Text); void SetAssembly(bool Active, bool Iron = false); void Notice(const FText& Text);
     void ShowFieldGuide(const FText& Objective, const FText& Route);
+    void ShowChapterMenu();
     bool HandleBack(); void HandleAction(int32 Action); void PlayInterfaceSound(FName Cue);
     void SetFieldPack(bool Open); void RefreshFieldPack();
     bool IsFieldPackVisible() const {return bPack;}

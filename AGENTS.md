@@ -2,7 +2,7 @@
 
 - Communicate with the owner in Chinese; write implementation prompts in English.
 - Read `README.md`, `docs/MILESTONES.md`, and `docs/TECHNICAL_DESIGN.md` first.
-- Current authorization: Phase06 complete Chapter01 narrative vertical slice and mechanical streaming doors, per the owner brief dated 2026-11-01 and docs/CHAPTER_06.md. Preserve accepted Phase053 weapon/arms, Phase054 combat/slide, schema1, IDs, checkpoints, native streaming and workbench lifecycle. Do not begin Chapter02 or Phase07.
+- Current authorization: the owner requested a game opening, story introduction and recap, and the design and playable production of Chapter 02 on 2026-11-18. Chapter 01 follows the 2026-11-01 brief in docs/CHAPTER_06.md. Preserve accepted Phase053 weapon/arms, Phase054 combat/slide, Chapter 01 schema1, IDs, checkpoints, native streaming and workbench lifecycle. Chapter 02 has separate checkpoint slots. Later chapters require a new brief.
 - Canon lives in `docs/GAME_DESIGN.md` and `docs/STORY.md`; mark new creative proposals, never silently invent canon.
 - Priorities: reliability, gameplay quality, maintainability, performance, then visual fidelity.
 - Preserve existing work. Audit before edits; never upgrade the engine or rewrite working architecture without authorization.

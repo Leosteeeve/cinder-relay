@@ -1,5 +1,11 @@
 # CINDER RELAY
 
+## 开场与第二章《回声渡口》
+
+本地 Windows 启动入口为 `.environment-local/chapter-02/package/Windows/CinderRelay.exe`。**New Game** 播放游戏开场，再进入第一章。第一章终点选择 **Next / Echo Crossing** 可以携带当前装备前往渡口。也可从标题画面选择 **Chapters & story → Begin Echo Crossing** 直接体验第二章。该菜单还能重播开场和章节回顾。**Continue** 可恢复尚未完成的第二章；两章都有检查点时会显示选择框。
+
+在渡口按 **E** 操作设备，按 **I** 核对回收的参考条，按 **F1** 查看当前步骤。两段动画都支持 **Tab** 跳过。[剧情梳理、关卡设计与验收路线](docs/CHAPTER_02.md)
+
 ## Play the Chapter 01 remake
 
 Launch `.environment-local/phase-06/remake/package/Windows/CinderRelay.exe` and choose **New Game** to see the rebuilt opening. At the yellow booth, **E** powers the hoist and raises the wagon. The sound draws nearby scouts. The east approach also leads to the Workshop. Inside, the three diagnostic bays and two underground controls now operate physical gates and crosswalks. The final console drives a working carrier meter. **F1** opens the illustrated field guide. [Route and verification](docs/CHAPTER_06_EXPANSION.md#november-18-playable-remake).

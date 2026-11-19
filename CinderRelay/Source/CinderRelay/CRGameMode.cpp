@@ -1,5 +1,6 @@
 #include "CRGameMode.h"
 #include "CRChapterMechanics.h"
+#include "CREchoChapter.h"
 #include "CRCharacter.h"
 #include "CRPlayerController.h"
 #include "CRChapterStreamingController.h"
@@ -12,6 +13,7 @@
 #include "Misc/Parse.h"
 #include "CRChapterSaveGame.h"
 #include "CRCheckpointRoute.h"
+#include "CRCampaignAcceptance.h"
 #include "CRChapterSaveSubsystem.h"
 #include "CRCheckpoint.h"
 #include "CRHealthComponent.h"
@@ -24,6 +26,7 @@ void ACRGameMode::InitGame(const FString& MapName, const FString& Options, FStri
 	Super::InitGame(MapName, Options, ErrorMessage);
 	BootstrapStarted = FPlatformTime::Seconds();
 	bUseCheckpoints = MapName.EndsWith(TEXT("L_CH01_Persistent"));
+	if (MapName.EndsWith(TEXT("L_CH02_EchoCrossing"))) return;
 #if !UE_BUILD_SHIPPING
 	bLegacyAcceptance = FParse::Param(FCommandLine::Get(), TEXT("CRStreamAcceptance")) || FParse::Param(FCommandLine::Get(), TEXT("CRCombatCheck"))
 		|| FParse::Param(FCommandLine::Get(), TEXT("CRWeaponCheck")) || FParse::Param(FCommandLine::Get(), TEXT("CRRestorationCheck"));
@@ -197,6 +200,7 @@ void ACRGameMode::HandleStartingNewPlayer_Implementation(APlayerController* NewP
 		ReleaseStartingPlayer(); return;
 	}
 	Super::HandleStartingNewPlayer_Implementation(NewPlayer);
+	if (UCREchoChapter::IsEchoWorld(GetWorld())) bBootstrapReady = IsValid(NewPlayer->GetPawn());
 }
 
 bool ACRGameMode::ReleaseStartingPlayer()
@@ -241,6 +245,8 @@ void ACRGameMode::BeginPlay()
 #if !UE_BUILD_SHIPPING
 	int32 CheckpointRoute = 0;
 	FString InterfaceCheck;
+	if (FParse::Value(FCommandLine::Get(), TEXT("CRCampaignCheck="), InterfaceCheck)) GetWorld()->SpawnActor<ACRCampaignAcceptance>();
+	if (UCREchoChapter::IsEchoWorld(GetWorld())) return;
 	if (FParse::Value(FCommandLine::Get(), TEXT("CR055InterfaceCheck="), InterfaceCheck)) GetWorld()->SpawnActor<ACRInterfaceAcceptance>();
 	if (FParse::Value(FCommandLine::Get(), TEXT("CRCheckpointRoute="), CheckpointRoute)) GetWorld()->SpawnActor<ACRCheckpointRoute>();
 	if (FParse::Param(FCommandLine::Get(), TEXT("CRStreamAcceptance"))) GetWorld()->SpawnActor<ACRStreamingAcceptance>();

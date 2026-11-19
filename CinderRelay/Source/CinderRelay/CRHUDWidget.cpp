@@ -3,6 +3,8 @@
 #include "CRPlayerController.h"
 #include "CRAudioSettingsSubsystem.h"
 #include "CRGameMode.h"
+#include "CREchoChapter.h"
+#include "CRChapterSaveSubsystem.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/TextBlock.h"
 #include "Components/Border.h"
@@ -162,6 +164,27 @@ void UCRHUDWidget::NativeOnInitialized()
         GuideSlot->SetAlignment(FVector2D(1, 1));
         GuideSlot->SetPosition(FVector2D(-48, -44));
         GuideSlot->SetSize(FVector2D(248, 56));
+        auto* Chapters = WidgetTree->ConstructWidget<UCRInterfaceAction>(UCRInterfaceAction::StaticClass(), TEXT("Chapters"));
+        Chapters->Configure(this, 108);
+        Chapters->SetStyle(Style(false));
+        auto* Caption = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("ChaptersLabel"));
+        Caption->SetFont(FSlateFontInfo(BodyFont, 24));
+        Caption->SetColorAndOpacity(White());
+        Chapters->SetContent(Caption);
+        auto* ChapterSlot = Content->AddChildToCanvas(Chapters);
+        ChapterSlot->SetAnchors(FAnchors(1, 1));
+        ChapterSlot->SetAlignment(FVector2D(1, 1));
+        ChapterSlot->SetPosition(FVector2D(-48,-115));
+        ChapterSlot->SetSize(FVector2D(420,64));
+        auto* ReturnLog = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("EchoReturnLog"));
+        ReturnLog->SetText(FText::FromString(TEXT("The first pulse faded at the river.\nA second came back on the far aerial.\n\nRelay Nine now has a route across the water.")));
+        ReturnLog->SetFont(FSlateFontInfo(BodyFont, 28));
+        ReturnLog->SetColorAndOpacity(White());
+        ReturnLog->SetAutoWrapText(true);
+        auto* LogSlot = Content->AddChildToCanvas(ReturnLog);
+        LogSlot->SetAnchors(FAnchors(.53f,.27f,.94f,.70f));
+        LogSlot->SetOffsets(FMargin(0));
+        ReturnLog->SetVisibility(ESlateVisibility::Collapsed);
     }
     TArray<FSoftObjectPath> Icons;
     for (const TCHAR *N : {TEXT("Rook"), TEXT("Optic"), TEXT("Ammo"), TEXT("PowerModule")})
@@ -242,7 +265,7 @@ void UCRHUDWidget::SetObjective(const FText &V, bool Notify)
     Put(TEXT("Objective"), Primary);
     Put(TEXT("ObjectiveHint"), Hint);
     const int32 Area = TaskArea(GetWorld());
-    Put(TEXT("ObjectiveLabel"), Area == INDEX_NONE ? FString(TEXT("CURRENT TASK"))
+    Put(TEXT("ObjectiveLabel"), UCREchoChapter::IsEchoWorld(GetWorld()) ? FString(TEXT("TASK   /   ECHO CROSSING")) : Area == INDEX_NONE ? FString(TEXT("CURRENT TASK"))
         : FString::Printf(TEXT("TASK   /   %s"), TaskAreas[Area]));
     SetObjectiveExpanded(true);
     if (Changed && Notify)
@@ -285,13 +308,17 @@ void UCRHUDWidget::SetMenu(bool V, bool End, bool Dead)
         CloseModal();
     if (!bStartup)
     {
-        Put(TEXT("MenuTitle"), Dead ? TEXT("ELIAS HAS FALLEN") : End ? TEXT("MERIDIAN NETWORK") : TEXT("PAUSED"));
-        Put(TEXT("MenuBody"), End    ? TEXT("CONNECTION RESTORED")
+        const bool Echo = UCREchoChapter::IsEchoWorld(GetWorld());
+        Put(TEXT("MenuTitle"), Dead ? TEXT("ELIAS HAS FALLEN") : End ? (Echo ? TEXT("ECHO\nCROSSING") : TEXT("MERIDIAN NETWORK")) : TEXT("PAUSED"));
+        Put(TEXT("MenuBody"), End    ? (Echo ? TEXT("RETURN PATH CONFIRMED") : TEXT("CONNECTION RESTORED"))
                               : Dead ? TEXT("Recover from the last saved checkpoint.")
-                                     : TEXT("THE DEAD STATION"));
+                                     : Echo ? TEXT("ECHO CROSSING") : TEXT("THE DEAD STATION"));
+        Put(TEXT("ChapterKicker"), Echo ? TEXT("CHAPTER 02") : TEXT("CHAPTER 01"));
     }
     Visibility(TEXT("Resume"), V && !End && !Dead);
     Visibility(TEXT("FieldGuide"), !End && !Dead);
+    Visibility(TEXT("Chapters"), V && !Dead);
+    Visibility(TEXT("EchoReturnLog"), V && End && UCREchoChapter::IsEchoWorld(GetWorld()));
     if (Changed && V && !ModalKind)
         RefreshNavigation();
 }
@@ -313,6 +340,7 @@ void UCRHUDWidget::SetRecoveryMenu(bool Startup, bool Dead, bool Resume, bool Co
         Put(TEXT("MenuBody"), TEXT("The Dead Station"));
     }
     Visibility(TEXT("TitleStationSection"), Startup);
+    Put(TEXT("ChaptersLabel"), bEnded && !UCREchoChapter::IsEchoWorld(GetWorld()) ? TEXT("Next  /  Echo Crossing") : TEXT("Chapters & story"));
     if (Changed)
         RefreshTitleArtwork();
     if (bMenu && !ModalKind && !bPack)
@@ -448,7 +476,7 @@ void UCRHUDWidget::RefreshNavigation()
 {
     MenuNavigation.Reset();
     for (const TCHAR *N :
-         {TEXT("Resume"), TEXT("Continue"), TEXT("Restart"), TEXT("Settings"), TEXT("Credits"), TEXT("Exit"), TEXT("FieldGuide")})
+         {TEXT("Resume"), TEXT("Continue"), TEXT("Restart"), TEXT("Settings"), TEXT("Credits"), TEXT("Exit"), TEXT("FieldGuide"), TEXT("Chapters")})
         if (auto *B = Cast<UButton>(WidgetTree->FindWidget(N));
             B && B->GetIsEnabled() && B->GetVisibility() != ESlateVisibility::Collapsed)
             MenuNavigation.Add(B);
@@ -563,6 +591,23 @@ void UCRHUDWidget::ShowFieldGuide(const FText& Objective, const FText& Route)
         return;
     }
     if (ModalKind != 0) return;
+    if (UCREchoChapter::IsEchoWorld(GetWorld()))
+    {
+        BeginModal(TEXT("FIELD GUIDE"), TEXT("Chapter 02   /   Echo Crossing"), 6);
+        auto* Box = Cast<UVerticalBox>(WidgetTree->FindWidget(TEXT("ModalChoices")));
+        if (Box)
+        {
+            auto* Copy = WidgetTree->ConstructWidget<UTextBlock>();
+            Copy->SetText(FText::FromString(Objective.ToString() + TEXT("\n\n") + Route.ToString()));
+            Copy->SetWrapTextAt(FMath::Max(280.f, GetCachedGeometry().GetLocalSize().X * .64f));
+            Copy->SetFont(FSlateFontInfo(BodyFont, 26));
+            Copy->SetColorAndOpacity(White());
+            Box->AddChildToVerticalBox(Copy)->SetPadding(FMargin(0,8,0,36));
+        }
+        AddAction(0,TEXT("Back"));
+        FocusIndex(0);
+        return;
+    }
     const int32 Area = bStartup ? INDEX_NONE : TaskArea(GetWorld());
     BeginModal(TEXT("FIELD GUIDE"), bStartup ? TEXT("Chapter 01   /   The Dead Station")
         : FString::Printf(TEXT("Task area   /   %s"), Area == INDEX_NONE ? TEXT("THE DEAD STATION") : TaskAreas[Area]), 6);
@@ -722,14 +767,27 @@ void UCRHUDWidget::ResumeClicked()
 void UCRHUDWidget::ContinueClicked()
 {
     PlayInterfaceSound(TEXT("UIConfirm"));
+    if (bStartup && UCREchoChapter::HasUnfinishedCheckpoint(this))
+    {
+        const auto* First = GetGameInstance()->GetSubsystem<UCRChapterSaveSubsystem>();
+        if (First && First->HasCheckpoint())
+        {
+            BeginModal(TEXT("CONTINUE"),TEXT("Both chapters have a saved checkpoint."),10);
+            AddAction(110,TEXT("02   Echo Crossing")); AddAction(115,TEXT("01   The Dead Station")); AddAction(0,TEXT("Back"));
+            FocusIndex(0);
+        }
+        else if (auto* PC = Cast<ACRPlayerController>(GetOwningPlayer())) PC->EnterEchoCrossing(true);
+        return;
+    }
     if (auto *PC = Cast<ACRPlayerController>(GetOwningPlayer()))
         PC->ContinueCheckpoint();
 }
 void UCRHUDWidget::RestartClicked()
 {
     BeginModal(bStartup ? TEXT("START NEW GAME?") : TEXT("RESTART CHAPTER?"),
-               TEXT("Your existing checkpoint is kept until you reach a new checkpoint. Unsaved progress returns to "
-                    "the chapter start."),
+               UCREchoChapter::IsEchoWorld(GetWorld())
+                    ? TEXT("Start again on the west bank. A new crossing checkpoint will replace your current progress.")
+                    : TEXT("Your existing checkpoint is kept until you reach a new checkpoint. Unsaved progress returns to the chapter start."),
                1);
     AddAction(100, TEXT("Start chapter"));
     AddAction(0, TEXT("Cancel"));
@@ -904,6 +962,17 @@ void UCRHUDWidget::HandleAction(int32 Id)
     }
     else if (Id == 104)
         PC->OpenFieldGuide();
+    else if (Id == 108) ShowChapterMenu();
+    else if (Id == 109) { CloseModal(); PC->EnterEchoCrossing(false); }
+    else if (Id == 110) { CloseModal(); PC->EnterEchoCrossing(true); }
+    else if (Id == 111 || Id == 112) { CloseModal(); PC->PlayCampaignFilm(Id == 112); }
+    else if (Id == 113) { CloseModal(); PC->ReturnToTitle(); }
+    else if (Id == 115) { CloseModal(); PC->ContinueCheckpoint(); }
+    else if (Id == 114)
+    {
+        BeginModal(TEXT("RESTART ECHO CROSSING?"), TEXT("Starting from the intake creates a new Chapter 02 checkpoint."), 9);
+        AddAction(109,TEXT("Start from the intake")); AddAction(0,TEXT("Cancel")); FocusIndex(1);
+    }
     else if (Id == 105)
     {
         SaveVolumes();
@@ -926,6 +995,23 @@ void UCRHUDWidget::HandleAction(int32 Id)
     }
     else if (Id == 240)
         PC->ToggleFieldPack();
+}
+
+void UCRHUDWidget::ShowChapterMenu()
+{
+    const bool Echo = UCREchoChapter::IsEchoWorld(GetWorld());
+    auto* Store = GetGameInstance()->GetSubsystem<UCREchoStore>();
+    BeginModal(TEXT("CHAPTERS & STORY"), TEXT("01   The Dead Station      /      02   Echo Crossing"), 8);
+    if (!Echo && Store && Store->IsReady())
+    {
+        if (Store->HasUnfinishedCheckpoint()) AddAction(110,TEXT("Resume Echo Crossing"));
+        AddAction(Store->HasCheckpoint() ? 114 : 109,Store->HasCheckpoint() ? TEXT("Start Echo Crossing from the intake") : TEXT("Begin Echo Crossing"));
+    }
+    AddAction(111,TEXT("Watch opening   /   The Quieting"));
+    AddAction(112,TEXT("Watch recap   /   Relay Nine"));
+    if (!bStartup) AddAction(113,TEXT("Return to title"));
+    AddAction(0,TEXT("Back"));
+    FocusIndex(0);
 }
 
 FReply UCRHUDWidget::NativeOnPreviewKeyDown(const FGeometry &G, const FKeyEvent &E)

@@ -490,6 +490,9 @@ void ACRCheckpointRoute::Tick(float Delta)
         }
         if(!PC->bPrototypeEnded) return; // Real native ending playback, bounded by the route stage timeout.
         Check(PC->bPrototypeEnded,TEXT("Original MERIDIAN chapter ending still completes"));
+        FString CampaignMode;
+        if (FParse::Value(FCommandLine::Get(),TEXT("CRCampaignCheck="),CampaignMode) && CampaignMode==TEXT("Handoff"))
+        { bFinished=true; return; } // The separate campaign fixture now operates the ending menu.
         if(Journey==4) { Check(!G->HasSurveyOptic()&&!G->HasSurveyUpgrade(),TEXT("Optional workbench bypass reaches ending")); Finish(true,TEXT("Checkpoint recovery, backtracking, death retry, restart and optional ending passed")); }
         else Travel(false,4);
     }
